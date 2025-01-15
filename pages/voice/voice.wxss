@@ -1,0 +1,162 @@
+page {
+  background: linear-gradient(180deg, #f0f2f5 0%, #ffffff 100%);
+}
+
+.container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin-right: 20px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.call-sign {
+  font-size: 16px;
+  color: #666666;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.codec-select {
+  margin-top: 32px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.title {
+  font-size: 18px;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.radio-group {
+  display: flex;
+  gap: 24px;
+}
+
+.radio-item {
+  font-size: 16px;
+  color: #666666;
+}
+
+.radio-item radio {
+  margin-right: 8px;
+}
+
+.talk-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0;
+}
+
+.talk-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: #07c160;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 4px 16px rgba(7,193,96,0.3);
+  transition: all 0.2s ease;
+}
+
+.talk-btn.active {
+  background: #f5222d;
+  box-shadow: 0 4px 16px rgba(245,34,45,0.3);
+}
+
+.settings {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.settings navigator {
+  display: flex;
+  align-items: center;
+  color: #1a1a1a;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings image {
+  width: 20px;
+  height: 20px;
+  margin-left: 12px;
+}
+
+.server-status {
+  margin: 24px 0;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.connected {
+  background-color: #52c41a;
+  box-shadow: 0 0 8px rgba(82,196,26,0.4);
+}
+
+.status-indicator.disconnected {
+  background-color: #ff4d4f;
+  box-shadow: 0 0 8px rgba(255,77,79,0.4);
+}
+
+.status-text {
+  font-size: 16px;
+  color: #1a1a1a;
+  font-weight: 500;
+}

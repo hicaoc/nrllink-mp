@@ -1,0 +1,36 @@
+<view class="container">
+  <view class="login-box">
+    <view class="logo">
+      <image src="/images/logo.png" mode="aspectFit"></image>
+    </view>
+    
+    <view class="form">
+      <view class="input-group">
+        <text class="label">用户名</text>
+        <input 
+          placeholder="请输入用户名" 
+          bindinput="inputUsername"
+          class="input"
+        />
+      </view>
+      
+      <view class="input-group">
+        <text class="label">密码</text>
+        <input 
+          type="password"
+          placeholder="请输入密码"
+          bindinput="inputPassword"
+          class="input"
+        />
+      </view>
+      
+      <button 
+        bindtap="login"
+        class="login-btn"
+        hover-class="btn-hover"
+      >
+        登录
+      </button>
+    </view>
+  </view>
+</view>

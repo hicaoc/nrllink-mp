@@ -1,0 +1,42 @@
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+    <view class="info">
+      <text class="name">{{userInfo.name}}</text>
+    <text class="call-sign">呼号：{{userInfo.callsign}}</text>
+    </view>
+  </view>
+
+  <!-- 编码选择 -->
+  <view class="codec-select">
+    <text class="title">编码协议</text>
+    <radio-group class="radio-group" bindchange="changeCodec">
+      <label class="radio-item">
+        <radio value="g711" checked/>G711
+      </label>
+      <label class="radio-item">
+        <radio value="opus"/>Opus
+      </label>
+    </radio-group>
+  </view>
+
+  <!-- 通话按钮 -->
+  <view class="talk-container">
+    <button 
+      class="talk-btn {{isTalking ? 'active' : ''}}" 
+      bindtouchstart="startRecording" 
+      bindtouchend="stopRecording"
+    >
+      {{isTalking ? '正在讲话...' : '按住讲话'}}
+    </button>
+  </view>
+
+  <!-- 服务器状态 -->
+  <view class="server-status">
+    <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
+    <text class="status-text">{{serverConnected ? '服务器在线' : '服务器离线'}}</text>
+  </view>
+
+
+</view>
