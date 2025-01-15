@@ -25,7 +25,6 @@ class NRL21Packet {
     this.data = data;
   }
 
-
   encode() {
     const buffer = new ArrayBuffer(48 + this.data.byteLength);
     const view = new DataView(buffer);
@@ -33,15 +32,17 @@ class NRL21Packet {
     // Write header
     this.writeString(view, 0, 'NRL2', 4);
     view.setUint16(4, 48 + this.data.byteLength, false);  
-  
-    view.setUint32(8,this.cpuId,false);    
-    view.setUint32(12, this.password, false); // 4字节无符号整数，大端序
-    view.setUint8(19, this.type);
-    view.setUint8(20, this.status);
-    view.setUint16(21, this.count, false);
+
+ 
+    view.setUint32(6, this.cpuId, false);
+
+    view.setUint32(10, this.password, false);
+    view.setUint8(20, this.type);
+    view.setUint8(21, this.status);
+    view.setUint16(22, this.count, false);
     this.writeString(view, 24, this.callSign, 6);
-    view.setUint8(30, this.ssid);
-    view.setUint8(31, this.devMode);
+    view.setUint8(30, 100); // ssid
+    view.setUint8(31, 5); // devMode
 
     // Write data
     const dataView = new Uint8Array(buffer, 48);
@@ -60,6 +61,9 @@ class NRL21Packet {
 }
 
 function createHeartbeatPacket({callSign, cpuId}) {
+
+  console.log('createHeartbeatPacket',callSign,cpuId  );
+ 
   return new NRL21Packet({
     type: 2,
     callSign,
@@ -83,9 +87,9 @@ function decode(data) {
   
   return new NRL21Packet({
     version: readString(view, 0, 4),
-    length: view.getUint16(4, false),
-    cpuId: view.getUint32(8, false),
-    password: view.getUint32(13, false),
+    length: view.getUint16(3, false),
+    cpuId: view.getUint32(5, false),
+    password: view.getUint32(10, false),
     type: view.getUint8(20),
     status: view.getUint8(21),
     count: view.getUint16(22, false),
@@ -108,19 +112,14 @@ function readString(view, offset, length) {
 }
 
 function calculateCpuId(callSign) {
-  // 将callsign转换为4字节整数
-  let hash = 0;
-  for (let i = 0; i < callSign.length; i++) {
-    hash = ((hash << 5) - hash) + callSign.charCodeAt(i);
-    hash |= 0; // 转换为32位整数
-  }
-  
-  // 创建4字节ArrayBuffer
-  const buffer = new ArrayBuffer(4);
-  const view = new DataView(buffer);
-  view.setUint32(0, hash, false); // 大端序
-  
-  return buffer;
+// 将字符串生成 32 位哈希值
+let hash = 0;
+for (const char of callSign) {
+  hash = (hash * 31 + char.charCodeAt(0)) | 0; // 简化位运算逻辑
+}
+
+return hash
+
 }
 
 function cpuIdToHex(cpuId) {

@@ -1,3 +1,6 @@
+const { calculateCpuId } = require('../../utils/nrl21');
+const app = getApp();
+
 Page({
   data: {
     username: '',
@@ -64,8 +67,16 @@ Page({
       success: (res) => {
         if (res.data.code === 20000) {
           const userInfo = res.data.data;
+          if (!userInfo.callsign) {
+            wx.showToast({
+              title: '用户信息缺少呼号',
+              icon: 'none'
+            });
+            return;
+          }
+          
           // 计算并存储cpuid
-          const cpuId = calculateCpuId(userInfo.callSign);
+          const cpuId = calculateCpuId(userInfo.callsign);
           userInfo.cpuId = cpuId;
           
           wx.setStorageSync('userInfo', userInfo);
