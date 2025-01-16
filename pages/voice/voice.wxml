@@ -4,7 +4,8 @@
     <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
     <view class="info">
       <text class="name">{{userInfo.name}}</text>
-    <text class="call-sign">{{userInfo.callsign}}-100</text>
+      <text class="call-sign">{{userInfo.callsign}}-100</text>
+      <text class="current-group" wx:if="{{currentGroup}}">{{currentGroup}}</text>
     </view>
   </view>
 

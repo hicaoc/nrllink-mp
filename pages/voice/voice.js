@@ -18,7 +18,8 @@ Page({
     devices: [], // 设备列表
     selectedGroup: null, // 当前选择的群组
     selectedDevice: null, // 当前选择的设备ID
-    selectedDeviceIndex: null // 当前选择的设备索引
+    selectedDeviceIndex: null, // 当前选择的设备索引
+    currentGroup: null // 当前设备所在群组
   },
 
   onLoad() {
@@ -39,9 +40,39 @@ Page({
     this.heartbeatTimer = this.startHeartbeat();
     this.connectionCheckTimer = setInterval(this.checkConnection.bind(this), 1000);
     
-    // 获取群组和设备列表
-    this.getGroupList();
-    this.getDeviceList();
+    // 初始化获取数据
+    this.refreshData();
+  },
+
+  // 刷新群组和设备列表
+  async refreshData() {
+    await this.getGroupList();
+    await this.getDeviceList();
+    this.getCurrentGroup();
+  },
+
+  // 获取当前设备所在群组
+  getCurrentGroup() {
+    const { cpuid, devices, groups } = this.data;
+    
+    // 将cpuid转换为16进制字符串
+    const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
+    
+    // 通过cpuid找到当前设备
+    const device = devices.find(d => {
+      return d.cpuid === hexCpuid;
+    });
+    
+    if (!device) {
+      this.setData({ currentGroup: null });
+      return;
+    }
+
+    // 通过group_id找到对应群组
+    const group = groups.find(g => g.id === device.group_id);
+    this.setData({
+      currentGroup: group ? group.name : null
+    });
   },
 
   // 获取群组列表
@@ -134,8 +165,9 @@ Page({
       wx.showToast({
         title: '加入群组成功'
       });
-      // 更新设备列表
+      // 更新设备列表和当前群组
       await this.getDeviceList();
+      this.getCurrentGroup();
     } catch (error) {
       wx.showToast({
         title: error.message || '加入群组失败',
