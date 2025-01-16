@@ -30,65 +30,50 @@ Page({
 
     this.setData({loading: true});
     
-    wx.request({
-      url: 'https://nrlptt.com/user/login',
-      method: 'POST',
-      data: {username, password},
-      success: (res) => {
-        if (res.data.code === 20000) {
-          wx.setStorageSync('token', res.data.data.token);
-          this.getUserInfo();
-        } else {
-          wx.showToast({
-            title: res.data.message || '登录失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
+    const api = require('../../utils/api');
+    
+    api.login({username, password})
+      .then(res => {
+        wx.setStorageSync('token', res.token);
+        this.getUserInfo();
+      })
+      .catch(err => {
         wx.showToast({
-          title: '网络错误，请重试',
+          title: err.message || '登录失败',
           icon: 'none'
         });
-      },
-      complete: () => {
+      })
+      .finally(() => {
         this.setData({loading: false});
-      }
-    });
+      });
   },
 
-  getUserInfo() {
-    wx.request({
-      url: 'https://nrlptt.com/user/info',
-      method: 'GET',
-      header: {
-        'x-token': wx.getStorageSync('token')
-      },
-      success: (res) => {
-        if (res.data.code === 20000) {
-          const userInfo = res.data.data;
-          if (!userInfo.callsign) {
-            wx.showToast({
-              title: '用户信息缺少呼号',
-              icon: 'none'
-            });
-            return;
-          }
-          
-          // 计算并存储cpuid
-          const cpuId = calculateCpuId(userInfo.callsign);
-          userInfo.cpuId = cpuId;
-          
-          wx.setStorageSync('userInfo', userInfo);
-          app.globalData.userInfo = userInfo;
-          wx.navigateTo({url: '/pages/voice/voice'});
-        } else {
-          wx.showToast({
-            title: res.data.message || '获取用户信息失败',
-            icon: 'none'
-          });
-        }
+  async getUserInfo() {
+    const api = require('../../utils/api');
+    
+    try {
+      const userInfo = await api.getUserInfo();
+      
+      if (!userInfo.callsign) {
+        wx.showToast({
+          title: '用户信息缺少呼号',
+          icon: 'none'
+        });
+        return;
       }
-    });
+      
+      // 计算并存储cpuid
+      const cpuId = calculateCpuId(userInfo.callsign);
+      userInfo.cpuId = cpuId;
+      
+      wx.setStorageSync('userInfo', userInfo);
+      app.globalData.userInfo = userInfo;
+      wx.navigateTo({url: '/pages/voice/voice'});
+    } catch (err) {
+      wx.showToast({
+        title: err.message || '获取用户信息失败',
+        icon: 'none'
+      });
+    }
   }
 });

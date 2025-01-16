@@ -1,6 +1,7 @@
 const udp = require('../../utils/udp');
 const audio = require('../../utils/audio');
 const nrl21 = require('../../utils/nrl21');
+const api = require('../../utils/api');
 
 
 Page({
@@ -44,45 +45,37 @@ Page({
   },
 
   // 获取群组列表
-  getGroupList() {
-    wx.request({
-      url: 'https://nrlptt.com/group/list',
-      method: 'POST',
-      header: {
-        'x-token': wx.getStorageSync('token')
-      },
-      data: {},
-      success: (res) => {
-        if (res.data.code === 20000) {
-          this.setData({
-            groups: Object.values(res.data.data.items)
-          });
-        }
-      }
-    });
+  async getGroupList() {
+    try {
+      const data = await api.getGroupList();
+      this.setData({
+        groups: Object.values(data.items)
+      });
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '获取群组失败',
+        icon: 'none'
+      });
+    }
   },
 
   // 获取设备列表
-  getDeviceList() {
-    wx.request({
-      url: 'https://nrlptt.com/device/mydevlist',
-      method: 'POST',
-      header: {
-        'x-token': wx.getStorageSync('token')
-      },
-      data: {},
-      success: (res) => {
-        if (res.data.code === 20000) {
-          const devices = Object.values(res.data.data.items).map(device => ({
-            ...device,
-            displayName: `${device.callsign}-${device.ssid}(${device.cpuid})`
-          }));
-          this.setData({
-            devices
-          });
-        }
-      }
-    });
+  async getDeviceList() {
+    try {
+      const data = await api.getDeviceList();
+      const devices = Object.values(data.items).map(device => ({
+        ...device,
+        displayName: `${device.callsign}-${device.ssid}(${device.cpuid})`
+      }));
+      this.setData({
+        devices
+      });
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '获取设备失败',
+        icon: 'none'
+      });
+    }
   },
 
   // 选择群组
@@ -105,7 +98,7 @@ Page({
   },
 
   // 加入群组
-  joinGroup() {
+  async joinGroup() {
     console.log('joinGroup called'); // 调试日志
     const { selectedGroup, selectedDevice, groups, devices } = this.data;
     if (!selectedGroup || !selectedDevice) {
@@ -133,41 +126,22 @@ Page({
     const groupId = groups[selectedGroup].id;
     console.log('准备发送请求，设备:', device, '群组ID:', groupId); // 调试日志
 
-    wx.request({
-      url: 'https://nrlptt.com/device/update',
-      method: 'POST',
-      header: {
-        'x-token': wx.getStorageSync('token')
-      },
-      data: {
-        ...device, // 保留所有设备信息
-        group_id: groupId // 只更新group_id
-      },
-      complete: (res) => {
-        console.log('请求完成:', res); // 调试日志
-      },
-      success: (res) => {
-        if (res.data.code === 20000) {
-          wx.showToast({
-            title: '加入群组成功'
-          });
-          // 更新设备列表
-          this.getDeviceList();
-        } else {
-          wx.showToast({
-            title: '加入群组失败',
-            icon: 'none'
-          });
-        }
-      },
-      fail: (err) => {
-        wx.showToast({
-          title: '请求失败，请检查网络',
-          icon: 'none'
-        });
-        console.error('加入群组请求失败:', err);
-      }
-    });
+    try {
+      await api.updateDevice({
+        ...device,
+        group_id: groupId
+      });
+      wx.showToast({
+        title: '加入群组成功'
+      });
+      // 更新设备列表
+      await this.getDeviceList();
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '加入群组失败',
+        icon: 'none'
+      });
+    }
   },
 
   onUnload() {
@@ -212,21 +186,42 @@ Page({
 
     // 实时处理音频数据
     const processAudio = async () => {
+      let buffer = new Uint8Array(0);
+      
       while (this.data.isTalking) {
-  
         const data = await this.recorder.getNextAudioFrame();
-        console.log('语音数据:', data);
         if (!data) continue;
 
-        // 立即发送500字节语音包
+        // 将新数据加入缓冲区
+        const newBuffer = new Uint8Array(buffer.length + data.length);
+        newBuffer.set(buffer);
+        newBuffer.set(new Uint8Array(data), buffer.length);
+        buffer = newBuffer;
+
+        // 当缓冲区达到100字节时发送
+        while (buffer.length >= 100) {
+          const packetData = buffer.slice(0, 100);
+          buffer = buffer.slice(100);
+
+          const packet = nrl21.createAudioPacket({
+            callSign: this.data.userInfo.callSign,
+            cpuid: this.data.cpuid,
+            type: this.data.codec === 'g711' ? 1 : 8,
+            data: packetData
+          });
+          
+          this.udpClient.send(packet);
+        }
+      }
+
+      // 发送剩余数据
+      if (buffer.length > 0) {
         const packet = nrl21.createAudioPacket({
           callSign: this.data.userInfo.callSign,
           cpuid: this.data.cpuid,
           type: this.data.codec === 'g711' ? 1 : 8,
-          data: new Uint8Array(data)
+          data: buffer
         });
-        console.log('发送语音包:', packet);
-        // 立即发送
         this.udpClient.send(packet);
       }
     };
