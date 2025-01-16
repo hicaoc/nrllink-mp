@@ -56,8 +56,6 @@ Page({
 
   startHeartbeat() {
 
-   // console.log('createHeartbeatPacket',callSign,cpuId  );
-
     const packet = nrl21.createHeartbeatPacket({
       callSign: this.data.userInfo.callSign,
       cpuId: this.data.cpuid
@@ -79,30 +77,21 @@ Page({
     // 实时处理音频数据
     const processAudio = async () => {
       while (this.data.isTalking) {
+  
         const data = await this.recorder.getNextAudioFrame();
+        console.log('语音数据:', data);
         if (!data) continue;
 
-        if (this.data.codec === 'g711') {
-          // G711编码，直接发送
-          const packet = nrl21.createAudioPacket({
-            callSign: this.data.userInfo.callSign,
-            cpuid: this.data.cpuid,
-            type: 2,
-            data
-          });
-          this.udpClient.send(packet);
-        } else {
-          // Opus编码，直接发送
-          const packet = nrl21.createAudioPacket({
-            callSign: this.data.userInfo.callSign,
-            cpuid: this.data.cpuid,
-            type: 8,
-            data
-          });
-          this.udpClient.send(packet);
-          // 控制发送速率
-          await new Promise(resolve => setTimeout(resolve, 20));
-        }
+        // 立即发送500字节语音包
+        const packet = nrl21.createAudioPacket({
+          callSign: this.data.userInfo.callSign,
+          cpuid: this.data.cpuid,
+          type: this.data.codec === 'g711' ? 1 : 8,
+          data: new Uint8Array(data)
+        });
+        console.log('发送语音包:', packet);
+        // 立即发送
+        this.udpClient.send(packet);
       }
     };
 
@@ -110,8 +99,10 @@ Page({
   },
 
   async stopRecording() {
+    console.log('停止录音1');
     this.setData({ isTalking: false });
     await this.audioProcessor; // 等待处理完成
+    console.log('停止录音2');
     audio.stopRecording(this.recorder);
   },
 

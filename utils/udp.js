@@ -15,11 +15,16 @@ class UDPClient {
   }
 
   send(data) {
-    this.socket.send({
-      address: this.host,
-      port: this.port,
-      message: data
-    });
+    // 立即发送但不等待响应
+    try {
+      this.socket.send({
+        address: this.host,
+        port: this.port,
+        message: data
+      });
+    } catch (e) {
+      console.error('UDP发送失败:', e);
+    }
   }
 
   close() {
