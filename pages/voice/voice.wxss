@@ -92,7 +92,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 32px 0;
+  margin: 8px 0; /* 从16px减小到8px */
 }
 
 .talk-btn {
@@ -141,7 +141,7 @@ page {
 }
 
 .server-status {
-  margin: 24px 0;
+  margin: 8px 0; /* 从16px减小到8px */
   padding: 16px;
   background: #ffffff;
   border-radius: 16px;
@@ -176,7 +176,7 @@ page {
 
 /* 控制面板样式 */
 .control-panel {
-  margin: 24px 0;
+  margin: 16px 0; /* 从24px减小到16px */
   padding: 24px;
   background: #ffffff;
   border-radius: 16px;
