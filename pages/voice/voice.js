@@ -99,23 +99,35 @@ Page({
   },
 
   async stopRecording() {
-    console.log('停止录音1');
+
     this.setData({ isTalking: false });
     await this.audioProcessor; // 等待处理完成
-    console.log('停止录音2');
+
     audio.stopRecording(this.recorder);
   },
 
   handleMessage(data) {
+    
     const packet = nrl21.decode(data);
-    if (packet.type === 5 || packet.type === 8) {
+    console.log('解码后的数据包:', packet);
+    if (packet.type === 1 || packet.type === 8) {
       audio.play(packet.data, packet.type);
+      // 更新通话页面显示
+      this.setData({
+        currentCall: {
+          CallSign: packet.callSign || '未知',
+          SSID: packet.ssid || '00'
+        },
+        serverConnected: true,
+        lastHeartbeatTime: Date.now()
+      });
+    } else {
+      // 更新服务器连接状态
+      this.setData({
+        serverConnected: true,
+        lastHeartbeatTime: Date.now()
+      });
     }
-    // 更新服务器连接状态
-    this.setData({
-      serverConnected: true,
-      lastHeartbeatTime: Date.now()
-    });
   },
 
   checkConnection() {

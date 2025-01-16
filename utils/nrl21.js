@@ -61,8 +61,6 @@ class NRL21Packet {
 }
 
 function createHeartbeatPacket({callSign, cpuId}) {
-
-  console.log('createHeartbeatPacket',callSign,cpuId  );
  
   return new NRL21Packet({
     type: 2,

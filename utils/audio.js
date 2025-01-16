@@ -1,5 +1,43 @@
 const recorderManager = wx.getRecorderManager();
-const innerAudioContext = wx.createInnerAudioContext();
+const webAudioContext = wx.createWebAudioContext();
+
+// 音频播放队列
+let audioQueue = [];
+let isPlaying = false;
+
+// 初始化音频上下文
+const audioContext = webAudioContext;
+const gainNode = audioContext.createGain();
+gainNode.connect(audioContext.destination);
+
+// 音频播放器
+class AudioPlayer {
+  constructor() {
+    this.source = null;
+    this.buffer = null;
+  }
+
+  async play(buffer) {
+    if (this.source) {
+      this.source.stop();
+    }
+    this.buffer = buffer;
+    this.source = audioContext.createBufferSource();
+    this.source.buffer = buffer;
+    this.source.connect(gainNode);
+    this.source.start(0);
+    this.source.onended = () => {
+      audioQueue.shift();
+      if (audioQueue.length > 0) {
+        this.play(audioQueue[0]);
+      } else {
+        isPlaying = false;
+      }
+    };
+  }
+}
+
+const player = new AudioPlayer();
 
 // G.711编解码器
 class G711Codec {
@@ -34,6 +72,22 @@ class G711Codec {
       encoded[i] = this.linear2alaw(pcmData[i]);
     }
     return encoded;
+  }
+
+  alaw2linear(code) {
+    code ^= 0x55;
+    const seg = (code & this.SEG_MASK) >> 4;
+    const quant = code & this.QUANT_MASK;
+    let sample = (quant << 4) | 0x08;
+    
+    if (seg > 0) {
+      sample = (sample + 0x100) << (seg - 1);
+    }
+    
+    if (code & 0x80) {
+      return sample;
+    }
+    return -sample;
   }
 }
 
@@ -121,13 +175,37 @@ function stopRecording(recorder) {
   recorder.stop();
 }
 
-function play(data, type) {
+async function play(data, type) {
   if (type === 1) { // G711
-    innerAudioContext.src = data;
-    innerAudioContext.play();
+    // 解码G711数据
+    const g711Codec = new G711Codec();
+    const pcmData = new Int16Array(data.length);
+    for (let i = 0; i < data.length; i++) {
+      pcmData[i] = g711Codec.alaw2linear(data[i]);
+    }
+    
+    // 将PCM数据转换为AudioBuffer
+    const buffer = audioContext.createBuffer(1, pcmData.length, 8000);
+    const channelData = buffer.getChannelData(0);
+    for (let i = 0; i < pcmData.length; i++) {
+      channelData[i] = pcmData[i] / 32768.0;
+    }
+    
+    audioQueue.push(buffer);
+    if (!isPlaying) {
+      isPlaying = true;
+      player.play(buffer);
+    }
+    
   } else if (type === 8) { // Opus
-    innerAudioContext.src = URL.createObjectURL(new Blob([data], {type: 'audio/ogg'}));
-    innerAudioContext.play();
+    const arrayBuffer = await new Response(data).arrayBuffer();
+    const buffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+    audioQueue.push(buffer);
+    if (!isPlaying) {
+      isPlaying = true;
+      player.play(buffer);
+    }
   }
 }
 

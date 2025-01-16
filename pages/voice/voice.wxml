@@ -21,6 +21,11 @@
     </radio-group>
   </view>
 
+  <!-- 当前通话信息 -->
+  <view class="current-call" wx:if="{{currentCall.CallSign}}">
+    <text class="call-info">正在与 {{currentCall.CallSign}}-{{currentCall.SSID}} 通话</text>
+  </view>
+
   <!-- 通话按钮 -->
   <view class="talk-container">
     <button 
