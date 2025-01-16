@@ -79,8 +79,12 @@ Page({
   async getGroupList() {
     try {
       const data = await api.getGroupList();
+      const groups = Object.values(data.items).map(group => ({
+        ...group,
+        displayName: `${group.id}-${group.name}`
+      }));
       this.setData({
-        groups: Object.values(data.items)
+        groups
       });
     } catch (error) {
       wx.showToast({

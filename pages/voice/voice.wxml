@@ -49,9 +49,9 @@
     <!-- 群组选择 -->
     <view class="control-item">
       <view class="control-label">选择群组</view>
-      <picker mode="selector" range="{{groups}}" range-key="name" bindchange="selectGroup">
+      <picker mode="selector" range="{{groups}}" range-key="displayName" bindchange="selectGroup">
         <view class="picker">
-          {{selectedGroup ? groups[selectedGroup].name : '请选择群组'}}
+          {{selectedGroup ? groups[selectedGroup].displayName : '请选择群组'}}
         </view>
       </picker>
     </view>
