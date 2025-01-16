@@ -4,12 +4,12 @@
     <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
     <view class="info">
       <text class="name">{{userInfo.name}}</text>
-    <text class="call-sign">呼号：{{userInfo.callsign}}</text>
+    <text class="call-sign">{{userInfo.callsign}}-100</text>
     </view>
   </view>
 
   <!-- 编码选择 -->
-  <view class="codec-select">
+  <!-- <view class="codec-select">
     <text class="title">编码协议</text>
     <radio-group class="radio-group" bindchange="changeCodec">
       <label class="radio-item">
@@ -19,7 +19,7 @@
         <radio value="opus"/>Opus
       </label>
     </radio-group>
-  </view>
+  </view> -->
 
   <!-- 当前通话信息 -->
   <view class="current-call" wx:if="{{currentCall.CallSign}}">
@@ -43,5 +43,30 @@
     <text class="status-text">{{serverConnected ? '服务器在线' : '服务器离线'}}</text>
   </view>
 
+  <!-- 控制面板 -->
+  <view class="control-panel">
+    <!-- 群组选择 -->
+    <view class="control-item">
+      <view class="control-label">选择群组</view>
+      <picker mode="selector" range="{{groups}}" range-key="name" bindchange="selectGroup">
+        <view class="picker">
+          {{selectedGroup ? groups[selectedGroup].name : '请选择群组'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 设备选择 -->
+    <view class="control-item">
+      <view class="control-label">选择设备</view>
+    <picker mode="selector" range="{{devices}}" range-key="displayName" value="{{selectedDeviceIndex}}" bindchange="selectDevice">
+        <view class="picker">
+          {{selectedDeviceIndex !== null ? devices[selectedDeviceIndex].displayName : '请选择设备'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 加入群组按钮 -->
+    <button class="join-btn" bindtap="joinGroup">加入群组</button>
+  </view>
 
 </view>
