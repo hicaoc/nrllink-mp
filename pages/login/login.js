@@ -68,7 +68,17 @@ Page({
       
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
-      wx.navigateTo({url: '/pages/voice/voice'});
+      console.log('准备跳转到语音页面');
+      try {
+        wx.switchTab({url: '/pages/voice/voice'});
+        console.log('跳转成功');
+      } catch (err) {
+        console.error('跳转失败:', err);
+        wx.showToast({
+          title: '跳转失败，请重试',
+          icon: 'none'
+        });
+      }
     } catch (err) {
       wx.showToast({
         title: err.message || '获取用户信息失败',

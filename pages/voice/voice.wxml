@@ -44,30 +44,4 @@
     <text class="status-text">{{serverConnected ? '服务器在线' : '服务器离线'}}</text>
   </view>
 
-  <!-- 控制面板 -->
-  <view class="control-panel">
-    <!-- 群组选择 -->
-    <view class="control-item">
-      <view class="control-label">选择群组</view>
-      <picker mode="selector" range="{{groups}}" range-key="displayName" bindchange="selectGroup">
-        <view class="picker">
-          {{selectedGroup ? groups[selectedGroup].displayName : '请选择群组'}}
-        </view>
-      </picker>
-    </view>
-
-    <!-- 设备选择 -->
-    <view class="control-item">
-      <view class="control-label">选择设备</view>
-    <picker mode="selector" range="{{devices}}" range-key="displayName" value="{{selectedDeviceIndex}}" bindchange="selectDevice">
-        <view class="picker">
-          {{selectedDeviceIndex !== null ? devices[selectedDeviceIndex].displayName : '请选择设备'}}
-        </view>
-      </picker>
-    </view>
-
-    <!-- 加入群组按钮 -->
-    <button class="join-btn" bindtap="joinGroup">加入群组</button>
-  </view>
-
 </view>

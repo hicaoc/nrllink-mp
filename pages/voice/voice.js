@@ -3,7 +3,6 @@ const audio = require('../../utils/audio');
 const nrl21 = require('../../utils/nrl21');
 const api = require('../../utils/api');
 
-
 Page({
   data: {
     userInfo: {},
@@ -14,20 +13,31 @@ Page({
     serverConnected: false,
     lastHeartbeatTime: null,
     cpuid: '',
-    groups: [], // 群组列表
-    devices: [], // 设备列表
-    selectedGroup: null, // 当前选择的群组
-    selectedDevice: null, // 当前选择的设备ID
-    selectedDeviceIndex: null, // 当前选择的设备索引
-    currentGroup: null // 当前设备所在群组
+    currentCall: {},
+    currentGroup: null // 当前群组
   },
 
-  onLoad() {
+  // 获取当前群组信息
+  getCurrentGroup() {
+    const app = getApp();
+    const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
+    this.setData({ currentGroup });
+    return currentGroup;
+  },
+
+  async onLoad() {
+    const app = getApp();
+    // 注册当前页面实例
+    app.registerPage(this);
+    
     const userInfo = wx.getStorageSync('userInfo') || {};
 
     const callSign = userInfo.callsign || 'UNKNOWN';
-    const cpuid = nrl21.calculateCpuId(callSign);  
+    const cpuid = nrl21.calculateCpuId(callSign);
 
+    // 将cpuid存储到全局
+    app.globalData.cpuid = cpuid;
+    
     this.setData({
       userInfo: {
         ...userInfo,
@@ -35,152 +45,60 @@ Page({
       },
       cpuid
     });
+
+    // 获取设备列表和群组列表
+    const [devicesRes, groupsRes] = await Promise.all([
+      api.getDeviceList(),
+      api.getGroupList()
+    ]);
+    
+    // 转换API返回的数据结构
+    const devices = Object.values(devicesRes.items || {});
+    const groups = Object.values(groupsRes.items || {});
+    
+    // 将cpuid转换为16进制字符串
+    const hexCpuid = parseInt(this.data.cpuid).toString(16).toUpperCase();
+    
+    // 通过cpuid找到当前设备
+    const currentDevice = devices.find(device => device.cpuid === hexCpuid);
+    let currentGroup = null;
+    
+    if (currentDevice) {
+      // 通过group_id找到对应群组
+      currentGroup = groups.find(group => group.id === currentDevice.group_id);
+    }
+    
+    // 更新全局数据
+    app.globalData.currentGroup = currentGroup || null;
+    app.globalData.currentDevice = currentDevice || null;
+    app.globalData.availableGroups = groups;
+    app.globalData.availableDevices = devices;
+    
+    // 监听群组变化
+    app.globalData.onGroupChange = (newGroup) => {
+      console.log('群组变化监听触发，更新页面');
+      this.setData({
+        currentGroup: newGroup?.name || '未加入群组'
+      });
+    };
+    
+    // 更新页面显示
+    this.setData({
+      currentGroup: currentGroup ? currentGroup.name : '未加入群组'
+    });
   
     this.initUDP();
     this.heartbeatTimer = this.startHeartbeat();
     this.connectionCheckTimer = setInterval(this.checkConnection.bind(this), 1000);
-    
-    // 初始化获取数据
-    this.refreshData();
-  },
-
-  // 刷新群组和设备列表
-  async refreshData() {
-    await this.getGroupList();
-    await this.getDeviceList();
-    this.getCurrentGroup();
-  },
-
-  // 获取当前设备所在群组
-  getCurrentGroup() {
-    const { cpuid, devices, groups } = this.data;
-    
-    // 将cpuid转换为16进制字符串
-    const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
-    
-    // 通过cpuid找到当前设备
-    const device = devices.find(d => {
-      return d.cpuid === hexCpuid;
-    });
-    
-    if (!device) {
-      this.setData({ currentGroup: null });
-      return;
-    }
-
-    // 通过group_id找到对应群组
-    const group = groups.find(g => g.id === device.group_id);
-    this.setData({
-      currentGroup: group ? group.name : null
-    });
-  },
-
-  // 获取群组列表
-  async getGroupList() {
-    try {
-      const data = await api.getGroupList();
-      const groups = Object.values(data.items).map(group => ({
-        ...group,
-        displayName: `${group.id}-${group.name}`
-      }));
-      this.setData({
-        groups
-      });
-    } catch (error) {
-      wx.showToast({
-        title: error.message || '获取群组失败',
-        icon: 'none'
-      });
-    }
-  },
-
-  // 获取设备列表
-  async getDeviceList() {
-    try {
-      const data = await api.getDeviceList();
-      const devices = Object.values(data.items).map(device => ({
-        ...device,
-        displayName: `${device.callsign}-${device.ssid}(${device.cpuid})`
-      }));
-      this.setData({
-        devices
-      });
-    } catch (error) {
-      wx.showToast({
-        title: error.message || '获取设备失败',
-        icon: 'none'
-      });
-    }
-  },
-
-  // 选择群组
-  selectGroup(e) {
-    this.setData({
-      selectedGroup: e.detail.value
-    });
-  },
-
-  // 选择设备
-  selectDevice(e) {
-    const index = e.detail.value;
-    const device = this.data.devices[index];
-    if (!device) return;
-    
-    this.setData({
-      selectedDevice: device.id,
-      selectedDeviceIndex: index
-    });
-  },
-
-  // 加入群组
-  async joinGroup() {
-    console.log('joinGroup called'); // 调试日志
-    const { selectedGroup, selectedDevice, groups, devices } = this.data;
-    if (!selectedGroup || !selectedDevice) {
-      wx.showToast({
-        title: '请选择群组和设备',
-        icon: 'none'
-      });
-      return;
-    }
-
-    console.log('当前设备列表:', devices);
-    console.log('选择的设备ID:', selectedDevice);
-    console.log('选择的设备group:', selectedGroup);
-    
-    const device = devices.find(d => d.id === selectedDevice);
-    if (!device) {
-      console.error('设备未找到，当前设备列表:', devices, '选择的设备ID:', selectedDevice);
-      wx.showToast({
-        title: '设备未找到，请刷新重试',
-        icon: 'none'
-      });
-      return;
-    }
-
-    const groupId = groups[selectedGroup].id;
-    console.log('准备发送请求，设备:', device, '群组ID:', groupId); // 调试日志
-
-    try {
-      await api.updateDevice({
-        ...device,
-        group_id: groupId
-      });
-      wx.showToast({
-        title: '加入群组成功'
-      });
-      // 更新设备列表和当前群组
-      await this.getDeviceList();
-      this.getCurrentGroup();
-    } catch (error) {
-      wx.showToast({
-        title: error.message || '加入群组失败',
-        icon: 'none'
-      });
-    }
   },
 
   onUnload() {
+    const app = getApp();
+    // 注销当前页面实例
+    app.unregisterPage(this);
+    // 移除监听
+    app.globalData.onCurrentGroupChange = null;
+    
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
     }
@@ -201,7 +119,6 @@ Page({
   },
 
   startHeartbeat() {
-
     const packet = nrl21.createHeartbeatPacket({
       callSign: this.data.userInfo.callSign,
       cpuId: this.data.cpuid
@@ -266,15 +183,12 @@ Page({
   },
 
   async stopRecording() {
-
     this.setData({ isTalking: false });
     await this.audioProcessor; // 等待处理完成
-
     audio.stopRecording(this.recorder);
   },
 
   handleMessage(data) {
-    
     const packet = nrl21.decode(data);
 
     if (packet.type === 1 || packet.type === 8) {

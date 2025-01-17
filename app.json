@@ -1,15 +1,27 @@
 {
   "pages": [
     "pages/login/login",
-    "pages/voice/voice"
+    "pages/voice/voice",
+    "pages/config/config"
   ],
   "window": {
-    "navigationBarTitleText": "语音通信小程序"
+    "navigationBarTitleText": "NRL对讲机"
   },
-  "permission": {
-    "scope.userLocation": {
-      "desc": "你的位置信息将用于语音通信"
-    }
+  "tabBar": {
+    "list": [
+      {
+        "pagePath": "pages/voice/voice",
+        "text": "通话",
+        "iconPath": "images/voice.png",
+        "selectedIconPath": "images/voice-active.png"
+      },
+      {
+        "pagePath": "pages/config/config",
+        "text": "配置",
+        "iconPath": "images/config.png",
+        "selectedIconPath": "images/config-active.png"
+      }
+    ]
   },
   "networkTimeout": {
     "request": 10000,
@@ -18,9 +30,12 @@
     "downloadFile": 10000
   },
   "requiredBackgroundModes": ["audio"],
-  "request": {
-    "domain": [
-      "https://nrlptt.com"
-    ]
-  }
+  "permission": {
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于语音通信"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ]
 }

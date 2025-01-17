@@ -1,0 +1,62 @@
+<view class="container">
+  <!-- 当前设备信息卡片 -->
+  <view class="card">
+    <view class="card-title">当前设备信息</view>
+    <view class="info-list">
+      <view class="info-item">
+        <text class="label">设备ID：</text>
+        <text class="value">{{cpuid}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">当前群组：</text>
+        <text class="value">{{currentGroup || '未加入群组'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 群组选择卡片 -->
+  <view class="card">
+    <view class="card-title">选择群组</view>
+    <picker 
+      mode="selector" 
+      range="{{groups}}" 
+      range-key="displayName"
+      bindchange="selectGroup">
+      <view class="picker">
+        <text class="label">群组：</text>
+        <text class="value">
+          {{groups[selectedGroup] ? groups[selectedGroup].displayName : '请选择群组'}}
+        </text>
+        <image class="arrow" src="/images/arrow-right.png" />
+      </view>
+    </picker>
+  </view>
+
+  <!-- 设备选择卡片 -->
+  <view class="card">
+    <view class="card-title">选择设备</view>
+    <picker 
+      mode="selector" 
+      range="{{devices}}" 
+      range-key="displayName"
+      bindchange="selectDevice">
+      <view class="picker">
+        <text class="label">设备：</text>
+        <text class="value">
+          {{devices[selectedDeviceIndex] ? devices[selectedDeviceIndex].displayName : '请选择设备'}}
+        </text>
+        <image class="arrow" src="/images/arrow-right.png" />
+      </view>
+    </picker>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-container">
+    <button 
+      class="primary-btn"
+      bindtap="joinGroup"
+      disabled="{{!selectedGroup || !selectedDevice}}">
+      加入群组
+    </button>
+  </view>
+</view>
