@@ -186,9 +186,9 @@ Page({
         buffer = newBuffer;
 
         // 当缓冲区达到100字节时发送
-        while (buffer.length >= 500) {
-          const packetData = buffer.slice(0, 500);
-          buffer = buffer.slice(500);      
+        while (buffer.length >= 512) {
+          const packetData = buffer.slice(0, 512);
+          buffer = buffer.slice(512);      
 
           const packet = nrl21.createAudioPacket({
             callSign: this.data.userInfo.callSign,

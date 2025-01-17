@@ -131,11 +131,15 @@ class AudioRecorder {
     
     if (this.codec === 'g711') {
 
+      console.log(frame)
+
       const encoded = this.g711Codec.encode(new Int16Array(frame));
       // 确保每次返回500字节(62.5ms)
+
+      console.log(frame,encoded)
     
-      if (encoded.length >= 500) {
-        return encoded.slice(0, 500);
+      if (encoded.length >= 512) {
+        return encoded.slice(0, 512);
       }
       return encoded;
     }
