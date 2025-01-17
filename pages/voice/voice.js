@@ -110,6 +110,15 @@ Page({
     }
   },
 
+  onShow() {
+    // 页面显示时重新启动心跳
+    if (!this.heartbeatTimer) {
+      this.heartbeatTimer = this.startHeartbeat();
+    }
+    // 检查连接状态
+    this.checkConnection();
+  },
+
   initUDP() {
     this.udpClient = new udp.UDPClient({
       host: this.data.server,
@@ -126,7 +135,7 @@ Page({
 
     return setInterval(() => {
       this.udpClient.send(packet);
-    }, 5000);
+    }, 2000);
   },
 
   changeCodec(e) {
@@ -263,7 +272,7 @@ Page({
 
   checkConnection() {
     if (this.data.lastHeartbeatTime &&
-      Date.now() - this.data.lastHeartbeatTime > 15000) {
+      Date.now() - this.data.lastHeartbeatTime > 6000) {
       this.setData({ serverConnected: false });
     }
   }
