@@ -186,16 +186,17 @@ Page({
         buffer = newBuffer;
 
         // 当缓冲区达到100字节时发送
-        while (buffer.length >= 100) {
-          const packetData = buffer.slice(0, 100);
-          buffer = buffer.slice(100);
+        while (buffer.length >= 500) {
+          const packetData = buffer.slice(0, 500);
+          buffer = buffer.slice(500);      
 
           const packet = nrl21.createAudioPacket({
             callSign: this.data.userInfo.callSign,
-            cpuid: this.data.cpuid,
+            cpuId: this.data.cpuid,
             type: this.data.codec === 'g711' ? 1 : 8,
             data: packetData
           });
+        
           
           this.udpClient.send(packet);
         }

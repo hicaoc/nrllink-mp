@@ -5,7 +5,7 @@
     "pages/config/config"
   ],
   "window": {
-    "navigationBarTitleText": "NRL对讲机"
+    "navigationBarTitleText": "NRL对讲机1.0.6"
   },
   "tabBar": {
     "list": [

@@ -2,7 +2,7 @@ class NRL21Packet {
   constructor({
     version = 'NRL2',
     length = 0,
-    cpuId = new ArrayBuffer(4),
+    cpuId = 0,
     password = '',
     type = 0,
     status = 0,
@@ -29,6 +29,8 @@ class NRL21Packet {
     const buffer = new ArrayBuffer(48 + this.data.byteLength);
     const view = new DataView(buffer);
 
+
+
     // Write header
     this.writeString(view, 0, 'NRL2', 4);
     view.setUint16(4, 48 + this.data.byteLength, false);  
@@ -38,7 +40,7 @@ class NRL21Packet {
 
     view.setUint32(10, this.password, false);
     view.setUint8(20, this.type);
-    view.setUint8(21, this.status);
+    view.setUint8(21, 1);
     view.setUint16(22, this.count, false);
     this.writeString(view, 24, this.callSign, 6);
     view.setUint8(30, 100); // ssid
