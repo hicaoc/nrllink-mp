@@ -30,6 +30,11 @@ Page({
     // 注册当前页面实例
     app.registerPage(this);
     
+    // 保持屏幕常亮
+    wx.setKeepScreenOn({
+      keepScreenOn: true
+    });
+    
     const userInfo = wx.getStorageSync('userInfo') || {};
 
     const callSign = userInfo.callsign || 'UNKNOWN';
