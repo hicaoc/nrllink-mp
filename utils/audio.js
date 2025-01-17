@@ -49,21 +49,22 @@ class G711Codec {
   }
 
   linear2alaw(sample) {
-    let mask = (sample >> 15) & 0xff;
-    let seg;
-    
-    sample = Math.abs(sample);
+    let sign = (sample >> 8) & 0x80;
+    if (sign) sample = -sample;
     if (sample > 32767) sample = 32767;
     
-    if (sample >= 256) {
-      seg = this.SEG_MASK;
-      sample = sample >> 4;
-    } else {
-      seg = 0;
-      sample = sample >> 3;
+    sample += 132;
+    if (sample < 0) sample = 0;
+    
+    let seg = 7;
+    for (let i = 0x4000; i > 0 && (sample & i) === 0; i >>= 1) {
+      seg--;
     }
     
-    return ((mask ^ 0x55) | (seg << 4) | ((sample >> 4) & this.QUANT_MASK)) & 0xff;
+    let mant = (seg === 0) ? (sample >> 4) : (sample >> (seg + 3));
+    let alaw = (seg << 4) | (mant & 0x0f);
+    
+    return (sign ? (alaw ^ 0xD5) : (alaw ^ 0x55)) & 0xff;
   }
 
   encode(pcmData) {
