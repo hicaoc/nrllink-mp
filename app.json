@@ -33,6 +33,9 @@
   "permission": {
     "scope.userLocation": {
       "desc": "你的位置信息将用于语音通信"
+    },
+    "scope.record": {
+      "desc": "需要访问您的麦克风以进行语音通话"
     }
   },
   "requiredPrivateInfos": [

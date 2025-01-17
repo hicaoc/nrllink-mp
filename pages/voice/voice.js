@@ -133,9 +133,43 @@ Page({
     this.setData({ codec: e.detail.value });
   },
 
+  async checkAudioPermission() {
+    const res = await wx.getSetting({});
+    if (!res.authSetting['scope.record']) {
+      await wx.authorize({
+        scope: 'scope.record'
+      });
+    }
+    return true;
+  },
+
   async startRecording() {
+    try {
+      await this.checkAudioPermission();
+    } catch (err) {
+      wx.showToast({
+        title: '麦克风权限被拒绝',
+        icon: 'none'
+      });
+      return;
+    }
+
     this.setData({ isTalking: true });
-    this.recorder = await audio.startRecording(this.data.codec);
+    try {
+      this.recorder = await audio.startRecording(this.data.codec);
+    } catch (err) {
+      wx.showToast({
+        title: '录音启动失败',
+        icon: 'none'
+      });
+      this.setData({ isTalking: false });
+      return;
+    }
+
+    // 请求保持屏幕常亮
+    wx.setKeepScreenOn({
+      keepScreenOn: true
+    });
 
     // 实时处理音频数据
     const processAudio = async () => {
@@ -184,8 +218,23 @@ Page({
 
   async stopRecording() {
     this.setData({ isTalking: false });
-    await this.audioProcessor; // 等待处理完成
-    audio.stopRecording(this.recorder);
+    try {
+      if (this.audioProcessor) {
+        await this.audioProcessor; // 等待处理完成
+      }
+      if (this.recorder) {
+        audio.stopRecording(this.recorder);
+      }
+    } catch (err) {
+      console.error('停止录音失败:', err);
+      wx.showToast({
+        title: '停止录音失败',
+        icon: 'none'
+      });
+    } finally {
+      this.recorder = null;
+      this.audioProcessor = null;
+    }
   },
 
   handleMessage(data) {

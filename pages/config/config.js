@@ -36,13 +36,7 @@ Page({
       currentGroup: app.globalData.currentGroup?.name || null
     });
 
-    // 打印调试信息
-    console.log('Device Info:', {
-      callsign,
-      cpuid,
-      hexCpuid,
-      userInfo
-    });
+
     this.refreshData();
   },
 
@@ -183,11 +177,7 @@ Page({
       // 如果修改的是当前设备，更新全局状态
       const app = getApp();
       const currentCpuid = parseInt(app.globalData.cpuid).toString(16).toUpperCase();
-      console.log('Comparing CPUIDs:', {
-        deviceCpuid: device.cpuid,
-        currentCpuid: currentCpuid
-      });
-      
+
       if (device.cpuid === currentCpuid) {
         app.globalData.currentGroup = groups[selectedGroup];
         app.globalData.currentDevice = device;
