@@ -52,7 +52,7 @@ class G711Codec {
     let sign = (sample >> 8) & 0x80;
     if (sign) sample = -sample;
     if (sample > 32767) sample = 32767;
-    
+
     sample += 132;
     if (sample < 0) sample = 0;
     
@@ -61,7 +61,7 @@ class G711Codec {
       seg--;
     }
     
-    let mant = (seg === 0) ? (sample >> 4) : (sample >> (seg + 3));
+    let mant = (seg === 0) ? (sample >> 4) : ((sample >> (seg + 3)));
     let alaw = (seg << 4) | (mant & 0x0f);
     
     return (sign ? (alaw ^ 0xD5) : (alaw ^ 0x55)) & 0xff;
@@ -118,7 +118,6 @@ class AudioRecorder {
   }
 
   async getNextAudioFrame() {
-
     let frame;
     if (this.frameQueue.length > 0) {
       frame = this.frameQueue.shift();
@@ -128,20 +127,8 @@ class AudioRecorder {
       });
     }
 
-
-    
     if (this.codec === 'g711') {
-
-      console.log(frame)
-
       const encoded = this.g711Codec.encode(new Int16Array(frame));
-      // 确保每次返回500字节(62.5ms)
-
-      console.log(frame,encoded)
-    
-      if (encoded.length >= 512) {
-        return encoded.slice(0, 512);
-      }
       return encoded;
     }
     return frame;
@@ -166,8 +153,6 @@ class AudioRecorder {
 }
 
 function startRecording(codec) {
-
-
   return new Promise((resolve) => {
     const recorder = new AudioRecorder(codec);
     recorder.start();
@@ -176,7 +161,6 @@ function startRecording(codec) {
 }
 
 function stopRecording(recorder) {
-
   recorder.stop();
 }
 

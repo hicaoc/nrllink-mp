@@ -93,21 +93,21 @@ Page({
   },
 
   onUnload() {
-    const app = getApp();
-    // 注销当前页面实例
-    app.unregisterPage(this);
-    // 移除监听
-    app.globalData.onCurrentGroupChange = null;
+    // const app = getApp();
+    // // 注销当前页面实例
+    // app.unregisterPage(this);
+    // // 移除监听
+    // app.globalData.onCurrentGroupChange = null;
     
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-    }
-    if (this.connectionCheckTimer) {
-      clearInterval(this.connectionCheckTimer);
-    }
-    if (this.udpClient) {
-      this.udpClient.close();
-    }
+    // if (this.heartbeatTimer) {
+    //   clearInterval(this.heartbeatTimer);
+    // }
+    // if (this.connectionCheckTimer) {
+    //   clearInterval(this.connectionCheckTimer);
+    // }
+    // // if (this.udpClient) {
+    // //   this.udpClient.close();
+    // // }
   },
 
   onShow() {
