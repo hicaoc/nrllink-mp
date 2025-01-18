@@ -10,6 +10,41 @@ const audioContext = webAudioContext;
 const gainNode = audioContext.createGain();
 gainNode.connect(audioContext.destination);
 
+// 音频输出管理
+let currentAudioOutput = 'speaker'; // 默认扬声器
+let isBluetoothConnected = false;
+
+// 初始化蓝牙状态
+wx.getBluetoothAdapterState({
+  success: (res) => {
+    isBluetoothConnected = res.available && res.discovering;
+    currentAudioOutput = isBluetoothConnected ? 'bluetooth' : 'speaker';
+  }
+});
+
+// 监听蓝牙适配器状态变化
+wx.onBluetoothAdapterStateChange((res) => {
+  isBluetoothConnected = res.available && res.discovering;
+  currentAudioOutput = isBluetoothConnected ? 'bluetooth' : 'speaker';
+});
+
+function setAudioOutput(outputType) {
+  return new Promise((resolve, reject) => {
+    if (outputType === 'bluetooth' && !isBluetoothConnected) {
+      return reject(new Error('蓝牙设备未连接'));
+    }
+
+    // 设置音频输出选项
+    wx.setInnerAudioOption({
+      obeyMuteSwitch: false,
+      speakerOn: outputType !== 'earpiece'
+    });
+
+    currentAudioOutput = outputType;
+    resolve();
+  });
+}
+
 // 音频播放器
 class AudioPlayer {
   constructor() {
@@ -24,16 +59,28 @@ class AudioPlayer {
     this.buffer = buffer;
     this.source = audioContext.createBufferSource();
     this.source.buffer = buffer;
-    this.source.connect(gainNode);
-    this.source.start(0);
-    this.source.onended = () => {
-      audioQueue.shift();
-      if (audioQueue.length > 0) {
-        this.play(audioQueue[0]);
-      } else {
-        isPlaying = false;
-      }
-    };
+    
+    // 根据当前音频输出模式设置
+    setAudioOutput(currentAudioOutput)
+      .then(() => {
+        this.source.connect(gainNode);
+        this.source.start(0);
+        this.source.onended = () => {
+          audioQueue.shift();
+          if (audioQueue.length > 0) {
+            this.play(audioQueue[0]);
+          } else {
+            isPlaying = false;
+          }
+        };
+      })
+      .catch((err) => {
+        console.error('音频输出设置失败:', err);
+        // 回退到默认扬声器模式
+        currentAudioOutput = 'speaker';
+        this.source.connect(gainNode);
+        this.source.start(0);
+      });
   }
 }
 
@@ -49,24 +96,40 @@ class G711Codec {
   }
 
   linear2alaw(sample) {
-    let sign = (sample >> 8) & 0x80;
-    if (sign) sample = -sample;
-    if (sample > 32767) sample = 32767;
-
-    sample += 132;
-    if (sample < 0) sample = 0;
+    // 1. 提取符号位
+    let sign = (sample >> 8) & 0x80; // 提取最高位（符号位）
     
-    let seg = 7;
-    for (let i = 0x4000; i > 0 && (sample & i) === 0; i >>= 1) {
-      seg--;
+    // 2. 处理负数，避免溢出
+    if (sign) {
+        if (sample === -32768) {
+            sample = 32767; // 处理最小负数（避免溢出）
+        } else {
+            sample = -sample; // 取反，将负数转换为正数
+        }
     }
     
-    let mant = (seg === 0) ? (sample >> 4) : ((sample >> (seg + 3)));
-    let alaw = (seg << 4) | (mant & 0x0f);
+    // 3. 限制样本范围
+    if (sample > 32767) sample = 32767; // 确保样本不超过最大值
     
-    return (sign ? (alaw ^ 0xD5) : (alaw ^ 0x55)) & 0xff;
-  }
-
+    // 4. 添加偏置（A-law编码的偏置为132）
+    sample += 132;
+    if (sample < 0) sample = 0; // 确保样本不为负
+    
+    // 5. 计算段号 (seg)
+    let seg = 7; // 初始化段号为7（最大段号）
+    for (let i = 0x4000; i >= 0x40 && (sample & i) === 0; i >>= 1) {
+        seg--; // 根据样本的高位确定段号
+    }
+    
+    // 6. 计算尾数 (mant)
+    let mant = (sample >> (seg + 3)) & 0x0f; // 提取尾数（低4位）
+    
+    // 7. 组合段号和尾数
+    let alaw = (seg << 4) | mant; // 将段号和尾数组合成8位值
+    
+    // 8. 根据符号位进行异或操作并返回结果
+    return (alaw ^ (sign ? 0xD5 : 0x55)) & 0xff; // 异或操作并确保结果为8位
+}
   encode(pcmData) {
     const encoded = new Uint8Array(pcmData.length);
     for (let i = 0; i < pcmData.length; i++) {
@@ -107,6 +170,7 @@ class AudioRecorder {
     });
 
     recorderManager.onFrameRecorded((res) => {
+      
       if (res.frameBuffer) {
         this.frameQueue.push(res.frameBuffer);
         if (this.resolveNextFrame) {
@@ -118,6 +182,9 @@ class AudioRecorder {
   }
 
   async getNextAudioFrame() {
+
+  
+    
     let frame;
     if (this.frameQueue.length > 0) {
       frame = this.frameQueue.shift();
@@ -128,7 +195,14 @@ class AudioRecorder {
     }
 
     if (this.codec === 'g711') {
+  
       const encoded = this.g711Codec.encode(new Int16Array(frame));
+      console.log('getNextAudioFrame', frame ,'encoded:', encoded);
+
+      // if (encoded.length >= 512) {
+      //   return encoded.slice(0, 512);
+      // }
+
       return encoded;
     }
     return frame;
@@ -138,6 +212,7 @@ class AudioRecorder {
     recorderManager.start({
       format: 'PCM',
       sampleRate: 8000,
+      encodeBitRate: 16000,
       numberOfChannels: 1,
       frameSize: 1,
     });

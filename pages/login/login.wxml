@@ -24,6 +24,12 @@
         />
       </view>
       
+      <view class="remember-me">
+        <label>
+          <checkbox value="remember" checked="{{rememberMe}}" /> 记住密码
+        </label>
+      </view>
+
       <button 
         bindtap="login"
         class="login-btn"

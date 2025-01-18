@@ -5,7 +5,21 @@ Page({
   data: {
     username: '',
     password: '',
-    loading: false
+    loading: false,
+    rememberMe: false
+  },
+
+  onLoad() {
+    // 检查是否有存储的账号信息
+    const savedUsername = wx.getStorageSync('savedUsername');
+    const savedPassword = wx.getStorageSync('savedPassword');
+    if (savedUsername && savedPassword) {
+      this.setData({
+        username: savedUsername,
+        password: savedPassword,
+        rememberMe: true
+      });
+    }
   },
 
   inputUsername(e) {
@@ -16,10 +30,25 @@ Page({
     this.setData({password: e.detail.value});
   },
 
+  toggleRememberMe() {
+    this.setData({
+      rememberMe: !this.data.rememberMe
+    });
+  },
+
   login() {
     if (this.data.loading) return;
     
-    const {username, password} = this.data;
+    const {username, password, rememberMe} = this.data;
+    
+    // 处理记住账号功能
+    if (rememberMe) {
+      wx.setStorageSync('savedUsername', username);
+      wx.setStorageSync('savedPassword', password);
+    } else {
+      wx.removeStorageSync('savedUsername');
+      wx.removeStorageSync('savedPassword');
+    }
     if (!username || !password) {
       wx.showToast({
         title: '请输入用户名和密码',

@@ -15,10 +15,10 @@ Page({
     const app = getApp();
     // 注册当前页面实例
     app.registerPage(this);
-    
+
     const userInfo = app.globalData.userInfo || {};
     const cpuid = app.globalData.cpuid;
-    
+
     if (!cpuid) {
       wx.showToast({
         title: '设备ID获取失败',
@@ -30,7 +30,7 @@ Page({
     // 将cpuid转换为16进制字符串
     const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
     const callsign = userInfo.callsign || '未知';
-    
+
     this.setData({
       cpuid: `${callsign}-100 (${hexCpuid})`,
       currentGroup: app.globalData.currentGroup?.name || null
@@ -57,15 +57,15 @@ Page({
   getCurrentGroup() {
     const cpuid = getApp().globalData.cpuid;
     const { devices, groups } = this.data;
-    
+
     // 将cpuid转换为16进制字符串
     const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
-    
+
     // 通过cpuid找到当前设备
     const device = devices.find(d => {
       return d.cpuid === hexCpuid;
     });
-    
+
     if (!device) {
       this.setData({ currentGroup: null });
       return;
@@ -82,6 +82,18 @@ Page({
   async getGroupList() {
     try {
       const data = await api.getGroupList();
+
+          // 添加3个私人房间到设备对象
+          data.items = Object.assign(
+      {
+        1: { id:1, name:"私人房间1" },
+        2: { id:2, name:"私人房间2" },
+        3: { id:3, name:"私人房间3" }
+      },
+      data.items || {}
+    );
+
+
       const groups = Object.values(data.items).map(group => ({
         ...group,
         displayName: `${group.id}-${group.name}`
@@ -132,7 +144,7 @@ Page({
     const index = e.detail.value;
     const device = this.data.devices[index];
     if (!device) return;
-    
+
     this.setData({
       selectedDevice: device.id,
       selectedDeviceIndex: index
@@ -149,7 +161,7 @@ Page({
       });
       return;
     }
-    
+
     const device = devices.find(d => d.id === selectedDevice);
     if (!device) {
       wx.showToast({
@@ -169,11 +181,11 @@ Page({
       wx.showToast({
         title: '加入群组成功'
       });
-      
+
       // 更新设备列表和当前群组
       await this.getDeviceList();
       this.getCurrentGroup();
-      
+
       // 如果修改的是当前设备，更新全局状态
       const app = getApp();
       const currentCpuid = parseInt(app.globalData.cpuid).toString(16).toUpperCase();

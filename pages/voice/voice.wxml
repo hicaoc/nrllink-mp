@@ -38,6 +38,22 @@
     </button>
   </view>
 
+  <!-- 音频输出选择 -->
+  <!-- <view class="audio-output-select">
+    <text class="title">音频输出</text>
+    <radio-group class="radio-group" bindchange="changeAudioOutput">
+      <label class="radio-item">
+        <radio value="earpiece" checked/>听筒
+      </label>
+      <label class="radio-item">
+        <radio value="speaker"/>扬声器
+      </label>
+      <label class="radio-item">
+        <radio value="bluetooth"/>蓝牙
+      </label>
+    </radio-group>
+  </view> -->
+
   <!-- 服务器状态 -->
   <view class="server-status">
     <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
