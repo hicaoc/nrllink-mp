@@ -11,8 +11,8 @@
   max-width: 400px;
   padding: 40px 20px;
   background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .logo {
@@ -37,23 +37,54 @@
 }
 
 .input {
-  width: 100%;
+  width: 90%;
   height: 40px;
   padding: 0 12px;
+  margin: 0 auto;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  border-color: #2575fc;
+  box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.2);
+  outline: none;
 }
 
 .login-btn {
   width: 100%;
   height: 44px;
   line-height: 44px;
-  background-color: #07c160;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   color: #fff;
   font-size: 16px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-top: 20px;
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300%;
+  height: 300%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%) rotate(45deg);
+  transition: all 0.5s ease;
+  opacity: 0;
+}
+
+.login-btn:active::after {
+  opacity: 1;
+  width: 0;
+  height: 0;
 }
 
 .btn-hover {
