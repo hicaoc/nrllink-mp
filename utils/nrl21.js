@@ -1,16 +1,22 @@
 class NRL21Packet {
+  // 固定头部大小
+  static FIXED_BUFFER_SIZE = 48;
+
+  // 报文总大小
+  static PACKET_SIZE = NRL21Packet.FIXED_BUFFER_SIZE
+
   constructor({
     version = 'NRL2',
     length = 0,
     cpuId = 0,
-    password = '',
+    password = 0,
     type = 0,
-    status = 0,
+    status = 1,
     count = 0,
-    callSign = '',
-    ssid = 0,
-    devMode = 0,
-    data = new Uint8Array(0)
+    callSign = 'CALL01',
+    ssid = 100,
+    devMode = 5,
+
   }) {
     this.version = version;
     this.length = length;
@@ -22,80 +28,78 @@ class NRL21Packet {
     this.callSign = callSign;
     this.ssid = ssid;
     this.devMode = devMode;
-    this.data = data;
+
+    // 预生成固定大小的 ArrayBuffer
+    this.buffer = new ArrayBuffer(NRL21Packet.PACKET_SIZE);
+    this.view = new DataView(this.buffer);
+
+  
+    // 初始化固定值
+    this.writeString(0, this.version, 4); // 写入固定头部
+    this.view.setUint16(4, NRL21Packet.FIXED_BUFFER_SIZE, false); // 初始长度（固定头部大小）
+    this.view.setUint32(6, this.cpuId, false); // 写入固定 cpuId
+    this.view.setUint32(10, this.password, false); // 写入固定 password
+    this.view.setUint8(20, this.type); // type 初始值（动态字段）
+    this.view.setUint8(21, this.status); // 写入固定 status
+    this.view.setUint16(22, this.count, false); // 写入固定 count
+    this.writeString(24, this.callSign, 6); // 写入固定 callSign
+    this.view.setUint8(30, this.ssid); // 写入固定 ssid
+    this.view.setUint8(31, this.devMode); // 写入固定 devMode
+
+    this.cachedBuffer = this.encode();
+
+    console.log("this.callSign", this.callSign,this.type)
+
   }
 
   encode() {
-    const buffer = new ArrayBuffer(48 + this.data.byteLength);
-    const view = new DataView(buffer);
+    // 更新动态字段
+    this.view.setUint8(20, this.type); // 更新 type
+    return this.buffer
 
-
-
-    // Write header
-    this.writeString(view, 0, 'NRL2', 4);
-    view.setUint16(4, 48 + this.data.byteLength, false);  
-
- 
-    view.setUint32(6, this.cpuId, false);
-
-    view.setUint32(10, this.password, false);
-    view.setUint8(20, this.type);
-    view.setUint8(21, 1);
-    view.setUint16(22, this.count, false);
-    this.writeString(view, 24, this.callSign, 6);
-    view.setUint8(30, 100); // ssid
-    view.setUint8(31, 5); // devMode
-
-    // Write data
-    const dataView = new Uint8Array(buffer, 48);
-    dataView.set(this.data);
-
-    return buffer;
   }
 
-  writeString(view, offset, str = '', length) {
+  // 直接返回缓存的数组值
+  getBuffer() {
+    console.log("this.getBuffer", this.callSign,this.type)
+    return this.cachedBuffer;
+  }
+
+  writeString(offset, str = '', length) {
     str = str.toString();
     for (let i = 0; i < length; i++) {
       const charCode = i < str.length ? str.charCodeAt(i) : 0;
-      view.setUint8(offset + i, charCode);
+      this.view.setUint8(offset + i, charCode);
     }
   }
 }
 
-function createHeartbeatPacket({callSign, cpuId}) {
- 
-  return new NRL21Packet({
-    type: 2,
-    callSign,
-    cpuId,
-    data: new Uint8Array(0)
-  }).encode();
-}
 
-function createAudioPacket({callSign, type, data, cpuId}) {
+function createPacket({ callSign, cpuId, type }) {
+
   return new NRL21Packet({
     type,
     callSign,
     cpuId,
-    data: new Uint8Array(data),
-    length: data.byteLength
-  }).encode();
+  });
 }
 
+
+
 function decode(data) {
-  const view = new DataView(data); 
-  
+  //const view = new DataView(data);
+
   return new NRL21Packet({
-    version: readString(view, 0, 4),
-    length: view.getUint16(3, false),
-    cpuId: view.getUint32(5, false),
-    password: view.getUint32(10, false),
+    // version: readString(view, 0, 4),
+    // length: view.getUint16(4, false),
+    // cpuId: view.getUint32(6, false),
+    // password: view.getUint32(10, false),
     type: view.getUint8(20),
-    status: view.getUint8(21),
-    count: view.getUint16(22, false),
+    // status: view.getUint8(21),
+    // count: view.getUint16(22, false),
     callSign: readString(view, 24, 6),
     ssid: view.getUint8(30),
-    devMode: view.getUint8(31),
+    // devMode: view.getUint8(31),
     data: new Uint8Array(data.slice(48))
   });
 }
@@ -112,13 +116,13 @@ function readString(view, offset, length) {
 }
 
 function calculateCpuId(callSign) {
-// 将字符串生成 32 位哈希值
-let hash = 0;
-for (const char of callSign) {
-  hash = (hash * 31 + char.charCodeAt(0)) | 0; // 简化位运算逻辑
-}
+  // 将字符串生成 32 位哈希值
+  let hash = 0;
+  for (const char of callSign) {
+    hash = (hash * 31 + char.charCodeAt(0)) | 0; // 简化位运算逻辑
+  }
 
-return hash
+  return hash
 
 }
 
@@ -129,8 +133,7 @@ function cpuIdToHex(cpuId) {
 }
 
 module.exports = {
-  createHeartbeatPacket,
-  createAudioPacket,
+  createPacket,
   decode,
   calculateCpuId,
   cpuIdToHex

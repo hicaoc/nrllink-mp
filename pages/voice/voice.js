@@ -29,12 +29,14 @@ Page({
     const app = getApp();
     // 注册当前页面实例
     app.registerPage(this);
-    
+
     // 保持屏幕常亮
     wx.setKeepScreenOn({
       keepScreenOn: true
     });
-    
+
+
+
     const userInfo = wx.getStorageSync('userInfo') || {};
 
     const callSign = userInfo.callsign || 'UNKNOWN';
@@ -42,7 +44,7 @@ Page({
 
     // 将cpuid存储到全局
     app.globalData.cpuid = cpuid;
-    
+
     this.setData({
       userInfo: {
         ...userInfo,
@@ -51,46 +53,74 @@ Page({
       cpuid
     });
 
+    // 预创建并缓存数据包实例
+    const heartbeatPacket = nrl21.createPacket({
+      type: 2,
+      callSign: this.data.userInfo.callSign,
+      cpuId: this.data.cpuid
+    });
+
+    this.heartbeatPacket = heartbeatPacket.getBuffer();
+
+    // 预创建并缓存音频包实例
+    const audioPacket = nrl21.createPacket({
+      type: 1,
+      callSign: this.data.userInfo.callSign,
+      cpuId: this.data.cpuid,
+    });
+
+
+    const  audioPacketHead = new  Uint8Array(audioPacket.getBuffer());
+
+    this.audioPacket = new Uint8Array(560);
+    this.audioPacket.set(audioPacketHead,0)
+
+    console.log('音频包实例创建成功', this.audioPacket,audioPacketHead)
+
+
+
+
+
     // 获取设备列表和群组列表
     let [devicesRes, groupsRes] = await Promise.all([
       api.getDeviceList(),
       api.getGroupList()
     ]);
 
-    console.log('设备列表和群组列表获取成功',  groupsRes)
-    
+    console.log('设备列表和群组列表获取成功', groupsRes)
+
     // 添加3个私人房间到设备对象
     groupsRes.items = Object.assign(
       {
-        1: { id:1, name:"私人房间1" },
-        2: { id:2, name:"私人房间2" },
-        3: { id:3, name:"私人房间3" }
+        1: { id: 1, name: "私人房间1" },
+        2: { id: 2, name: "私人房间2" },
+        3: { id: 3, name: "私人房间3" }
       },
       groupsRes.items || {}
     );
-    
+
     // 转换API返回的数据结构
     const devices = Object.values(devicesRes.items || {});
     const groups = Object.values(groupsRes.items || {});
-    
+
     // 将cpuid转换为16进制字符串
     const hexCpuid = parseInt(this.data.cpuid).toString(16).toUpperCase();
-    
+
     // 通过cpuid找到当前设备
     const currentDevice = devices.find(device => device.cpuid === hexCpuid);
     let currentGroup = null;
-    
+
     if (currentDevice) {
       // 通过group_id找到对应群组
       currentGroup = groups.find(group => group.id === currentDevice.group_id);
     }
-    
+
     // 更新全局数据
     app.globalData.currentGroup = currentGroup || null;
     app.globalData.currentDevice = currentDevice || null;
     app.globalData.availableGroups = groups;
     app.globalData.availableDevices = devices;
-    
+
     // 监听群组变化
     app.globalData.onGroupChange = (newGroup) => {
       console.log('群组变化监听触发，更新页面');
@@ -98,23 +128,23 @@ Page({
         currentGroup: newGroup?.name || '未加入群组'
       });
     };
-    
+
     // 更新页面显示
     this.setData({
       currentGroup: currentGroup ? currentGroup.name : '未加入群组'
     });
-  
+
     // 初始化UDP连接
     if (!this.udpClient) {
       this.initUDP();
     }
-    
+
     // 启动心跳定时器
     if (!this.heartbeatTimer) {
       this.heartbeatTimer = this.startHeartbeat();
       console.log('心跳定时器已启动');
     }
-    
+
     // 启动连接检查定时器
     if (!this.connectionCheckTimer) {
       this.connectionCheckTimer = setInterval(this.checkConnection.bind(this), 1000);
@@ -128,7 +158,7 @@ Page({
     // app.unregisterPage(this);
     // // 移除监听
     // app.globalData.onCurrentGroupChange = null;
-    
+
     // if (this.heartbeatTimer) {
     //   clearInterval(this.heartbeatTimer);
     // }
@@ -142,16 +172,16 @@ Page({
 
   onShow() {
     // 重新初始化UDP连接
-     // 初始化UDP连接
-     if (!this.udpClient) {
+    // 初始化UDP连接
+    if (!this.udpClient) {
       this.initUDP();
     }
-    
+
     // 如果心跳定时器不存在，则创建
     if (!this.heartbeatTimer) {
       this.heartbeatTimer = this.startHeartbeat();
     }
-    
+
     // 检查连接状态
     this.checkConnection();
   },
@@ -165,13 +195,8 @@ Page({
   },
 
   startHeartbeat() {
-    const packet = nrl21.createHeartbeatPacket({
-      callSign: this.data.userInfo.callSign,
-      cpuId: this.data.cpuid
-    });
-
     return setInterval(() => {
-      this.udpClient.send(packet);
+      this.udpClient.send(this.heartbeatPacket);
     }, 2000);
   },
 
@@ -191,7 +216,6 @@ Page({
 
   async startRecording() {
 
-    console.log('开始录音',this.data.isTalking,1);
     // 防止重复触发
     if (this.data.isTalking) {
       return;
@@ -209,7 +233,7 @@ Page({
 
 
 
- 
+
     // 设置状态并启动录音
     this.setData({ isTalking: true });
     try {
@@ -223,24 +247,24 @@ Page({
       return;
     }
     // 请求保持屏幕常亮
-     wx.setKeepScreenOn({
+    wx.setKeepScreenOn({
       keepScreenOn: true
     });
-    console.log('开始录音',this.data.isTalking,3);
+ 
 
     // 实时处理音频数据
     const processAudio = async () => {
       let buffer = new Uint8Array(0);
 
 
-      
+
       while (this.data.isTalking) {
 
         try {
 
           const data = await this.recorder.getNextAudioFrame();
 
-
+        
 
           if (!data) continue;
 
@@ -252,17 +276,27 @@ Page({
 
           // 当缓冲区达到128字节时发送
           while (buffer.length >= 512) {
+           
             const packetData = buffer.slice(0, 512);
-            buffer = buffer.slice(512);      
+            buffer = buffer.slice(512);
 
-            const packet = nrl21.createAudioPacket({
-              callSign: this.data.userInfo.callSign,
-              cpuId: this.data.cpuid,
-              type: this.data.codec === 'g711' ? 1 : 8,
-              data: packetData
-            });
-          
-            this.udpClient.send(packet);
+        
+
+            // 使用预创建的音频包实例
+            this.audioPacket.set(packetData,48)
+
+            //const packet =
+
+            // const packet = {
+            //   ... new Uint8Array(this.audioPacket),
+            //   data: packetData
+            // };
+
+            console.log('处理音频数据', this.audioPacket)
+
+
+
+            this.udpClient.send(this.audioPacket);
           }
         } catch (err) {
           console.error('音频处理出错:', err);
@@ -272,13 +306,7 @@ Page({
 
       // 发送剩余数据
       if (buffer.length > 0) {
-        const packet = nrl21.createAudioPacket({
-          callSign: this.data.userInfo.callSign,
-          cpuid: this.data.cpuid,
-          type: this.data.codec === 'g711' ? 1 : 8,
-          data: buffer
-        });
-        this.udpClient.send(packet);
+      console.log('剩余数据未发送:', buffer)
       }
     };
 
@@ -307,8 +335,26 @@ Page({
     }
   },
 
+
+  decodedata(data) {
+    //console.log('收到数据', data)
+    const byteArray = new Uint8Array(data);
+
+    // 使用 TextDecoder 将 Uint8Array 转换为字符串
+    const callSignStr = String.fromCharCode.apply(null, byteArray.slice(24, 30));
+  
+    return {
+      type: byteArray[20],
+      callSign: callSignStr, // 转换为字符串
+      ssid: byteArray[30],
+      data: byteArray.slice(48),
+    };
+  },
+
   handleMessage(data) {
-    const packet = nrl21.decode(data);
+    const packet = this.decodedata(data);
+
+    console.log('收到数据', packet) 
 
     if (packet.type === 1 || packet.type === 8) {
       audio.play(packet.data, packet.type);
@@ -334,7 +380,7 @@ Page({
     const now = Date.now();
     // 如果超过6秒没有收到心跳响应，或者UDP连接异常
     if ((this.data.lastHeartbeatTime && now - this.data.lastHeartbeatTime > 6000) ||
-        !this.udpClient || !this.udpClient.socket) {
+      !this.udpClient || !this.udpClient.socket) {
       this.setData({ serverConnected: false });
       // 尝试重新初始化UDP连接
       this.initUDP();
@@ -344,13 +390,13 @@ Page({
   // 切换音频输出设备
   changeAudioOutput(e) {
     const output = e.detail.value;
-    
+
     // 先停止所有音频播放
     wx.stopVoice();
-    
+
     // 创建新的音频上下文
     const audioContext = wx.createInnerAudioContext();
-    
+
     // 设置音频输出模式
     if (output === 'bluetooth') {
       audioContext.obeyMuteSwitch = false;
@@ -365,10 +411,10 @@ Page({
         speakerOn: true
       });
     }
-    
+
     // 设置音频源
     audioContext.src = '/audio/beep.mp3';
-    
+
     // 播放前准备
     audioContext.onCanplay(() => {
       // 确保音频输出模式已设置
@@ -376,7 +422,7 @@ Page({
         audioContext.play();
       }, 100);
     });
-    
+
     // 错误处理
     audioContext.onError((err) => {
       console.error('音频播放错误:', err);
@@ -386,7 +432,7 @@ Page({
       });
       audioContext.destroy();
     });
-    
+
     // 播放完成处理
     audioContext.onEnded(() => {
       audioContext.destroy();
