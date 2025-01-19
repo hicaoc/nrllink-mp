@@ -85,6 +85,7 @@ class AudioPlayer {
 }
 
 const player = new AudioPlayer();
+// 全局G711编解码器实例
 
 // G.711编解码器
 class G711Codec {
@@ -93,7 +94,11 @@ class G711Codec {
     this.QUANT_MASK = 0xf;
     this.SEG_MASK = 0x70;
     this.BIAS = 0x84;
+
+    console.log("g711code")
   }
+
+  
 
   linear2alaw(sample) {
     // 1. 提取符号位
@@ -155,12 +160,14 @@ class G711Codec {
   }
 }
 
+const g711Codec = new G711Codec(); 
+
 class AudioRecorder {
   constructor(codec) {
     this.codec = codec;
     this.frameQueue = [];
     this.resolveNextFrame = null;
-    this.g711Codec = new G711Codec();
+    this.g711Codec = g711Codec; // 使用全局实例
     this.initRecorder();
   }
 
@@ -239,7 +246,6 @@ function stopRecording(recorder) {
 async function play(data, type) {
   if (type === 1) { // G711
     // 解码G711数据
-    const g711Codec = new G711Codec();
     const pcmData = new Int16Array(data.length);
     for (let i = 0; i < data.length; i++) {
       pcmData[i] = g711Codec.alaw2linear(data[i]);
@@ -270,8 +276,56 @@ async function play(data, type) {
   }
 }
 
+/**
+ * G.711 编码器 (A-law)
+ * @param {Uint8Array} mdc1200Data - MDC1200 的编码数据
+ * @param {number} tailFrequency - 尾音的频率 (Hz)
+ * @param {number} tailDuration - 尾音的持续时间 (秒)
+ * @param {number} sampleRate - 采样率 (Hz)
+ * @returns {ArrayBuffer} G.711 (A-law) 编码后的数据
+ */
+function g711Encode(mdc1200Data, tailFrequency = 800, tailDuration = 0.1, sampleRate = 8000) {
+  if (!(mdc1200Data instanceof Uint8Array)) {
+    throw new TypeError('Input data must be Uint8Array');
+  }
+
+  // 引入 G.711 编码器（需要提前准备 g711Codec 模块）
+  //const g711Codec = require('g711'); // 确保安装了 g711 模块： npm install g711
+
+  // 生成尾音 PCM 数据
+  const numSamples = Math.floor(sampleRate * tailDuration);
+  const tailTone = new Int16Array(numSamples);
+
+  for (let i = 0; i < numSamples; i++) {
+    const sample = Math.sin((2 * Math.PI * tailFrequency * i) / sampleRate);
+    tailTone[i] = Math.floor(sample * 32767); // 归一化到 16-bit PCM 范围
+  }
+
+  // 将 MDC1200 PCM 数据与尾音数据合并
+  const combinedPCM = new Int16Array(mdc1200Data.length * 2 + tailTone.length);
+
+  // 将 MDC1200 数据转换为 PCM 格式并写入 combinedPCM
+  for (let i = 0; i < mdc1200Data.length; i++) {
+    const pcmValue = (mdc1200Data[i] - 127) << 8;
+    combinedPCM[i] = pcmValue;
+  }
+
+  // 将尾音数据添加到 combinedPCM 的尾部
+  combinedPCM.set(tailTone, mdc1200Data.length);
+
+  // 编码为 G.711 A-law 格式
+  const g711Data = new Uint8Array(combinedPCM.length);
+  for (let i = 0; i < combinedPCM.length; i++) {
+    g711Data[i] = g711Codec.linear2alaw(combinedPCM[i]);
+  }
+
+  return g711Data; // 返回 G.711 编码后的数据
+}
+
+
 module.exports = {
   startRecording,
   stopRecording,
-  play
+  play,
+  g711Encode
 };
