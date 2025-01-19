@@ -52,7 +52,7 @@ Page({
       );
       const app = getApp();
       app.globalData.mdcPacket = audio.g711Encode(mdcPacket);
-      console.log('MDC1200 packet generated:', app.globalData.mdcPacket);
+
 
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
@@ -100,15 +100,14 @@ Page({
     this.audioPacket = new Uint8Array(560);
     this.audioPacket.set(audioPacketHead, 0);
 
-    console.log('音频包实例创建成功', this.audioPacket, audioPacketHead);
-
+   
     // 获取设备列表和群组列表
     let [devicesRes, groupsRes] = await Promise.all([
       api.getDeviceList(),
       api.getGroupList()
     ]);
 
-    console.log('设备列表和群组列表获取成功', groupsRes);
+    
 
     // 添加3个私人房间到设备对象
     groupsRes.items = Object.assign(

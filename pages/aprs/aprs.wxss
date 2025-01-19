@@ -1,0 +1,13 @@
+.debug-info {
+  padding: 10px;
+  background-color: #f5f5f5;
+  margin: 10px;
+  border-radius: 4px;
+}
+
+.debug-info text {
+  display: block;
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}

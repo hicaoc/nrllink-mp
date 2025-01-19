@@ -48,7 +48,6 @@ class NRL21Packet {
 
     this.cachedBuffer = this.encode();
 
-    console.log("this.callSign", this.callSign,this.type)
 
   }
 
@@ -61,7 +60,7 @@ class NRL21Packet {
 
   // 直接返回缓存的数组值
   getBuffer() {
-    console.log("this.getBuffer", this.callSign,this.type)
+
     return this.cachedBuffer;
   }
 

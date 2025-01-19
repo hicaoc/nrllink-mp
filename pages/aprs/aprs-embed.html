@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>APRS Map</title>
+  <script>
+
+  wx.miniProgram.postMessage({ data: 'foo' })
+  wx.miniProgram.postMessage({ data: {foo: 'bar'} })
+  wx.miniProgram.getEnv(function(res) { console.log("webview in:",res.miniprogram) })
+
+  
+    // 监听小程序传递的消息
+    window.addEventListener('message', function(event) {
+      console.log('收到小程序消息:', event.data);
+      
+      // 处理ping消息
+      if (event.data.type === 'ping') {
+        // 返回pong响应
+        wx.miniProgram.postMessage({
+          data: [{
+            type: 'pong',
+            timestamp: event.data.timestamp
+          }]
+        });
+        return;
+      }
+      
+      // 处理呼号设置
+      if (event.data.type === 'callSign') {
+        // 设置tv_track变量
+        window.tv_track = event.data.callSign;
+        console.log('呼号已设置:', window.tv_track);
+      }
+    });
+  </script>
+  <script src="https://aprs.tv/js/embed.js"></script>
+
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+</body>
+</html>

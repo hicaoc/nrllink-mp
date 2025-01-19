@@ -1,0 +1,32 @@
+<!--pages/aprs/aprs.wxml-->
+<view class="container">
+  <view class="status">{{status}}</view>
+  
+  <view class="info" wx:if="{{latitude && longitude}}">
+    <view class="item">
+      <text>纬度:</text>
+      <text>{{latitude}}</text>
+    </view>
+    <view class="item">
+      <text>经度:</text>
+      <text>{{longitude}}</text>
+    </view>
+  </view>
+
+
+  <view class="map-container">
+    <web-view 
+      id="aprsWebView" 
+      src="https://aprs.tv/"
+      bindmessage="handleWebViewMessage"
+      bindload="handleWebViewLoad"
+      binderror="handleWebViewError"
+    ></web-view>
+  </view>
+  
+  <!-- 调试信息 -->
+  <view class="debug-info">
+    <text>当前呼号: {{userInfo.callSign}}</text>
+    <text>WebView状态: {{webViewStatus}}</text>
+  </view>
+</view>

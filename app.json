@@ -1,8 +1,9 @@
 {
   "pages": [
     "pages/login/login",
-    "pages/voice/voice",
-    "pages/config/config"
+    "pages/voice/voice", 
+    "pages/config/config",
+    "pages/aprs/aprs"
   ],
   "window": {
     "navigationBarTitleText": "NRL对讲机1.0.10"
@@ -20,6 +21,12 @@
         "text": "配置",
         "iconPath": "images/config.png",
         "selectedIconPath": "images/config-active.png"
+      },
+      {
+        "pagePath": "pages/aprs/aprs",
+        "text": "APRS",
+        "iconPath": "images/aprs.png",
+        "selectedIconPath": "images/aprs-active.png"
       }
     ]
   },
@@ -29,16 +36,20 @@
     "uploadFile": 10000,
     "downloadFile": 10000
   },
-  "requiredBackgroundModes": ["audio"],
+  "requiredBackgroundModes": ["audio", "location"],
   "permission": {
     "scope.userLocation": {
-      "desc": "你的位置信息将用于语音通信"
-    },
-    "scope.record": {
-      "desc": "需要访问您的麦克风以进行语音通话"
-    }
+      "desc": "你的位置信息将用于语音通信和APRS分享"
+    } 
   },
-  "requiredPrivateInfos": [
-    "getLocation"
-  ]
+  
+  "requiredPrivateInfos": [ 
+    "getLocation",
+    "onLocationChange",
+    "startLocationUpdateBackground",
+    "chooseAddress"
+  ],
+  "useExtendedLib": {
+    "weui": true
+  }
 }
