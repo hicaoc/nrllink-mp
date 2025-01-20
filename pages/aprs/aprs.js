@@ -44,11 +44,11 @@ Page({
   },
 
   onShow() {
-    console.log('onShow');
+   // console.log('onShow');
   },
   
   onReady() {
-    console.log('onReady');
+   // console.log('onReady');
  
   },
 
@@ -153,7 +153,7 @@ Page({
     const lonStr = this.decToAprs(lon, false);
     //BR4IN>APDR16,TCPIP*,qAC,T2LAUSITZ:=3638.3 N/11702.2 Er439.110MHz -5 88.5     济南黄河业余无线电  示位点 
     // BH4RPN-5>APRS,TCPIP*:!4903.50N/07201.75W-Test message
-    return `${callSign}-5>APRS,TCPIP*:!${latStr}/${lonStr} NRL微信小程序位置跟踪\n`;
+    return `${callSign}-5>APRS,TCPIP*:!${latStr}/${lonStr}[ NRL微信小程序${callSign}-100位置跟踪\n`;
   },
   
   decToAprs(dec, isLat) {

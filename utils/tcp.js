@@ -17,7 +17,7 @@ class TCPClient {
         const passcode = app.globalData.passcode || 21942; // 使用全局变量中的passcode
         const loginPacket = `user ${callSign} pass ${passcode} vers NRLLink 1.0\n`;        
         this.socket.write(loginPacket);
-        console.log('成功发送登录包:', loginPacket); 
+        //console.log('成功发送登录包:', loginPacket); 
         resolve();
       });
 
