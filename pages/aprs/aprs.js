@@ -2,9 +2,8 @@ const { TCPClient } = require('../../utils/tcp.js');
 
 Page({
   data: {
-    userInfo: {
-      callsign: '默认呼号',
-      callSign: '默认呼号' // 保持与wxml一致
+    userInfo: {    
+      callSign: '默认呼号', // 保持与wxml一致   
     },
     latitude: null,
     longitude: null,
@@ -19,13 +18,7 @@ Page({
     const app = getApp()
     
     // 确保用户信息存在
-    if (!app.globalData.userInfo) {
-      app.globalData.userInfo = {
-        callsign: '默认呼号',
-        callSign: '默认呼号'
-      }
-    }
-    
+ 
     this.setData({
       userInfo: {
         ...app.globalData.userInfo,
@@ -44,7 +37,6 @@ Page({
 
 
 
-  
     // 启动位置监听
     this.startLocationWatch();
     
@@ -57,6 +49,7 @@ Page({
   
   onReady() {
     console.log('onReady');
+ 
   },
 
   handleWebViewLoad(e) {
@@ -104,6 +97,7 @@ Page({
         // 启动定时发送
         this.setData({
           timer: setInterval(() => {
+            
             this.sendAprsPosition();
           }, 60000) // 60秒间隔
         });
@@ -123,31 +117,17 @@ Page({
     
     if (!latitude || !longitude || !callSign) {
       return;
-    }
-    
-    // 将呼号转换为大写并确保有SSID
-    callSign = callSign.toUpperCase();
-
-      // 发送登录包
-    const app = getApp()
-    const passcode = app.globalData.passcode || 21942; // 使用全局变量中的passcode
-    const loginPacket = `user ${callSign} pass ${passcode} vers NRLLink 1.0\n`;   
-
-    if (!callSign.includes('-')) {
-      callSign = `${callSign}-5`; // 添加默认SSID
-    }
-
+    } 
+   
     
     // 构造APRS数据包
     const aprsPacket = this.formatAprsPacket(callSign, latitude, longitude);
     
     try {
       
-      await this.tcpClient.send(loginPacket);
-      console.log('成功发送登录包:', loginPacket);
-    
+ 
       await this.tcpClient.send(aprsPacket);
-      console.log('成功发送APRS位置:', aprsPacket);
+      //console.log('成功发送APRS位置:', aprsPacket);
       this.setData({
         status: '位置已发送'
       });
@@ -168,10 +148,12 @@ Page({
   
   formatAprsPacket(callSign, lat, lon) {
     // 格式化APRS数据包
+
     const latStr = this.decToAprs(lat, true);
     const lonStr = this.decToAprs(lon, false);
-
-    return `${callSign}>APRS,TCPIP*:=!${latStr}/${lonStr} NRL微信小程序位置跟踪\n`;
+    //BR4IN>APDR16,TCPIP*,qAC,T2LAUSITZ:=3638.3 N/11702.2 Er439.110MHz -5 88.5     济南黄河业余无线电  示位点 
+    // BH4RPN-5>APRS,TCPIP*:!4903.50N/07201.75W-Test message
+    return `${callSign}-5>APRS,TCPIP*:!${latStr}/${lonStr} NRL微信小程序位置跟踪\n`;
   },
   
   decToAprs(dec, isLat) {
@@ -185,8 +167,10 @@ Page({
     return `${deg.toString().padStart(2, '0')}${min.toFixed(2).padStart(5, '0')}${dir}`;
   },
   
-  handleTcpMessage(message) {
-    console.log('收到TCP消息:', message);
+  handleTcpMessage(res) {
+    const decoder = new TextDecoder('utf-8');
+    const message = decoder.decode(res.message);
+    //console.log('收到TCP消息:', message);
     this.setData({
       status: '收到服务器响应'
     });
