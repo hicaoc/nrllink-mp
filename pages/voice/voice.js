@@ -189,20 +189,15 @@ Page({
   },
 
   handleMessage(data) {
-
-
     const packet = nrl21.decodePacket(data);
-
     const now = Date.now();
     this.lastMessageTime = now;
-
-
 
     // 根据消息类型分发
     switch (packet.type) {
       case 1: // 语音消息,心跳，读参数
 
-        console.log('播放语音', packet)
+
         audio.play(packet.data, packet.type);
         this.setData({
           currentCall: {
@@ -214,12 +209,13 @@ Page({
 
         break;
       // case 2: // 心跳包
-      //   if (this.globalData.voicePage) {
-      //     this.globalData.voicePage.updateDeviceStatus(packet);
-      //   }
+
       //   break;
       case 5: // 文本消息
+        const app = getApp();
+
         if (app.globalData.messagePage) {
+
           app.globalData.messagePage.handleMessage(packet);
         }
         break;
