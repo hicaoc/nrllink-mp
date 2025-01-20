@@ -83,25 +83,36 @@ function createPacket({ callSign, cpuId, type }) {
   });
 }
 
+function decodePacket(data) {
+    const byteArray = new Uint8Array(data);
+    const callSignStr = String.fromCharCode.apply(null, byteArray.slice(24, 30));
+
+    return {
+      type: byteArray[20],
+      callSign: callSignStr,
+      ssid: byteArray[30],
+      data: byteArray.slice(48),
+    };
+  }
 
 
-function decode(data) {
-  //const view = new DataView(data);
+// function decode(data) {
+//   //const view = new DataView(data);
 
-  return new NRL21Packet({
-    // version: readString(view, 0, 4),
-    // length: view.getUint16(4, false),
-    // cpuId: view.getUint32(6, false),
-    // password: view.getUint32(10, false),
-    type: view.getUint8(20),
-    // status: view.getUint8(21),
-    // count: view.getUint16(22, false),
-    callSign: readString(view, 24, 6),
-    ssid: view.getUint8(30),
-    // devMode: view.getUint8(31),
-    data: new Uint8Array(data.slice(48))
-  });
-}
+//   return new NRL21Packet({
+//     // version: readString(view, 0, 4),
+//     // length: view.getUint16(4, false),
+//     // cpuId: view.getUint32(6, false),
+//     // password: view.getUint32(10, false),
+//     type: view.getUint8(20),
+//     // status: view.getUint8(21),
+//     // count: view.getUint16(22, false),
+//     callSign: readString(view, 24, 6),
+//     ssid: view.getUint8(30),
+//     // devMode: view.getUint8(31),
+//     data: new Uint8Array(data.slice(48))
+//   });
+// }
 
 function readString(view, offset, length) {
   let str = '';
@@ -133,7 +144,7 @@ function cpuIdToHex(cpuId) {
 
 module.exports = {
   createPacket,
-  decode,
+  decodePacket,
   calculateCpuId,
   cpuIdToHex
 };

@@ -8,7 +8,7 @@ Page({
     selectedDevice: null, // 当前选择的设备ID
     selectedDeviceIndex: null, // 当前选择的设备索引
     currentGroup: null, // 当前设备所在群组
-    cpuid: getApp().globalData.cpuid || null // 当前设备CPUID
+    cpuid: null // 当前设备CPUID
   },
 
   onLoad() {
@@ -17,7 +17,11 @@ Page({
     app.registerPage(this);
 
     const userInfo = app.globalData.userInfo || {};
-    const cpuid = app.globalData.cpuid;
+   // const cpuid = app.globalData.cpuId;
+    const cpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
+
+
+
 
     if (!cpuid) {
       wx.showToast({
@@ -28,22 +32,27 @@ Page({
     }
 
     // 将cpuid转换为16进制字符串
-    const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
+
     const callsign = userInfo.callsign || '未知';
 
+    console.log(`当前设备CPUID: ${cpuid}`,app.globalData.currentGroup.name );
+
+
     this.setData({
-      cpuid: `${callsign}-100 (${hexCpuid})`,
-      currentGroup: app.globalData.currentGroup?.name || null
+      cpuid: `${callsign}-100 (${cpuid})`,
+      currentGroup: app.globalData.currentGroup.name || null
     });
+
+
 
 
     this.refreshData();
   },
 
   onUnload() {
-    const app = getApp();
-    // 注销当前页面实例
-    app.unregisterPage(this);
+    // const app = getApp();
+    // // 注销当前页面实例
+    // app.unregisterPage(this);
   },
 
   // 刷新群组和设备列表
@@ -55,15 +64,15 @@ Page({
 
   // 获取当前设备所在群组
   getCurrentGroup() {
-    const cpuid = getApp().globalData.cpuid;
+    const cpuid = parseInt(getApp().globalData.cpuId).toString(16).toUpperCase();
     const { devices, groups } = this.data;
 
     // 将cpuid转换为16进制字符串
-    const hexCpuid = parseInt(cpuid).toString(16).toUpperCase();
+
 
     // 通过cpuid找到当前设备
     const device = devices.find(d => {
-      return d.cpuid === hexCpuid;
+      return d.cpuid === cpuid;
     });
 
     if (!device) {
@@ -188,12 +197,16 @@ Page({
 
       // 如果修改的是当前设备，更新全局状态
       const app = getApp();
-      const currentCpuid = parseInt(app.globalData.cpuid).toString(16).toUpperCase();
+      const currentCpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
 
       if (device.cpuid === currentCpuid) {
         app.globalData.currentGroup = groups[selectedGroup];
         app.globalData.currentDevice = device;
+
+       
       }
+
+   
 
       // 通知voice页面更新群组显示
       const voicePage = app.globalData.voicePage;

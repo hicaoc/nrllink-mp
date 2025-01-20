@@ -93,10 +93,11 @@ Page({
       
       // 计算并存储cpuid
       const cpuId = calculateCpuId(userInfo.callsign);
-      userInfo.cpuId = cpuId;
+   
       
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
+      app.globalData.cpuId = cpuId;
       console.log('准备跳转到语音页面');
       try {
         wx.switchTab({url: '/pages/voice/voice'});

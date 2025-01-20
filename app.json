@@ -1,12 +1,13 @@
 {
   "pages": [
     "pages/login/login",
-    "pages/voice/voice", 
-    "pages/config/config",
-    "pages/aprs/aprs"
+    "pages/voice/voice",   
+    "pages/aprs/aprs",
+    "pages/message/message",
+    "pages/config/config"
   ],
   "window": {
-    "navigationBarTitleText": "NRL对讲机1.0.3000"
+    "navigationBarTitleText": "NRL对讲机1.0.8000"
   },
   "tabBar": {
     "list": [
@@ -16,17 +17,24 @@
         "iconPath": "images/voice.png",
         "selectedIconPath": "images/voice-active.png"
       },
-      {
-        "pagePath": "pages/config/config",
-        "text": "配置",
-        "iconPath": "images/config.png",
-        "selectedIconPath": "images/config-active.png"
-      },
+   
       {
         "pagePath": "pages/aprs/aprs",
         "text": "APRS",
         "iconPath": "images/aprs.png",
         "selectedIconPath": "images/aprs-active.png"
+      },
+      {
+        "pagePath": "pages/message/message",
+        "text": "消息",
+        "iconPath": "images/message.jpg",
+        "selectedIconPath": "images/message-active.jpg"
+      },
+      {
+        "pagePath": "pages/config/config",
+        "text": "配置",
+        "iconPath": "images/config.png",
+        "selectedIconPath": "images/config-active.png"
       }
     ]
   },

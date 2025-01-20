@@ -9,107 +9,103 @@ Page({
     userInfo: {},
     isTalking: false,
     codec: 'g711',
-    server: 'nrlptt.com',
-    port: 60050,
+    server: getApp().globalData.serverConfig.host,
+    port: getApp().globalData.serverConfig.port,
     serverConnected: false,
-    lastHeartbeatTime: null,
-    cpuid: '',
     currentCall: {},
-    currentGroup: null, // 当前群组
+    currentGroup: null,
     mdcPacket: null
   },
 
-  // 获取当前群组信息
-  getCurrentGroup() {
-    const app = getApp();
-    const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
-    this.setData({ currentGroup });
-    return currentGroup;
-  },
 
   async onLoad() {
+
     const app = getApp();
-    // 注册当前页面实例
+
+    this.setData({
+      userInfo: app.globalData.userInfo,
+    }
+
+    )
+
     app.registerPage(this);
 
-    // 初始化G711编码器
+
+
+
+    console.log("app", app)
+    // const callSign = app.globalData.userInfo.callsign || 'UNKNOWN';
+    // const cpuid = nrl21.calculateCpuId(callSign);
+
+    const heartbeatPacket = nrl21.createPacket({
+      type: 2,
+      callSign: app.globalData.userInfo.callsign,
+      cpuId: app.globalData.cpuId
+    });
+
+    this.heartbeatPacket = heartbeatPacket.getBuffer();
+    app.globalData.udpClient = new udp.UDPClient({
+      host: app.globalData.serverConfig.host,
+      port: app.globalData.serverConfig.port,
+
+      onMessage: this.handleMessage.bind(this)
+
+    });
+
+    // 启动心跳定时器
+    this.startHeartbeat();
+
+    // 初始化连接检查定时器
+    this.connectionCheckTimer = setInterval(() => {
+      this.checkConnection();
+    }, 1000);
+
     // MDC1200配置
     const mdcConfig = app.globalData.mdcConfig || {
-      op: 0x01, // 操作码：PTT按下
-      arg: 0x80, // 参数：默认优先级
-      unitId: parseInt(this.data.cpuid) // 使用当前设备的cpuid作为单元ID
+      op: 0x01,
+      arg: 0x80,
+      unitId: parseInt(this.data.cpuid)
     };
 
-    // 初始化MDC1200编码器
     this.mdcEncoder = new mdc.MDC1200Encoder();
 
-    // 生成MDC1200数据包
     try {
       const mdcPacket = this.mdcEncoder.encodeSinglePacket(
         mdcConfig.op,
         mdcConfig.arg,
         mdcConfig.unitId
       );
-      const app = getApp();
       app.globalData.mdcPacket = audio.g711Encode(mdcPacket);
-
-
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
-      this.mdcPacket = new Uint8Array(512); // 生成空数据包
+      this.mdcPacket = new Uint8Array(512);
     }
 
-    // 保持屏幕常亮
     wx.setKeepScreenOn({
       keepScreenOn: true
     });
 
-    const userInfo = wx.getStorageSync('userInfo') || {};
+    // 初始化udpClient
 
-    const callSign = userInfo.callsign || 'UNKNOWN';
-    const cpuid = nrl21.calculateCpuId(callSign);
 
-    // 将cpuid存储到全局
-    app.globalData.cpuid = cpuid;
 
-    this.setData({
-      userInfo: {
-        ...userInfo,
-        callSign
-      },
-      cpuid
-    });
 
-    // 预创建并缓存数据包实例
-    const heartbeatPacket = nrl21.createPacket({
-      type: 2,
-      callSign: this.data.userInfo.callSign,
-      cpuId: this.data.cpuid
-    });
-
-    this.heartbeatPacket = heartbeatPacket.getBuffer();
-
-    // 预创建并缓存音频包实例
+    // 预创建音频包实例
     const audioPacket = nrl21.createPacket({
       type: 1,
-      callSign: this.data.userInfo.callSign,
-      cpuId: this.data.cpuid,
+      callSign: app.globalData.userInfo.callsign,
+      cpuId: app.globalData.cpuId
     });
 
     const audioPacketHead = new Uint8Array(audioPacket.getBuffer());
     this.audioPacket = new Uint8Array(560);
     this.audioPacket.set(audioPacketHead, 0);
 
-   
-    // 获取设备列表和群组列表
     let [devicesRes, groupsRes] = await Promise.all([
       api.getDeviceList(),
       api.getGroupList()
     ]);
 
-    
-
-    // 添加3个私人房间到设备对象
     groupsRes.items = Object.assign(
       {
         1: { id: 1, name: "私人房间1" },
@@ -119,105 +115,129 @@ Page({
       groupsRes.items || {}
     );
 
-    // 转换API返回的数据结构
     const devices = Object.values(devicesRes.items || {});
     const groups = Object.values(groupsRes.items || {});
+    const hexCpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
 
-    // 将cpuid转换为16进制字符串
-    const hexCpuid = parseInt(this.data.cpuid).toString(16).toUpperCase();
 
-    // 通过cpuid找到当前设备
     const currentDevice = devices.find(device => device.cpuid === hexCpuid);
     let currentGroup = null;
 
     if (currentDevice) {
-      // 通过group_id找到对应群组
       currentGroup = groups.find(group => group.id === currentDevice.group_id);
     }
 
-    // 更新全局数据
     app.globalData.currentGroup = currentGroup || null;
     app.globalData.currentDevice = currentDevice || null;
     app.globalData.availableGroups = groups;
     app.globalData.availableDevices = devices;
 
-    // 监听群组变化
     app.globalData.onGroupChange = (newGroup) => {
-      console.log('群组变化监听触发，更新页面');
       this.setData({
         currentGroup: newGroup?.name || '未加入群组'
       });
     };
 
-    // 更新页面显示
     this.setData({
       currentGroup: currentGroup ? currentGroup.name : '未加入群组'
     });
-
-    // 初始化UDP连接
-    if (!this.udpClient) {
-      this.initUDP();
-    }
-
-    // 启动心跳定时器
-    if (!this.heartbeatTimer) {
-      this.heartbeatTimer = this.startHeartbeat();
-      console.log('心跳定时器已启动');
-    }
-
-    // 启动连接检查定时器
-    if (!this.connectionCheckTimer) {
-      this.connectionCheckTimer = setInterval(this.checkConnection.bind(this), 1000);
-      console.log('连接检查定时器已启动');
-    }
   },
 
   onUnload() {
-    // const app = getApp();
-    // // 注销当前页面实例
-    // app.unregisterPage(this);
-    // // 移除监听
-    // app.globalData.onCurrentGroupChange = null;
+    const app = getApp();
+    app.unregisterPage(this);
+    app.globalData.onCurrentGroupChange = null;
 
-    // if (this.heartbeatTimer) {
-    //   clearInterval(this.heartbeatTimer);
-    // }
-    // if (this.connectionCheckTimer) {
-    //   clearInterval(this.connectionCheckTimer);
-    // }
-    // // if (this.udpClient) {
-    // //   this.udpClient.close();
-    // // }
+    if (this.connectionCheckTimer) {
+      clearInterval(this.connectionCheckTimer);
+    }
   },
 
   onShow() {
-    // 重新初始化UDP连接
-    // 初始化UDP连接
-    if (!this.udpClient) {
-      this.initUDP();
-    }
-
-    // 如果心跳定时器不存在，则创建
-    if (!this.heartbeatTimer) {
-      this.heartbeatTimer = this.startHeartbeat();
-    }
-
-    // 检查连接状态
     this.checkConnection();
   },
 
-  initUDP() {
-    this.udpClient = new udp.UDPClient({
-      host: this.data.server,
-      port: this.data.port,
-      onMessage: this.handleMessage.bind(this)
-    });
+  getCurrentGroup() {
+    const app = getApp();
+    const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
+    this.setData({ currentGroup });
+    return currentGroup;
   },
 
+
+  // 启动心跳定时器
   startHeartbeat() {
-    return setInterval(() => {
-      this.udpClient.send(this.heartbeatPacket);
+    if (this.heartbeatTimer) {
+      return;
+    }
+
+    const app = getApp();
+
+    this.heartbeatTimer = setInterval(() => {
+      if (app.globalData.udpClient && this.heartbeatPacket) {
+        app.globalData.udpClient.send(this.heartbeatPacket);
+      }
     }, 2000);
+  },
+
+  // 停止心跳定时器
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  },
+
+  handleMessage(data) {
+
+
+    const packet = nrl21.decodePacket(data);
+
+    const now = Date.now();
+    this.lastMessageTime = now;
+
+
+
+    // 根据消息类型分发
+    switch (packet.type) {
+      case 1: // 语音消息,心跳，读参数
+
+        console.log('播放语音', packet)
+        audio.play(packet.data, packet.type);
+        this.setData({
+          currentCall: {
+            CallSign: packet.callSign || '未知',
+            SSID: packet.ssid || '00'
+          },
+          serverConnected: true
+        });
+
+        break;
+      // case 2: // 心跳包
+      //   if (this.globalData.voicePage) {
+      //     this.globalData.voicePage.updateDeviceStatus(packet);
+      //   }
+      //   break;
+      case 5: // 文本消息
+        if (app.globalData.messagePage) {
+          app.globalData.messagePage.handleMessage(packet);
+        }
+        break;
+    }
+
+    this.setData({
+      serverConnected: true
+    });
+
+  },
+
+  checkConnection() {
+    const now = Date.now();
+    if (this.lastMessageTime && now - this.lastMessageTime > 6000) {
+      this.setData({
+        serverConnected: false
+      });
+    }
   },
 
   changeCodec(e) {
@@ -235,7 +255,6 @@ Page({
   },
 
   async startRecording() {
-    // 防止重复触发
     if (this.data.isTalking) {
       return;
     }
@@ -250,7 +269,6 @@ Page({
       return;
     }
 
-    // 设置状态并启动录音
     this.setData({ isTalking: true });
     try {
       this.recorder = await audio.startRecording(this.data.codec);
@@ -263,37 +281,30 @@ Page({
       return;
     }
 
-    // 请求保持屏幕常亮
     wx.setKeepScreenOn({
       keepScreenOn: true
     });
 
-    // 实时处理音频数据
     const processAudio = async () => {
       let buffer = new Uint8Array(0);
-      let encodedBuffer = new Uint8Array(512); // 预分配编码缓冲区
+      let encodedBuffer = new Uint8Array(512);
 
       while (this.data.isTalking) {
         try {
           const data = await this.recorder.getNextAudioFrame();
           if (!data) continue;
 
-          // 将新数据加入缓冲区
           const newBuffer = new Uint8Array(buffer.length + data.length);
           newBuffer.set(buffer);
           newBuffer.set(new Uint8Array(data), buffer.length);
           buffer = newBuffer;
 
-          // 当缓冲区达到512字节时发送
           while (buffer.length >= 512) {
             const packetData = buffer.slice(0, 512);
             buffer = buffer.slice(512);
 
-            // 使用预创建的音频包实例
             this.audioPacket.set(packetData, 48);
-
-            // 发送编码数据
-            this.udpClient.send(this.audioPacket);
+            getApp().globalData.udpClient.send(this.audioPacket);
           }
         } catch (err) {
           console.error('音频处理出错:', err);
@@ -301,7 +312,6 @@ Page({
         }
       }
 
-      // 发送剩余数据
       if (buffer.length > 0) {
         console.log('剩余数据未发送:', buffer);
       }
@@ -323,30 +333,19 @@ Page({
       }
 
       const app = getApp();
-      console.log("app.globalData.mdcPacket:", app.globalData.mdcPacket);
-      
-      // 确保mdcPacket是Uint8Array类型
-      const mdcPacket = app.globalData.mdcPacket ;
-      
-      console.log('停止录音:', mdcPacket.length);
+      const mdcPacket = app.globalData.mdcPacket;
 
-      // 分片发送MDC1200数据包
-      const packetSize = 512; // 每个分片512字节
+      const packetSize = 512;
       const totalPackets = Math.ceil(mdcPacket.length / packetSize);
-      
+
       for (let i = 0; i < totalPackets; i++) {
         const start = i * packetSize;
         const end = Math.min(start + packetSize, mdcPacket.length);
         const chunk = mdcPacket.slice(start, end);
-        
-        // 使用audioPacket的48字节头
+
         this.audioPacket.set(chunk, 48);
-        this.udpClient.send(this.audioPacket);
-        console.log(`发送MDC1200分片 ${i + 1}/${totalPackets}`);
+        getApp().globalData.udpClient.send(this.audioPacket);
       }
-
-      console.log('MDC1200数据包发送完成，总计', totalPackets, '个分片');
-
     } catch (err) {
       console.error('停止录音失败:', err);
       wx.showToast({
@@ -356,48 +355,6 @@ Page({
     } finally {
       this.recorder = null;
       this.audioProcessor = null;
-    }
-  },
-
-  decodedata(data) {
-    const byteArray = new Uint8Array(data);
-    const callSignStr = String.fromCharCode.apply(null, byteArray.slice(24, 30));
-
-    return {
-      type: byteArray[20],
-      callSign: callSignStr,
-      ssid: byteArray[30],
-      data: byteArray.slice(48),
-    };
-  },
-
-  handleMessage(data) {
-    const packet = this.decodedata(data);
-
-    if (packet.type === 1 || packet.type === 8) {
-      audio.play(packet.data, packet.type);
-      this.setData({
-        currentCall: {
-          CallSign: packet.callSign || '未知',
-          SSID: packet.ssid || '00'
-        },
-        serverConnected: true,
-        lastHeartbeatTime: Date.now()
-      });
-    } else {
-      this.setData({
-        serverConnected: true,
-        lastHeartbeatTime: Date.now()
-      });
-    }
-  },
-
-  checkConnection() {
-    const now = Date.now();
-    if ((this.data.lastHeartbeatTime && now - this.data.lastHeartbeatTime > 6000) ||
-      !this.udpClient || !this.udpClient.socket) {
-      this.setData({ serverConnected: false });
-      this.initUDP();
     }
   },
 
