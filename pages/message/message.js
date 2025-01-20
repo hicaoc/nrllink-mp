@@ -19,20 +19,65 @@ Page({
 
   // 处理接收到的消息
   handleMessage(packet) {
-
+    console.log('收到消息:', packet);
     if (packet.type !== 5) return;
 
     const message = {
       id: Date.now(),
       sender: packet.callSign,
-      content: String.fromCharCode.apply(null, packet.message),
+      content: this.decodeUint8ArrayToText(packet.data || new Uint8Array()),
+     
       timestamp: new Date().toLocaleString(),
       isSelf: false
     };
 
+    console.log(message);
+
     this.setData({
       messages: this.data.messages.concat([message])
     });
+  },
+
+  decodeUint8ArrayToText(data) {
+
+    console.log(data);
+    if (!data || !data.length) return '';
+    
+    try {
+      let text = '';
+      let i = 0;
+      const uint8Array = new Uint8Array(data);
+      
+      while (i < uint8Array.length) {
+        const byte1 = uint8Array[i++];
+        if (byte1 < 0x80) {
+          text += String.fromCharCode(byte1);
+        } else if (byte1 >= 0xC0 && byte1 < 0xE0) {
+          const byte2 = uint8Array[i++];
+          text += String.fromCharCode(((byte1 & 0x1F) << 6) | (byte2 & 0x3F));
+        } else if (byte1 >= 0xE0 && byte1 < 0xF0) {
+          const byte2 = uint8Array[i++];
+          const byte3 = uint8Array[i++];
+          text += String.fromCharCode(
+            ((byte1 & 0x0F) << 12) | ((byte2 & 0x3F) << 6) | (byte3 & 0x3F)
+          );
+        } else if (byte1 >= 0xF0) {
+          const byte2 = uint8Array[i++];
+          const byte3 = uint8Array[i++];
+          const byte4 = uint8Array[i++];
+          const codePoint =
+            ((byte1 & 0x07) << 18) |
+            ((byte2 & 0x3F) << 12) |
+            ((byte3 & 0x3F) << 6) |
+            (byte4 & 0x3F);
+          text += String.fromCodePoint(codePoint);
+        }
+      }
+      return text;
+    } catch (e) {
+      console.error('解码消息失败:', e);
+      return '';
+    }
   },
 
   encodeTextToUint8Array(text) {
