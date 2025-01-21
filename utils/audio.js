@@ -95,7 +95,7 @@ class G711Codec {
     this.SEG_MASK = 0x70;
     this.BIAS = 0x84;
 
-    console.log("g711code")
+   // console.log("g711code")
   }
 
   

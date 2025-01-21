@@ -11,6 +11,7 @@
           placeholder="请输入用户名" 
           bindinput="inputUsername"
           class="input"
+          value="{{username}}"
         />
       </view>
       
@@ -21,15 +22,10 @@
           placeholder="请输入密码"
           bindinput="inputPassword"
           class="input"
+          value="{{password}}"
         />
       </view>
       
-      <view class="remember-me">
-        <label>
-          <checkbox value="remember" checked="{{rememberMe}}" /> 记住密码
-        </label>
-      </view>
-
       <button 
         bindtap="login"
         class="login-btn"

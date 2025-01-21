@@ -5,19 +5,52 @@ Page({
   data: {
     username: '',
     password: '',
-    loading: false,
-    rememberMe: false
+    loading: false
   },
 
   onLoad() {
+    // 检查是否有有效 token
+    const token = wx.getStorageSync('token');
+    if (token) {
+      console.log('检测到有效 token，初始化全局数据');
+      
+      // 初始化全局用户信息
+      const userInfo = wx.getStorageSync('userInfo');
+      const cpuId = wx.getStorageSync('cpuId');
+      
+      if (userInfo) {
+        app.globalData.userInfo = userInfo;
+        app.globalData.cpuId = cpuId;
+        console.log('全局用户信息初始化完成:', {
+          userInfo,
+          cpuId
+        });
+      }
+      
+      console.log('自动跳转到语音页面');
+      wx.switchTab({url: '/pages/voice/voice'});
+      return;
+    }
+
     // 检查是否有存储的账号信息
     const savedUsername = wx.getStorageSync('savedUsername');
     const savedPassword = wx.getStorageSync('savedPassword');
+    
+    console.log('页面加载，读取存储信息:', {
+      savedUsername,
+      savedPassword
+    });
+    
     if (savedUsername && savedPassword) {
+      console.log('成功读取存储的用户名和密码');
       this.setData({
         username: savedUsername,
-        password: savedPassword,
-        rememberMe: true
+        password: savedPassword
+      }, () => {
+        console.log('setData 回调:', {
+          username: this.data.username,
+          password: this.data.password
+        });
       });
     }
   },
@@ -30,24 +63,27 @@ Page({
     this.setData({password: e.detail.value});
   },
 
-  toggleRememberMe() {
-    this.setData({
-      rememberMe: !this.data.rememberMe
-    });
-  },
-
   login() {
     if (this.data.loading) return;
     
-    const {username, password, rememberMe} = this.data;
+    const {username, password} = this.data;
+
+    console.log('登录中...', {
+      username,
+      password
+    });
     
-    // 处理记住账号功能
-    if (rememberMe) {
+    // 默认记住账号
+    try {
       wx.setStorageSync('savedUsername', username);
       wx.setStorageSync('savedPassword', password);
-    } else {
-      wx.removeStorageSync('savedUsername');
-      wx.removeStorageSync('savedPassword');
+      console.log('成功存储用户名和密码');
+    } catch (err) {
+      wx.showToast({
+        title: '存储失败，请检查存储空间',
+        icon: 'none'
+      });
+      console.error('存储失败:', err);
     }
     if (!username || !password) {
       wx.showToast({
@@ -93,11 +129,12 @@ Page({
       
       // 计算并存储cpuid
       const cpuId = calculateCpuId(userInfo.callsign);
-   
+      wx.setStorageSync('cpuId', cpuId);
       
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
       app.globalData.cpuId = cpuId;
+      console.log('cpuId 计算并存储完成:', cpuId);
       console.log('准备跳转到语音页面');
       try {
         wx.switchTab({url: '/pages/voice/voice'});
