@@ -168,8 +168,8 @@ Page({
   },
   
   handleTcpMessage(res) {
-    const decoder = new TextDecoder('utf-8');
-    const message = decoder.decode(res.message);
+    // const decoder = new TextDecoder('utf-8');
+    // const message = decoder.decode(res.message);
     //console.log('收到TCP消息:', message);
     this.setData({
       status: '收到服务器响应'

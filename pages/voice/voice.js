@@ -1,8 +1,8 @@
-const udp = require('../../utils/udp');
-const audio = require('../../utils/audio');
-const nrl21 = require('../../utils/nrl21');
-const api = require('../../utils/api');
-const mdc = require('../../utils/mdc1200');
+import * as udp from '../../utils/udp';
+import * as audio from '../../utils/audio';
+import * as nrl21 from '../../utils/nrl21';
+import * as api from '../../utils/api';
+import * as mdc from '../../utils/mdc1200';
 
 Page({
   data: {
@@ -241,13 +241,45 @@ Page({
   },
 
   async checkAudioPermission() {
-    const res = await wx.getSetting({});
-    if (!res.authSetting['scope.record']) {
+    try {
+      // 获取设备信息
+      const deviceInfo = await wx.getDeviceInfo();
+
+     
+      // if (!deviceInfo || !deviceInfo.microphoneSupported) {
+      //   wx.showToast({
+      //     title: '当前设备不支持录音',
+      //     icon: 'none'
+      //   });
+      //   throw new Error('设备不支持录音');
+      // }
+
+      // 检查录音权限状态
+      const authSetting = await wx.getAppAuthorizeSetting();
+
+      console.log('###设备信息：', authSetting);
+
+      if (authSetting['microphoneAuthorized'] !== "authorized") {
+        wx.showToast({
+          title: '录音权限被拒绝，请前往设置开启',
+          icon: 'none'
+        });
+        throw new Error('录音权限被拒绝');
+      }
+
+      // 请求录音权限
       await wx.authorize({
         scope: 'scope.record'
       });
+    
+      return true;
+    } catch (err) {
+      wx.showToast({
+        title: '获取麦克风权限失败',
+        icon: 'none'
+      });
+      throw err;
     }
-    return true;
   },
 
   async startRecording() {
@@ -354,11 +386,34 @@ Page({
     }
   },
 
+  // 点击切换通话状态
+  // 点击切换通话状态
+  toggleTalk() {
+    if (this.data.isTalking) {
+      this.stopRecording();
+    } else {
+      this.startRecording();
+    }
+  },
+
+  // 长按开始通话，松开停止
+  handleLongPress(e) {
+    this.startRecording();
+  },
+
+  handleTouchEnd(e) {
+    if (this.data.isTalking) {
+      this.stopRecording();
+    }
+  },
+
   changeAudioOutput(e) {
     const output = e.detail.value;
     wx.stopVoice();
 
-    const audioContext = wx.createInnerAudioContext();
+    const audioContext = wx.createInnerAudioContext({
+      useWebAudioImplement: true // 是否使用 WebAudio 作为底层音频驱动，默认关闭。对于短音频、播放频繁的音频建议开启此选项，开启后将获得更优的性能表现。由于开启此选项后也会带来一定的内存增长，因此对于长音频建议关闭此选项
+    });
 
     if (output === 'bluetooth') {
       audioContext.obeyMuteSwitch = false;

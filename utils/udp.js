@@ -7,11 +7,19 @@ class UDPClient {
   }
 
   initSocket() {
-    this.socket = wx.createUDPSocket();
-    this.socket.bind();
-    this.socket.onMessage((res) => {
-      this.onMessage(res.message);
-    });
+    try {
+      this.socket = wx.createUDPSocket();
+      this.socket.bind();
+      this.socket.onMessage((res) => {
+        this.onMessage(res.message);
+      });
+    } catch (error) {
+      console.error('UDP socket 创建失败:', error);
+      // 3秒后重试
+      setTimeout(() => {
+        this.initSocket();
+      }, 3000);
+    }
   }
 
   send(data) {

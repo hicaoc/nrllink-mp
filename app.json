@@ -7,7 +7,7 @@
     "pages/config/config"
   ],
   "window": {
-    "navigationBarTitleText": "NRL对讲机1.0.8000"
+    "navigationBarTitleText": "NRL对讲机1.1.1"
   },
   "tabBar": {
     "list": [
@@ -54,8 +54,8 @@
   "requiredPrivateInfos": [ 
     "getLocation",
     "onLocationChange",
-    "startLocationUpdateBackground",
-    "chooseAddress"
+    "startLocationUpdateBackground"
+   
   ],
   "useExtendedLib": {
     "weui": true

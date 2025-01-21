@@ -3,6 +3,7 @@
   "projectname": "NRL%E5%AF%B9%E8%AE%B2%E6%9C%BA",
   "setting": {
     "compileHotReLoad": true,
-    "urlCheck": true
-  }
+    "urlCheck": false
+  },
+  "libVersion": "3.7.6"
 }

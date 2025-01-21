@@ -31,10 +31,9 @@
   <view class="talk-container">
     <button 
       class="talk-btn {{isTalking ? 'active' : ''}}" 
-      bindtouchstart="startRecording" 
-      bindtouchend="stopRecording"
+      bindtap="toggleTalk"
     >
-      {{isTalking ? '正在讲话...' : '按住讲话'}}
+      {{isTalking ? '正在通话...' : '点击通话'}}
     </button>
   </view>
 

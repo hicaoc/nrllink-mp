@@ -1,0 +1,102 @@
+{
+  "miniVersion": "v2",
+  "name": "%name%",
+  "version": "1.0.8000",
+  "versionCode": 100,
+  "i18nFilePath": "i18n",
+  "mini-android": {
+    "resourcePath": "miniapp/android/nativeResources",
+    "sdkVersion": "1.5.9",
+    "toolkitVersion": "0.11.0",
+    "useExtendedSdk": {
+      "media": false,
+      "bluetooth": false,
+      "network": true,
+      "scanner": false,
+      "xweb": false
+    },
+    "icons": {
+      "hdpi": "images/logo.png",
+      "xhdpi": "images/logo.png",
+      "xxhdpi": "images/logo.png",
+      "xxxhdpi": "images/logo.png"
+    },
+    "splashscreen": {
+      "hdpi": "",
+      "xhdpi": "",
+      "xxhdpi": ""
+    },
+    "enableVConsole": "open",
+    "privacy": {
+      "enable": true
+    },
+    "abi": {
+      "arm64-v8a": true,
+      "armeabi-v7a": true
+    },
+    "privateDescriptions": {
+      "ACCESS_COARSE_LOCATION": "申请位置权限用于APRS定位",
+      "ACCESS_FINE_LOCATION": "申请位置权限用于APRS定位",
+      "RECORD_AUDIO": "申请录音权限用于语音通联",
+      "CAMERA": "申请权限用于通联"
+    }
+  },
+  "mini-ios": {
+    "sdkVersion": "1.5.13",
+    "toolkitVersion": "0.0.9",
+    "useExtendedSdk": {
+      "WeAppOpenFuns": false,
+      "WeAppNetwork": false,
+      "WeAppBluetooth": false,
+      "WeAppMedia": false,
+      "WeAppLBS": false,
+      "WeAppOthers": false,
+      "WeAppAudio": false
+    },
+    "enableVConsole": "open",
+    "icons": {
+      "mainIcon120": "",
+      "mainIcon180": "",
+      "spotlightIcon80": "",
+      "spotlightIcon120": "",
+      "settingsIcon58": "",
+      "settingsIcon87": "",
+      "notificationIcon40": "",
+      "notificationIcon60": "",
+      "appStore1024": ""
+    },
+    "splashScreen": {
+      "customImage": ""
+    },
+    "privacy": {
+      "enable": false,
+      "enableNativePlugin": false
+    },
+    "enableOpenUrlNavigate": true,
+    "enableIpad": true,
+    "privateDescriptions": {
+      "NSMicrophoneUsageDescription": "需要麦克风权限语音通联",
+      "NSLocationAlwaysAndWhenInUseUsageDescription": "开启APRS功能需要访问您的位置"
+    },
+    "enableAutoCompletePrivacyDesc": false,
+    "gdt": {
+      "splashAd_defaultEnable": false
+    }
+  },
+  "mini-plugin": {
+    "android": [
+      {
+        "open": false,
+        "pluginId": "",
+        "pluginVersion": ""
+      }
+    ],
+    "ios": [
+      {
+        "open": false,
+        "pluginId": "",
+        "pluginVersion": ""
+      }
+    ]
+  }
+}
