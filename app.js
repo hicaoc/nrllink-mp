@@ -24,8 +24,6 @@ App({
     const udp = require('./utils/udp');
     const nrl = require('./utils/nrl21');
     
-   
-
     // 检查本地存储中是否有token
     const token = wx.getStorageSync('token');
     if (token) {
@@ -37,6 +35,21 @@ App({
     wx.reLaunch({
       url: '/pages/login/login'
     });
+  },
+
+  onShow() {
+    // 小程序回到前台时重新连接
+    if (this.globalData.udpClient) {
+      this.globalData.udpClient.reconnect();
+    }
+  },
+
+  onHide() {
+    // 小程序进入后台时保持连接
+    if (this.globalData.udpClient) {
+      this.globalData.udpClient.keepAlive();
+    }
+    console.log('UDPClient keepAlive');
   },
 
 
