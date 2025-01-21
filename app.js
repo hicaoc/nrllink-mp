@@ -3,6 +3,7 @@ App({
     userInfo: null,
     token: null,
     cpuid: null,
+    passcode: null,
     currentGroup: null,
     currentDevice: null,
     availableGroups: [],
