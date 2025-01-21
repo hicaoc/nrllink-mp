@@ -97,8 +97,22 @@ Page({
         // 启动定时发送
         this.setData({
           timer: setInterval(() => {
-            
-            this.sendAprsPosition();
+            wx.getLocation({
+              type: 'wgs84',
+              success: (res) => {
+                this.setData({
+                  latitude: res.latitude,
+                  longitude: res.longitude
+                });
+                this.sendAprsPosition();
+              },
+              fail: (err) => {
+                this.setData({
+                  status: '获取位置失败'
+                });
+                console.error('获取位置失败', err);
+              }
+            });
           }, 60000) // 60秒间隔
         });
       },
@@ -117,17 +131,25 @@ Page({
     
     if (!latitude || !longitude || !callSign) {
       return;
-    } 
-   
+    }
+
+    // 获取设备信息
+    const deviceInfo = await wx.getDeviceInfo();
+    //console.log('设备信息：', deviceInfo);
+    const deviceModel = deviceInfo.model;
+    
+    // 获取高度信息
+    const location = await wx.getLocation({
+      type: 'wgs84',
+      altitude: true
+    });
+    const altitude = location.altitude || 0;
     
     // 构造APRS数据包
-    const aprsPacket = this.formatAprsPacket(callSign, latitude, longitude);
+    const aprsPacket = this.formatAprsPacket(callSign, latitude, longitude, altitude, deviceModel);
     
     try {
-      
- 
       await this.tcpClient.send(aprsPacket);
-      //console.log('成功发送APRS位置:', aprsPacket);
       this.setData({
         status: '位置已发送'
       });
@@ -146,14 +168,11 @@ Page({
     }, 2000);
   },
   
-  formatAprsPacket(callSign, lat, lon) {
+  formatAprsPacket(callSign, lat, lon, altitude, deviceModel) {
     // 格式化APRS数据包
-
     const latStr = this.decToAprs(lat, true);
     const lonStr = this.decToAprs(lon, false);
-    //BR4IN>APDR16,TCPIP*,qAC,T2LAUSITZ:=3638.3 N/11702.2 Er439.110MHz -5 88.5     济南黄河业余无线电  示位点 
-    // BH4RPN-5>APRS,TCPIP*:!4903.50N/07201.75W-Test message
-    return `${callSign}-5>APRS,TCPIP*:!${latStr}/${lonStr}[ NRL微信小程序${callSign}-100位置跟踪\n`;
+    return `${callSign}-5>APRS,TCPIP*:!${latStr}/${lonStr}[A${altitude.toFixed(0)} ${deviceModel}@NRL微信小程序\n`;
   },
   
   decToAprs(dec, isLat) {
