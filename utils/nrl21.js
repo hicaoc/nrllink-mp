@@ -137,9 +137,11 @@ function calculateCpuId(callSign) {
 }
 
 function cpuIdToHex(cpuId) {
-  const view = new DataView(cpuId);
-  const value = view.getUint32(0, false);
-  return value.toString(16).toUpperCase().padStart(8, '0');
+
+  //console.log('cpuIdToHex', cpuId,cpuId.toString(16).toUpperCase().padStart(8, '0'))
+  return cpuId.toString(16).toUpperCase().padStart(8, '0');
+
+
 }
 
 module.exports = {

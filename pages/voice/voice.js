@@ -117,8 +117,7 @@ Page({
 
     const devices = Object.values(devicesRes.items || {});
     const groups = Object.values(groupsRes.items || {});
-    const hexCpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
-
+    const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
 
     const currentDevice = devices.find(device => device.cpuid === hexCpuid);
     let currentGroup = null;
@@ -173,20 +172,18 @@ Page({
 
     const app = getApp();
 
-    this.heartbeatTimer = setInterval(() => {
-      if (app.globalData.udpClient && this.heartbeatPacket) {
-        app.globalData.udpClient.send(this.heartbeatPacket);
-      }
+    this.heartbeatTimer = setInterval(() => {    
+        app.globalData.udpClient.send(this.heartbeatPacket);      
     }, 2000);
   },
 
-  // 停止心跳定时器
-  stopHeartbeat() {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-  },
+  // // 停止心跳定时器
+  // stopHeartbeat() {
+  //   if (this.heartbeatTimer) {
+  //     clearInterval(this.heartbeatTimer);
+  //     this.heartbeatTimer = null;
+  //   }
+  // },
 
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);

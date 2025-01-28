@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+import * as nrl21 from '../../utils/nrl21';
 
 Page({
   data: {
@@ -18,8 +19,9 @@ Page({
 
     const userInfo = app.globalData.userInfo || {};
    // const cpuid = app.globalData.cpuId;
-    const cpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
 
+
+    const cpuid = nrl21.cpuIdToHex(app.globalData.cpuId)
 
 
 
@@ -35,7 +37,8 @@ Page({
 
     const callsign = userInfo.callsign || '未知';
 
-    console.log(`当前设备CPUID: ${cpuid}`,app.globalData.currentGroup.name );
+
+    //console.log(`当前设备CPUID: ${cpuid}`,app.globalData.currentGroup.name );
 
 
     this.setData({
@@ -64,7 +67,8 @@ Page({
 
   // 获取当前设备所在群组
   getCurrentGroup() {
-    const cpuid = parseInt(getApp().globalData.cpuId).toString(16).toUpperCase();
+    
+    const cpuid = nrl21.cpuIdToHex(getApp().globalData.cpuId);
     const { devices, groups } = this.data;
 
     // 将cpuid转换为16进制字符串
@@ -197,8 +201,7 @@ Page({
 
       // 如果修改的是当前设备，更新全局状态
       const app = getApp();
-      const currentCpuid = parseInt(app.globalData.cpuId).toString(16).toUpperCase();
-
+      const currentCpuid = cpuIdToHex(app.globalData.cpuId)
       if (device.cpuid === currentCpuid) {
         app.globalData.currentGroup = groups[selectedGroup];
         app.globalData.currentDevice = device;
