@@ -229,6 +229,22 @@ Page({
 
     //console.log('device:',device);
 
+    const app = getApp()
+    const userInfo = app.globalData.userInfo
+
+    const currentCallsign = userInfo?.callsign
+
+    if (!userInfo?.roles?.includes('admin') && device.callsign !== currentCallsign  ) {
+      wx.showToast({
+        title: '权限不够', 
+        icon: 'errorerror'
+      });
+
+      return
+     
+    }
+
+
     wx.showLoading({
       title: '正在更新状态...',
       mask: true
