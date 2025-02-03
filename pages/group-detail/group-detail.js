@@ -20,7 +20,8 @@ Page({
     devices: [], // 所有设备列表
     selectedDevice: null, // 当前选择的设备
     expandedDetails: {}, // 用于存储每个设备的展开状态
-    showDetails: false // 控制详细信息显示
+    showDetails: false, // 控制详细信息显示
+    DevStatusOptions: DevStatusOptions // 添加状态选项
   },
 
   // 切换详细信息显示
@@ -34,7 +35,7 @@ Page({
 
   onLoad(options) {
     // 绑定所有需要的方法
-    this.formatTime = this.formatTime.bind(this);
+
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
 
@@ -168,43 +169,43 @@ Page({
   // 获取设备类型名称
   getDevTypeName(typeId) {
     const type = DevTypeOptions.find(t => t.id === typeId);
-    return type ? type.name : '未知';
+    return type ? type.name : typeId;
   },
 
   // 获取设备型号名称
   getDevModelName(modelId) {
     const model = DevModelOptions.find(m => m.id === modelId);
-    return model ? model.name : '未知';
+    return model ? model.name : modelId;
   },
 
   // 获取设备射频类型名称
   getDevRFtypeName(rfTypeId) {
     if (typeof rfTypeId !== 'number') {
       console.warn('Invalid rfTypeId:', rfTypeId);
-      return '未知';
+      return rfTypeId;
     }
     const rfType = DevRFtypeOptions.find(r => r.id === rfTypeId);
-    return rfType ? rfType.name : '未知';
+    return rfType ? rfType.name : rfTypeId;
   },
 
   // 获取群组类型名称
   getGroupTypeName(groupTypeId) {
     if (typeof groupTypeId !== 'number') {
       console.warn('Invalid groupTypeId:', groupTypeId);
-      return '未知';
+      return groupTypeId;
     }
     const groupType = groupTypeOptions.find(g => g.id === groupTypeId);
-    return groupType ? groupType.name : '未知';
+    return groupType ? groupType.name : groupTypeId;
   },
 
   // 获取设备状态名称
   getDevStatusName(statusId) {
     if (typeof statusId !== 'number') {
       console.warn('Invalid statusId:', statusId);
-      return '未知';
+      return statusId;
     }
     const status = DevStatusOptions.find(s => s.id === statusId);
-    return status ? status.name : '未知';
+    return status ? status.name : statusId;
   },
 
   // 获取设备状态对应的样式类
@@ -213,11 +214,63 @@ Page({
     if (!status) return 'unknown';
 
     switch (status.name) {
-      case '正常': return 'normal';
+      case '全开': return 'normal';
       case '禁收': return 'disabled-receive';
       case '禁发': return 'disabled-send';
       case '双禁': return 'disabled-both';
       default: return 'unknown';
+    }
+  },
+
+  // 处理状态选择
+  async handleStatusChange(e) {
+    const statusId = e.currentTarget.dataset.value;
+    const device = e.currentTarget.dataset.device;
+
+    //console.log('device:',device);
+
+    wx.showLoading({
+      title: '正在更新状态...',
+      mask: true
+    });
+
+    try {
+      await api.updateDevice({
+        ...device,
+        status: statusId
+      });
+
+      wx.showToast({
+        title: '状态更新成功', 
+        icon: 'success'
+      });
+
+      // // 更新设备状态显示
+      // const devices = this.data.devices.map(d => {
+      //   if (d.id === device.id) {
+      //     return {
+      //       ...d,
+      //       status: statusId,
+            
+      //       statusText: this.getDevStatusName(statusId),
+      //       statusClass: this.getStatusClass(statusId)
+      //     };
+      //   }
+      //   return d;
+      // });
+
+      this.groupData.devmap[device.id].status = statusId; 
+      
+      //this.setData({ devices });
+      this.loadGroupDetail(this.groupData)
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '状态更新失败',
+        icon: 'none'
+      });
+      console.error('Error updating status:', error);
+    } finally {
+      wx.hideLoading();
     }
   },
 
@@ -248,44 +301,6 @@ Page({
     }
   },
 
-  // 格式化时间
-  formatTime(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return '无';
-
-    try {
-      // 尝试解析常见时间格式
-      let date;
-      // 格式1: YYYY-MM-DD HH:mm:ss
-      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timeStr)) {
-        date = new Date(timeStr.replace(' ', 'T') + 'Z');
-      }
-      // 格式2: Unix 时间戳
-      else if (/^\d+$/.test(timeStr)) {
-        date = new Date(parseInt(timeStr));
-      }
-      // 其他格式尝试直接解析
-      else {
-        date = new Date(timeStr);
-      }
-
-      // 检查日期是否有效
-      if (isNaN(date.getTime())) {
-        return '无';
-      }
-
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }).replace(/\//g, '-');
-    } catch (error) {
-      console.warn('Failed to format time:', timeStr, error);
-      return '无';
-    }
-  },
 
   loadGroupDetail(group) {
     if (!group) {
@@ -300,16 +315,7 @@ Page({
       const formatCache = new Map();
 
       const formatIfNeeded = (timeStr) => {
-        if (!timeStr || typeof timeStr !== 'string') return '无';
-        try {
-          if (formatCache.has(timeStr)) return formatCache.get(timeStr);
-          const formatted = this.formatTime(timeStr);
-          formatCache.set(timeStr, formatted);
-          return formatted;
-        } catch (error) {
-          console.warn('Failed to format time:', timeStr, error);
-          return '无';
-        }
+   timeStr
       };
 
       // 优化设备映射，在线设备优先
@@ -369,9 +375,9 @@ Page({
 
         devmap[i] = {
           ...device,
-          callsign: `📻 ${device.callsign || '无'}`,
+          callsign: `${device.callsign || '无'}`,
           ssid: `${device.ssid || 0}`,
-          name: `📱 ${device.name || '未命名设备'}`,
+          name: `${device.name || '未命名设备'}`,
           type: this.getDevTypeName(typeId),
           model: this.getDevModelName(modelId),
           rfType: rfTypeId,

@@ -32,18 +32,30 @@
           <tag class="title-value {{item.is_online ? 'online' : 'offline'}}">{{item.callsign}}-{{item.ssid}}</tag>
           <!-- <text class="status-text {{item.is_online ? 'online' : 'offline'}}">({{item.is_online ? '在线' : '离线'}})</text> -->
                 
-          <text class="value">{{item.statusText}}</text>
+        </view>
+        <view class="status-button-group" data-device="{{item}}">
+          <view 
+            class="status-button {{status.id === item.status ? 'active' : ''}}" 
+            wx:for="{{DevStatusOptions}}" 
+            wx:key="id"
+            wx:for-item="status" 
+            bindtap="handleStatusChange"
+            data-value="{{status.id}}"
+            data-device="{{item}}"
+          >
+            <text class="button-text">{{status.name}}</text>
+          </view>
         </view>
      
-        <view class="title-row">
+        <!-- <view class="title-row">
           <text class="title-label">名称：</text>
           <text class="title-value">{{item.name}}</text>
-        </view>
+        </view> -->
       </view>
       <view class="name">{{item.deviceName}}</view>
      
       <view class="collapsible-toggle" bindtap="toggleDetails" data-index="{{index}}">
-        <text>详细信息</text>
+        <text>{{item.name}}</text>
         <image class="icon" src="/images/arrow-down.png" mode="aspectFit"></image>
       </view>
       <view class="collapsible-details" wx:if="{{expandedDetails[index]}}">
