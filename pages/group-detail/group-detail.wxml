@@ -28,12 +28,9 @@
     <view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId">
       <view class="title-container">
         <view class="title-row">
-          <text class="title-label">设备：</text>
+          <!-- <text class="title-label">设备：</text> -->
           <tag class="title-value {{item.is_online ? 'online' : 'offline'}}">{{item.callsign}}-{{item.ssid}}</tag>
-          <!-- <text class="status-text {{item.is_online ? 'online' : 'offline'}}">({{item.is_online ? '在线' : '离线'}})</text> -->
-                
-        </view>
-        <view class="status-button-group" data-device="{{item}}">
+          <view class="status-button-group" data-device="{{item}}">
           <view 
             class="status-button {{status.id === item.status ? 'active' : ''}}" 
             wx:for="{{DevStatusOptions}}" 
@@ -45,6 +42,7 @@
           >
             <text class="button-text">{{status.name}}</text>
           </view>
+           </view>
         </view>
      
         <!-- <view class="title-row">

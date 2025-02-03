@@ -464,6 +464,7 @@ Page({
       this.loadGroupDetail(this.groupData)
     }
     this.loadDeviceList()
+    
     wx.stopPullDownRefresh()
   },
 
