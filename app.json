@@ -1,13 +1,14 @@
 {
   "pages": [
     "pages/login/login",
-    "pages/voice/voice",   
+    "pages/config/config",
     "pages/aprs/aprs",
     "pages/message/message",
-    "pages/config/config"
+    "pages/voice/voice",
+    "pages/group-detail/group-detail"
   ],
   "window": {
-    "navigationBarTitleText": "NRL互联1.1.6"
+    "navigationBarTitleText": "NRL互联1.1.7"
   },
   "tabBar": {
     "list": [

@@ -1,0 +1,106 @@
+<view class="container">
+  <view class="group-info">
+    <view class="title">{{group.displayName}}</view>
+    <!-- <view class="status">
+      <text class="label">状态</text>
+      <text class="value">{{group.statusText}}</text>
+    </view> -->
+    <view class="group-type">
+      <text class="label">群组类型</text>
+      <text class="value">{{group.typeName}}</text>
+    </view>
+    <view class="device-count">
+      <text class="label">设备总数</text>
+      <text class="value">{{group.deviceCount}}</text>
+    </view>
+    <view class="online-count">
+      <text class="label">在线设备</text>
+      <text class="value">{{group.onlineCount}}</text>
+    </view>
+  </view>
+
+  <view class="device-list">
+    <view class="header">
+      <text>设备列表</text>
+      <!-- <text class="count">{{group.deviceCount}} 台设备</text> -->
+    </view>
+
+    <view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId">
+      <view class="title-container">
+        <view class="title-row">
+          <text class="title-label">设备：</text>
+          <tag class="title-value {{item.is_online ? 'online' : 'offline'}}">{{item.callsign}}-{{item.ssid}}</tag>
+          <!-- <text class="status-text {{item.is_online ? 'online' : 'offline'}}">({{item.is_online ? '在线' : '离线'}})</text> -->
+                
+          <text class="value">{{item.statusText}}</text>
+        </view>
+     
+        <view class="title-row">
+          <text class="title-label">名称：</text>
+          <text class="title-value">{{item.name}}</text>
+        </view>
+      </view>
+      <view class="name">{{item.deviceName}}</view>
+     
+      <view class="collapsible-toggle" bindtap="toggleDetails" data-index="{{index}}">
+        <text>详细信息</text>
+        <image class="icon" src="/images/arrow-down.png" mode="aspectFit"></image>
+      </view>
+      <view class="collapsible-details" wx:if="{{expandedDetails[index]}}">
+        <view class="info-row">
+          <text class="label">设备类型：</text>
+          <text class="value">{{item.type || '未知'}}</text>
+        </view>
+    
+        <view class="info-row">
+          <text class="label">射频类型：</text>
+          <text class="value">{{item.rfTypeText}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">设备型号：</text>
+          <text class="value">{{item.model || '未知'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">创建时间：</text>
+          <text class="value">{{item.create_time || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">更新时间：</text>
+          <text class="value">{{item.update_time || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">最后语音：</text>
+          <text class="value">{{item.last_voice_begin_time || '无'}} - {{item.last_voice_end_time || '无'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">语音时长：</text>
+          <text class="value">{{item.last_voice_duration || 0}}秒</text>
+        </view>
+        <view class="info-row">
+          <text class="label">流量统计：</text>
+          <text class="value">{{item.traffic || 0}}字节</text>
+        </view>
+      </view>
+ 
+    </view>
+
+    <!-- 加入群组操作 -->
+    <view class="join-container">
+      <picker 
+        mode="selector" 
+        range="{{devices}}" 
+        range-key="displayName"
+        bindchange="selectDevice">
+        <view class="picker">
+          选择设备：{{selectedDevice ? selectedDevice.displayName : '请选择'}}
+        </view>
+      </picker>
+      <button 
+        class="join-btn"
+        bindtap="joinGroup"
+        disabled="{{!selectedDevice}}">
+        加入当前群组
+      </button>
+    </view>
+  </view>
+</view>

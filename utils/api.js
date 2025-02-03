@@ -100,47 +100,47 @@ const request = async (options, retries = 3, timeout = 10000) => {
 
 // API 集合
 const api = {
-  // 获取群组列表
-  getGroupList() {
-    return request({
-      url: '/group/list',
-      method: 'POST'
-    });
-  },
+    // 获取群组列表
+    getGroupList() {
+        return request({
+            url: '/group/list',
+            method: 'POST'
+        });
+    },
 
-  // 获取设备列表
-  getDeviceList() {
-    return request({
-      url: '/device/mydevlist',
-      method: 'POST'
-    });
-  },
+    // 获取设备列表
+    getDeviceList() {
+        return request({
+            url: '/device/list', // 修改为新的接口地址
+            method: 'POST'
+        });
+    },
 
-  // 更新设备信息
-  updateDevice(device) {
-    return request({
-      url: '/device/update',
-      method: 'POST',
-      data: device
-    });
-  },
+    // 更新设备信息
+    updateDevice(device) {
+        return request({
+            url: '/device/update',
+            method: 'POST',
+            data: device
+        });
+    },
 
-  // 用户登录
-  login(credentials) {
-    return request({
-      url: '/user/login',
-      method: 'POST',
-      data: credentials
-    });
-  },
+    // 用户登录
+    login(credentials) {
+        return request({
+            url: '/user/login',
+            method: 'POST',
+            data: credentials
+        });
+    },
 
-  // 获取用户信息
-  getUserInfo() {
-    return request({
-      url: '/user/info',
-      method: 'GET'
-    });
-  }
+    // 获取用户信息
+    getUserInfo() {
+        return request({
+            url: '/user/info',
+            method: 'GET'
+        });
+    }
 };
 
 module.exports = api;

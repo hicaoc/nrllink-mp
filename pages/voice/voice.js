@@ -108,6 +108,7 @@ Page({
 
     groupsRes.items = Object.assign(
       {
+        0: { id: 0, name: "公共大厅" },
         1: { id: 1, name: "私人房间1" },
         2: { id: 2, name: "私人房间2" },
         3: { id: 3, name: "私人房间3" }
@@ -143,13 +144,13 @@ Page({
   },
 
   onUnload() {
-    const app = getApp();
-    app.unregisterPage(this);
-    app.globalData.onCurrentGroupChange = null;
+    // const app = getApp();
+    // app.unregisterPage(this);
+    // app.globalData.onCurrentGroupChange = null;
 
-    if (this.connectionCheckTimer) {
-      clearInterval(this.connectionCheckTimer);
-    }
+    // if (this.connectionCheckTimer) {
+    //   clearInterval(this.connectionCheckTimer);
+    // }
   },
 
   onShow() {

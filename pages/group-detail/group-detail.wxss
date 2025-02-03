@@ -1,0 +1,281 @@
+.container {
+  padding: 20rpx;
+  background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%);
+}
+
+.group-info {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-bottom: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 38rpx;
+  font-weight: 600;
+  margin-bottom: 28rpx;
+  color: #303133;
+}
+
+.status,
+.device-count,
+.group-type,
+.online-count {
+  display: flex;
+  justify-content: space-between;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.label {
+  color: #999;
+}
+
+.value {
+  color: #333;
+}
+
+.device-list {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.count {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.device-item {
+  padding: 24rpx;
+  border-bottom: 1rpx solid #eee;
+  background: #fafafa;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+  transition: all 0.3s ease;
+}
+
+.device-item:active {
+  transform: scale(0.98);
+  background: #f5f5f5;
+}
+
+.device-item:last-child {
+  border-bottom: none;
+}
+
+.name {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.status {
+  font-size: 26rpx;
+  margin-bottom: 16rpx;
+}
+
+.status.online {
+  color: #67C23A;
+}
+
+.status.offline {
+  color: #909399;
+}
+
+/* Group status styles */
+.status.normal {
+  color: #67C23A;
+}
+
+.status.disabled-receive {
+  color: #F56C6C;
+}
+
+.status.disabled-send {
+  color: #F56C6C;
+}
+
+.status.disabled-both {
+  color: #E6A23C;
+}
+
+/* RF type styles */
+.rf-type.none {
+  color: #909399;
+}
+
+.rf-type.internal {
+  color: #409EFF;
+}
+
+.rf-type.external {
+  color: #E6A23C;
+}
+
+/* Group type styles */
+.group-type {
+  font-size: 28rpx;
+}
+
+.group-type.public {
+  color: #67C23A;
+}
+
+.group-type.relay {
+  color: #409EFF;
+}
+
+.group-type.device {
+  color: #E6A23C;
+}
+
+.group-type.listen {
+  color: #909399;
+}
+
+.group-type.other {
+  color: #F56C6C;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.info-row .label {
+  color: #999;
+  margin-right: 16rpx;
+}
+
+.info-row .value {
+  color: #333;
+  text-align: right;
+}
+
+.show-more {
+  text-align: center;
+  color: #409EFF;
+  font-size: 28rpx;
+  padding: 24rpx 0;
+}
+
+.device-selector {
+  margin: 32rpx 0;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+
+.device-selector picker {
+  width: 100%;
+}
+
+.join-btn {
+  margin: 32rpx 0;
+  background: linear-gradient(135deg, #409EFF 0%, #64b5f6 100%);
+  color: #fff;
+  border-radius: 12rpx;
+  text-align: center;
+  padding: 24rpx;
+  font-size: 34rpx;
+  box-shadow: 0 4rpx 12rpx rgba(64, 158, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.join-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(64, 158, 255, 0.3);
+}
+
+.join-btn.disabled {
+  background: #c0c4cc;
+  color: #fff;
+}
+
+.online {
+  color: #409EFF;
+}
+
+.offline {
+  color: #909399;
+}
+
+tag {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-right: 8rpx;
+  transition: all 0.2s ease;
+}
+
+tag:active {
+  transform: scale(0.95);
+}
+
+tag.online {
+  background-color: #409EFF;
+  color: #fff;
+}
+
+tag.offline {
+  background-color: #909399;
+  color: #fff;
+}
+
+/* Collapsible section styles */
+.collapsible {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.collapsible.collapsed {
+  max-height: 0;
+}
+
+.collapsible.expanded {
+  max-height: 1000px;
+}
+
+.collapsible-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  color: #409EFF;
+  font-size: 28rpx;
+  cursor: pointer;
+}
+
+.collapsible-toggle .icon {
+  width: 32rpx;
+  height: 32rpx;
+  transition: transform 0.3s ease;
+}
+
+.collapsible-toggle.expanded .icon {
+  transform: rotate(180deg);
+}
+
+.info-row {
+  transition: opacity 0.3s ease;
+}
+
+.collapsible.collapsed .info-row {
+  opacity: 0;
+}
