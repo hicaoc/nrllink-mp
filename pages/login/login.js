@@ -154,7 +154,7 @@ Page({
       }
 
       // 计算并存储cpuid
-      const cpuId = calculateCpuId(userInfo.callsign);
+      const cpuId = calculateCpuId(userInfo.callsign+'-'+userInfo.ssid);
       wx.setStorageSync('cpuId', cpuId);
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;

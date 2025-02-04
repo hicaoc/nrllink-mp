@@ -118,9 +118,10 @@ Page({
 
     const devices = Object.values(devicesRes.items || {});
     const groups = Object.values(groupsRes.items || {});
-    const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
+    //const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
 
-    const currentDevice = devices.find(device => device.cpuid === hexCpuid);
+    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100  )
+
     let currentGroup = null;
 
     if (currentDevice) {
@@ -173,8 +174,8 @@ Page({
 
     const app = getApp();
 
-    this.heartbeatTimer = setInterval(() => {    
-        app.globalData.udpClient.send(this.heartbeatPacket);      
+    this.heartbeatTimer = setInterval(() => {
+      app.globalData.udpClient.send(this.heartbeatPacket);
     }, 2000);
   },
 
@@ -243,7 +244,7 @@ Page({
       // 获取设备信息
       const deviceInfo = await wx.getDeviceInfo();
 
-     
+
       // if (!deviceInfo || !deviceInfo.microphoneSupported) {
       //   wx.showToast({
       //     title: '当前设备不支持录音',
@@ -269,7 +270,7 @@ Page({
       await wx.authorize({
         scope: 'scope.record'
       });
-    
+
       return true;
     } catch (err) {
       wx.showToast({

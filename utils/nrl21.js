@@ -15,7 +15,7 @@ class NRL21Packet {
     count = 0,
     callSign = 'CALL01',
     ssid = 100,
-    devMode = 5,
+    devMode = 100,
 
   }) {
     this.version = version;

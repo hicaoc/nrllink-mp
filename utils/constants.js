@@ -63,6 +63,8 @@ export const DevModelOptions = [
     { id: 21, name: 'FTM-400D' },
     { id: 22, name: 'ESP32' },
     { id: 23, name: 'MMDVM' },
-    { id: 25, name: '4G便携' }
+    { id: 25, name: '4G便携' },
+    { id: 100, name: '微信小程序' },
+    { id: 200, name: 'NRL-Server' },
 ];
 

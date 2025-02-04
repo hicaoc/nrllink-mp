@@ -79,13 +79,13 @@ App({
 
   // 注销页面实例
   unregisterPage(page) {
-    const route = page.__route__ || page.route;
-    if (route === 'pages/voice/voice') {
-      this.globalData.voicePage = null;
-    } else if (route === 'pages/config/config') {
-      this.globalData.configPage = null;
-    } else if (route === 'pages/message/message') {
-      this.globalData.messagePage = null;
-    }
+    // const route = page.__route__ || page.route;
+    // if (route === 'pages/voice/voice') {
+    //   this.globalData.voicePage = null;
+    // } else if (route === 'pages/config/config') {
+    //   this.globalData.configPage = null;
+    // } else if (route === 'pages/message/message') {
+    //   this.globalData.messagePage = null;
+    // }
   }
 });
