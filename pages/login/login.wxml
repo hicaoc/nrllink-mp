@@ -5,6 +5,26 @@
     </view>
     
     <view class="form">
+
+      <view class="input-group">
+        <text class="label">服务器</text>
+        <picker bindchange="bindServerChange" value="{{serverIndex}}" range="{{serverList}}" range-key="name">
+          <view class="picker">
+            当前选择：{{serverList[serverIndex].name}}
+          </view>
+        </picker>
+      </view>
+
+      <!-- <view class="input-group">
+        <text class="label">自定义服务器</text>
+        <input 
+          placeholder="请输入服务器地址" 
+          bindinput="inputCustomServer"
+          class="input"
+          value="{{customServer}}"
+        />
+      </view> -->
+
       <view class="input-group">
         <text class="label">用户名</text>
         <input 
@@ -17,13 +37,18 @@
       
       <view class="input-group">
         <text class="label">密码</text>
-        <input 
-          type="password"
-          placeholder="请输入密码"
-          bindinput="inputPassword"
-          class="input"
-          value="{{password}}"
-        />
+        <view class="password-input">
+          <input 
+            type="{{showPassword ? 'text' : 'password'}}" 
+            placeholder="请输入密码"
+            bindinput="inputPassword"
+            class="input"
+            value="{{password}}"      
+          />
+          <view class="eye-icon" bindtap="togglePassword">
+            <image src="/images/{{showPassword ? 'eye-open' : 'eye-close'}}.png" mode="aspectFit"></image>
+          </view>
+        </view>
       </view>
       
       <button 

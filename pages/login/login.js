@@ -5,7 +5,45 @@ Page({
   data: {
     username: '',
     password: '',
-    loading: false
+    showPassword: false,
+    loading: false,
+    serverList: [
+      { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
+      { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
+      { name: '徐州HAM互联', host: 'nrl.bd4two.site', port: 60050 }
+    ],
+    serverIndex: 1, // Default to NRLPTT主站
+    customServer: ''
+  },
+
+  bindServerChange(e) {
+    console.log('picker发送选择改变，携带值为', e.detail.value);
+    const newServerIndex = e.detail.value;
+    this.setData({
+      serverIndex: newServerIndex
+    });
+  
+    const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+    console.log('serverCredentials:', serverCredentials); // 添加这行
+    const currentServerCreds = serverCredentials[newServerIndex];
+    console.log('currentServerCreds:', currentServerCreds); // 添加这行
+  
+    if (currentServerCreds) {
+      this.setData({
+        username: currentServerCreds.username,
+        password: currentServerCreds.password
+      });
+    } else {
+      this.setData({
+        username: '',
+        password: ''
+      });
+    }
+  },
+  inputCustomServer(e) {
+    this.setData({
+      customServer: e.detail.value
+    })
   },
 
   onLoad() {
@@ -14,76 +52,49 @@ Page({
     const userInfo = wx.getStorageSync('userInfo');
     const cpuId = wx.getStorageSync('cpuId');
     const passcode = wx.getStorageSync('passcode');
+    const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+
+    // 设置默认服务器索引
+    const savedServerIndex = wx.getStorageSync('savedServerIndex');
+    if (savedServerIndex !== undefined) {
+      this.setData({
+        serverIndex: savedServerIndex
+      });
+    }
+
+    // 如果当前服务器有存储的凭证，自动填充
+    const currentServerCreds = serverCredentials[this.data.serverIndex];
+    if (currentServerCreds) {
+      this.setData({
+        username: currentServerCreds.username,
+        password: currentServerCreds.password
+      });
+    }
 
     if (token && userInfo && cpuId && passcode) {
       console.log('检测到有效 token，初始化全局数据');
-
-      // 初始化全局用户信息
-
-      if (userInfo) {
-        app.globalData.userInfo = userInfo;
-        app.globalData.cpuId = cpuId;
-        app.globalData.passcode = passcode;
-        console.log('全局用户信息初始化完成:', {
-          userInfo,
-          cpuId,
-          passcode
-        });
-      }
-
-      console.log('自动跳转到语音页面');
+      app.globalData.userInfo = userInfo;
+      app.globalData.cpuId = cpuId;
+      app.globalData.passcode = passcode;
       wx.switchTab({ url: '/pages/voice/voice' });
       return;
-    }
-
-    // 检查是否有存储的账号信息
-    const savedUsername = wx.getStorageSync('savedUsername');
-    const savedPassword = wx.getStorageSync('savedPassword');
-
-    console.log('页面加载，读取存储信息:', {
-      savedUsername,
-      savedPassword
-    });
-
-    if (savedUsername && savedPassword) {
-      console.log('成功读取存储的用户名和密码');
-      this.setData({
-        username: savedUsername,
-        password: savedPassword
-      }, () => {
-        console.log('setData 回调:', {
-          username: this.data.username,
-          password: this.data.password
-        });
-      });
     }
   },
 
   generateAPRSPasscode(callsign) {
-    // 将呼号转换为大写并移除 SSID（例如 '-1'）
     callsign = callsign.split('-')[0].toUpperCase();
-
-    // 初始化passcode
     let passcode = 29666;
-
-    // 对每两个字符进行XOR运算
     let i = 0;
     while (i < callsign.length) {
-      // 第一个字符乘以256后XOR
       passcode ^= callsign.charCodeAt(i) * 256;
-      // 第二个字符直接XOR
       if (i + 1 < callsign.length) {
         passcode ^= callsign.charCodeAt(i + 1);
       }
       i += 2;
     }
-
-    // 与32767进行AND操作
     passcode &= 32767;
-
     return passcode;
   },
-
 
   inputUsername(e) {
     this.setData({ username: e.detail.value });
@@ -93,24 +104,18 @@ Page({
     this.setData({ password: e.detail.value });
   },
 
+  togglePassword() {
+    console.log('togglePassword');
+    this.setData({
+      showPassword: !this.data.showPassword
+    });
+  },
+
   login() {
     if (this.data.loading) return;
 
     const { username, password } = this.data;
 
-
-    // 默认记住账号
-    try {
-      wx.setStorageSync('savedUsername', username);
-      wx.setStorageSync('savedPassword', password);
-      console.log('成功存储用户名和密码');
-    } catch (err) {
-      wx.showToast({
-        title: '存储失败，请检查存储空间',
-        icon: 'none'
-      });
-      console.error('存储失败:', err);
-    }
     if (!username || !password) {
       wx.showToast({
         title: '请输入用户名和密码',
@@ -119,9 +124,41 @@ Page({
       return;
     }
 
+    // 存储凭证
+    try {
+      const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+      serverCredentials[this.data.serverIndex] = { username, password };
+      wx.setStorageSync('serverCredentials', serverCredentials);
+      wx.setStorageSync('savedServerIndex', this.data.serverIndex);
+      console.log('成功存储服务器凭证');
+    } catch (err) {
+      wx.showToast({
+        title: '存储失败，请检查存储空间',
+        icon: 'none'
+      });
+      console.error('存储失败:', err);
+    }
+
     this.setData({ loading: true });
 
     const api = require('../../utils/api');
+
+    // 更新服务器配置
+    if (this.data.customServer) {
+      const [host, port] = this.data.customServer.split(':');
+      app.globalData.serverConfig = {
+        name: '自定义服务器',
+        host: host,
+        port: port ? parseInt(port) : 60050
+      };
+    } else {
+      const selectedServer = this.data.serverList[this.data.serverIndex];
+      app.globalData.serverConfig = {
+        name: selectedServer.name,
+        host: selectedServer.host,
+        port: selectedServer.port
+      };
+    }
 
     api.login({ username, password })
       .then(res => {
@@ -153,37 +190,17 @@ Page({
         return;
       }
 
-      // 计算并存储cpuid
       const cpuId = calculateCpuId(userInfo.callsign+'-'+userInfo.ssid);
       wx.setStorageSync('cpuId', cpuId);
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
       app.globalData.cpuId = cpuId;
 
-      console.log('全局用户信息初始化完成:', {
-        userInfo,
-        cpuId
-      });
-
-
       const passcode = this.generateAPRSPasscode(userInfo.callsign);
       app.globalData.passcode = passcode;
-
-      console.log('生成APRS密码成功:', passcode);
       wx.setStorageSync('passcode', passcode);
 
-
-      console.log('准备跳转到语音页面');
-      try {
-        wx.switchTab({ url: '/pages/voice/voice' });
-        console.log('跳转成功');
-      } catch (err) {
-        console.error('跳转失败:', err);
-        wx.showToast({
-          title: '跳转失败，请重试',
-          icon: 'none'
-        });
-      }
+      wx.switchTab({ url: '/pages/voice/voice' });
     } catch (err) {
       wx.showToast({
         title: err.message || '获取用户信息失败',

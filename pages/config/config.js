@@ -5,7 +5,7 @@
 Page({
   data: {
     groups: [], // 群组列表
-
+    showLogout: true
   },
 
   onLoad() {
@@ -40,5 +40,11 @@ Page({
       url: `/pages/group-detail/group-detail?group=${encodeURIComponent(JSON.stringify(group))}`
     });
   },
+
+  // 退出登录
+  handleLogout() {
+    const app = getApp();
+    app.globalData.logout();
+  }
 
 });
