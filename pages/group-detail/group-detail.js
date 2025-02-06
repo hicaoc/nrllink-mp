@@ -12,11 +12,12 @@ Page({
   data: {
     group: {
       displayName: '',
-      statusText: '',
+      //statusText: '',
       deviceCount: 0,
       onlineCount: 0,
       devmap: []
     },
+    groupData: {},
     devices: [], // 所有设备列表
     selectedDevice: null, // 当前选择的设备
     expandedDetails: {}, // 用于存储每个设备的展开状态
@@ -65,17 +66,23 @@ Page({
     try {
       const app = getApp()
       const userInfo = app.globalData.userInfo
-      let devices = app.globalData.availableDevices || []
+      let devlist = app.globalData.availableDevices || []
       const currentCallsign = userInfo?.callsign
+
       
+
       // 如果不是管理员，只显示当前用户的设备
       if (!userInfo?.roles?.includes('admin')) {
-  
-        devices = devices.filter(device => device.callsign === currentCallsign)
+
+        devlist = devlist.filter(device => device.callsign === currentCallsign)
       }
 
+      //console.log("devices:", devlist)
+
+      const devices = Object.values(devlist)
+
       // 排序规则：当前用户设备 > 其他设备
-   
+
       devices.sort((a, b) => {
         const isCurrentA = a.callsign === currentCallsign
         const isCurrentB = b.callsign === currentCallsign
@@ -83,9 +90,10 @@ Page({
         if (!isCurrentA && isCurrentB) return 1
         return 0
       })
-      
+
       this.setData({ devices })
     } catch (error) {
+      console.error('Error loading device list:', error)
       wx.showToast({
         title: '获取设备列表失败',
         icon: 'none'
@@ -130,27 +138,19 @@ Page({
         icon: 'success'
       })
 
-      await Promise.all([
-        this.loadGroupDetail(this.groupData),
-        this.loadDeviceList(),
-        // 刷新全局设备列表
-        api.getDeviceList().then(devices => {
-          app.globalData.availableDevices = devices
+      await app.globalData.getGroupList()   
 
-          if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
-            app.globalData.currentGroup = this.groupData;
-            app.globalData.currentDevice = selectedDevice;
-            const voicePage = app.globalData.voicePage;
-            if (voicePage && voicePage.getCurrentGroup) {
-              voicePage.getCurrentGroup();
-            } else {
-              console.warn('Voice page not found or getCurrentGroup method missing');
-            }
-          }
+      const group = app.globalData.availableGroups.find(group => group.id === this.groupData.id)
+      this.groupData = group
+      this.loadGroupDetail(group)
+      this.loadDeviceList()
+      
+      if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
+        app.globalData.currentGroup = this.groupData;
+        app.globalData.currentDevice = selectedDevice;   
+      } 
 
-          })
-      ])
-      wx.showToast({
+       wx.showToast({
         title: '数据刷新完成',
         icon: 'success'
       })
@@ -234,14 +234,14 @@ Page({
 
     const currentCallsign = userInfo?.callsign
 
-    if (!userInfo?.roles?.includes('admin') && device.callsign !== currentCallsign  ) {
+    if (!userInfo?.roles?.includes('admin') && device.callsign !== currentCallsign) {
       wx.showToast({
-        title: '权限不够', 
+        title: '权限不够',
         icon: 'errorerror'
       });
 
       return
-     
+
     }
 
 
@@ -257,26 +257,13 @@ Page({
       });
 
       wx.showToast({
-        title: '状态更新成功', 
+        title: '状态更新成功',
         icon: 'success'
       });
 
-      // // 更新设备状态显示
-      // const devices = this.data.devices.map(d => {
-      //   if (d.id === device.id) {
-      //     return {
-      //       ...d,
-      //       status: statusId,
-            
-      //       statusText: this.getDevStatusName(statusId),
-      //       statusClass: this.getStatusClass(statusId)
-      //     };
-      //   }
-      //   return d;
-      // });
 
-      this.groupData.devmap[device.id].status = statusId; 
-      
+      this.groupData.devmap[device.id].status = statusId;
+
       //this.setData({ devices });
       this.loadGroupDetail(this.groupData)
     } catch (error) {
@@ -331,7 +318,7 @@ Page({
       const formatCache = new Map();
 
       const formatIfNeeded = (timeStr) => {
-   timeStr
+        timeStr
       };
 
       // 优化设备映射，在线设备优先
@@ -436,9 +423,9 @@ Page({
       if (group.displayName !== this.data.group.displayName) {
         update['group.displayName'] = group.displayName;
       }
-      if (group.statusText !== this.data.group.statusText) {
-        update['group.statusText'] = group.statusText;
-      }
+      // if (group.statusText !== this.data.group.statusText) {
+      //   update['group.statusText'] = group.statusText;
+      // }
 
       this.setData(update);
     } catch (error) {
@@ -464,7 +451,7 @@ Page({
       this.loadGroupDetail(this.groupData)
     }
     this.loadDeviceList()
-    
+
     wx.stopPullDownRefresh()
   },
 

@@ -24,15 +24,8 @@ Page({
 
     this.setData({
       userInfo: app.globalData.userInfo,
-    }
-
-    )
-
+    })
     app.registerPage(this);
-
-
-
-
     console.log("app", app)
     // const callSign = app.globalData.userInfo.callsign || 'UNKNOWN';
     // const cpuid = nrl21.calculateCpuId(callSign);
@@ -101,47 +94,10 @@ Page({
     this.audioPacket = new Uint8Array(560);
     this.audioPacket.set(audioPacketHead, 0);
 
-    let [devicesRes, groupsRes] = await Promise.all([
-      api.getDeviceList(),
-      api.getGroupList()
-    ]);
 
-    groupsRes.items = Object.assign(
-      {
-        0: { id: 0, name: "公共大厅" },
-        1: { id: 1, name: "私人房间1" },
-        2: { id: 2, name: "私人房间2" },
-        3: { id: 3, name: "私人房间3" }
-      },
-      groupsRes.items || {}
-    );
+    this.refreshData()
 
-    const devices = Object.values(devicesRes.items || {});
-    const groups = Object.values(groupsRes.items || {});
-    //const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
-
-    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100  )
-
-    let currentGroup = null;
-
-    if (currentDevice) {
-      currentGroup = groups.find(group => group.id === currentDevice.group_id);
-    }
-
-    app.globalData.currentGroup = currentGroup || null;
-    app.globalData.currentDevice = currentDevice || null;
-    app.globalData.availableGroups = groups;
-    app.globalData.availableDevices = devices;
-
-    app.globalData.onGroupChange = (newGroup) => {
-      this.setData({
-        currentGroup: newGroup?.name || '未加入群组'
-      });
-    };
-
-    this.setData({
-      currentGroup: currentGroup ? currentGroup.name : '未加入群组'
-    });
+   
   },
 
   onUnload() {
@@ -156,6 +112,62 @@ Page({
 
   onShow() {
     this.checkConnection();
+    this.getCurrentGroup();
+
+  },
+
+  async refreshData() {
+
+    const app = getApp();
+    
+     await app.globalData.getGroupList()
+     await app.globalData.getDeviceList()
+
+    const groups = app.globalData.availableGroups
+    const devices = app.globalData.availableDevices
+
+
+    // groupsRes.items = Object.assign(
+    //   {
+    //     0: { id: 0, name: "公共大厅" },
+    //     1: { id: 1, name: "私人房间1" },
+    //     2: { id: 2, name: "私人房间2" },
+    //     3: { id: 3, name: "私人房间3" }
+    //   },
+    //   groupsRes.items || {}
+    // );
+
+    // const devices = Object.values(devicesRes.items || {});
+    // const groups = Object.values(groupsRes.items || {});
+    //const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
+
+    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100  )
+
+    let currentGroup = null;
+
+    if (currentDevice) {
+      currentGroup = groups.find(group => group.id === currentDevice.group_id);
+    }
+
+    app.globalData.currentGroup = currentGroup || null;
+    app.globalData.currentDevice = currentDevice || null;
+    //app.globalData.availableGroups = groups;
+    //app.globalData.availableDevices = devices;
+
+    app.globalData.onGroupChange = (newGroup) => {
+      this.setData({
+        currentGroup: newGroup?.name || '未加入群组'
+      });
+    };
+
+    this.setData({
+      currentGroup: currentGroup ? currentGroup.name : '未加入群组'
+    });
+
+    //await this.getGroupList();
+    // this.setData({ groups,devices });
+    //await this.getDeviceList();
+    //this.getCurrentGroup();
   },
 
   getCurrentGroup() {

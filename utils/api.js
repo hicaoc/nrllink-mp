@@ -1,5 +1,5 @@
 // 基础配置
-const BASE_URL = 'https://nrlptt.com';
+//const BASE_URL = 'https://nrlptt.com';
 const getDefaultHeaders = () => ({
   'Content-Type': 'application/json',
   'x-token': wx.getStorageSync('token') || ''
@@ -42,13 +42,18 @@ const responseInterceptor = (response) => {
 
 // 统一请求方法
 const request = async (options, retries = 3, timeout = 10000) => {
+ 
+  const app = getApp();
+ 
   const config = requestInterceptor({
-    url: BASE_URL + options.url,
+    url: 'https://' + app.globalData.serverConfig.host + options.url,
     method: options.method || 'GET',
     header: Object.assign({}, getDefaultHeaders(), options.headers || {}),
     data: options.data || {},
     timeout
   });
+
+  console.log('###请求参数：', config);
 
   // 检查网络状态
   const checkNetwork = () => new Promise((resolve, reject) => {
