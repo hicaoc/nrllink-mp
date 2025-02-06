@@ -112,6 +112,17 @@ App({
       };
     }
 
+    //bd4two bh4vap
+    if (accountInfo.miniProgram.appId === 'wxe4ca2cd50966d0af') {
+      this.globalData.serverConfig = {
+        host: 'nrl.bd4two.site',
+        port: 60050
+      };
+    }
+
+
+    
+
 
     // 否则跳转到登录页面
     wx.reLaunch({
