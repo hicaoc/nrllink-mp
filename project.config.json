@@ -1,11 +1,5 @@
 {
-  "appid": "wx776b03fb53f1c193",
   "compileType": "miniprogram",
-  "libVersion": "3.7.5",
-  "packOptions": {
-    "ignore": [],
-    "include": []
-  },
   "setting": {
     "coverView": true,
     "es6": true,
@@ -19,15 +13,21 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "condition": true
+    "condition": true,
+    "ignoreUploadUnusedFiles": true
   },
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "projectArchitecture": "multiPlatform",
   "simulatorPluginLibVersion": {
     "wxext14566970e7e9f62": "3.6.5-21"
-  }
+  },
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "projectArchitecture": "multiPlatform",
+  "appid": "wx776b03fb53f1c193"
 }

@@ -5,12 +5,13 @@ Page({
   data: {
     username: '',
     password: '',
+    tempPassword: '', // 用于临时保存密码
     showPassword: false,
     loading: false,
-    serverList: [
-      { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
+    serverList: [    
       { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
-      { name: '徐州HAM互联', host: 'nrl.bd4two.site', port: 60050 }
+      { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
+      { name: '徐州HAM互联', host: 'bd4two.nrlptt.com', port: 60050 }
     ],
     serverIndex: 1, // Default to NRLPTT主站
     customServer: ''
@@ -106,8 +107,20 @@ Page({
 
   togglePassword() {
     console.log('togglePassword');
+        // 1. 保存当前密码到 tempPassword
+         // 1. 保存当前密码到 tempPassword
+    this.setData({
+      tempPassword: this.data.password
+    });
+
+    // 2. 切换 showPassword 状态
     this.setData({
       showPassword: !this.data.showPassword
+    }, () => { // 3. 在 setData 完成后恢复密码
+      this.setData({
+        password: this.data.tempPassword,
+        tempPassword: '' // 清空 tempPassword
+      });
     });
   },
 

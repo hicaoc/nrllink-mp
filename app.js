@@ -99,10 +99,7 @@ App({
   },
 
   onHide() {
-    if (this.globalData.udpClient) {
-      this.globalData.udpClient.keepAlive();
-    }
-    console.log('UDPClient keepAlive');
+ 
   },
 
   formatTime(timeStr) {
