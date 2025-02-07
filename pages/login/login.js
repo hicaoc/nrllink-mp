@@ -5,8 +5,8 @@ Page({
   data: {
     username: '',
     password: '',
-    tempPassword: '', // 用于临时保存密码
-    showPassword: false,
+    //tempPassword: '', // 用于临时保存密码
+    //showPassword: false,
     loading: false,
     serverList: [    
       { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
@@ -105,24 +105,27 @@ Page({
     this.setData({ password: e.detail.value });
   },
 
-  togglePassword() {
-    console.log('togglePassword');
-        // 1. 保存当前密码到 tempPassword
-         // 1. 保存当前密码到 tempPassword
-    this.setData({
-      tempPassword: this.data.password
-    });
+  // togglePassword() {
+  //   console.log('togglePassword1',this.data.password);
+  //       // 1. 保存当前密码到 tempPassword
+  //        // 1. 保存当前密码到 tempPassword
+  //   this.setData({
+  //     tempPassword: this.data.password
+  //   });
 
-    // 2. 切换 showPassword 状态
-    this.setData({
-      showPassword: !this.data.showPassword
-    }, () => { // 3. 在 setData 完成后恢复密码
-      this.setData({
-        password: this.data.tempPassword,
-        tempPassword: '' // 清空 tempPassword
-      });
-    });
-  },
+  //   // 2. 切换 showPassword 状态
+  //   this.setData({
+  //     showPassword: !this.data.showPassword
+  //   }, () => {
+  //     wx.nextTick(() => {
+  //       this.setData({
+  //         password: this.data.tempPassword,
+  //         tempPassword: ''
+  //       });
+  //     });
+  //   });
+  //   console.log('togglePassword2',this.data.password);
+  // },
 
   login() {
     if (this.data.loading) return;

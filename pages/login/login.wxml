@@ -39,15 +39,15 @@
         <text class="label">密码</text>
         <view class="password-input">
           <input 
-            type="{{showPassword ? 'text' : 'password'}}" 
+            type="password"
             placeholder="请输入密码"
             bindinput="inputPassword"
             class="input"
             value="{{password}}"      
           />
-          <view class="eye-icon" bindtap="togglePassword">
+          <!-- <view class="eye-icon" bindtap="togglePassword">
             <image src="/images/{{showPassword ? 'eye-open' : 'eye-close'}}.png" mode="aspectFit"></image>
-          </view>
+          </view> -->
         </view>
       </view>
       
