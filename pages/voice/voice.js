@@ -1,7 +1,8 @@
 import * as udp from '../../utils/udp';
-import * as audio from '../../utils/audio';
+import * as audio from '../../utils/audioPlayer';
+import * as recoder from '../../utils/audioRecoder';
+import * as g711 from '../../utils/audioG711';
 import * as nrl21 from '../../utils/nrl21';
-import * as api from '../../utils/api';
 import * as mdc from '../../utils/mdc1200';
 
 Page({
@@ -68,7 +69,7 @@ Page({
         mdcConfig.arg,
         mdcConfig.unitId
       );
-      app.globalData.mdcPacket = audio.g711Encode(mdcPacket);
+      app.globalData.mdcPacket = g711.g711Encode(mdcPacket);
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
       this.mdcPacket = new Uint8Array(512);
@@ -94,6 +95,8 @@ Page({
     this.audioPacket = new Uint8Array(560);
     this.audioPacket.set(audioPacketHead, 0);
 
+
+    audio.initWebAudio()
 
     this.refreshData()
 
@@ -201,8 +204,8 @@ Page({
 
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);
-    const now = Date.now();
-    this.lastMessageTime = now;
+
+    this.lastMessageTime =  Date.now();
 
     // 根据消息类型分发
     switch (packet.type) {
@@ -215,7 +218,7 @@ Page({
             CallSign: packet.callSign || '未知',
             SSID: packet.ssid || '00'
           },
-          serverConnected: true
+         
         });
 
         break;
@@ -310,7 +313,7 @@ Page({
 
     this.setData({ isTalking: true });
     try {
-      this.recorder = await audio.startRecording(this.data.codec);
+      this.recorder = await recoder.startRecording(this.data.codec);
     } catch (err) {
       wx.showToast({
         title: '录音启动失败',
@@ -368,7 +371,7 @@ Page({
         await this.audioProcessor;
       }
       if (this.recorder) {
-        audio.stopRecording(this.recorder);
+        recoder.stopRecording(this.recorder);
       }
 
       const app = getApp();
@@ -418,49 +421,5 @@ Page({
     }
   },
 
-  changeAudioOutput(e) {
-    const output = e.detail.value;
-    wx.stopVoice();
 
-    const audioContext = wx.createInnerAudioContext({
-      useWebAudioImplement: true // 是否使用 WebAudio 作为底层音频驱动，默认关闭。对于短音频、播放频繁的音频建议开启此选项，开启后将获得更优的性能表现。由于开启此选项后也会带来一定的内存增长，因此对于长音频建议关闭此选项
-    });
-
-    if (output === 'bluetooth') {
-      audioContext.obeyMuteSwitch = false;
-      audioContext.useSpeaker = false;
-    } else {
-      audioContext.obeyMuteSwitch = false;
-      audioContext.useSpeaker = true;
-      wx.setInnerAudioOption({
-        obeyMuteSwitch: false,
-        speakerOn: true
-      });
-    }
-
-    audioContext.src = '/audio/beep.mp3';
-
-    audioContext.onCanplay(() => {
-      setTimeout(() => {
-        audioContext.play();
-      }, 100);
-    });
-
-    audioContext.onError((err) => {
-      console.error('音频播放错误:', err);
-      wx.showToast({
-        title: '音频切换失败',
-        icon: 'none'
-      });
-      audioContext.destroy();
-    });
-
-    audioContext.onEnded(() => {
-      audioContext.destroy();
-      wx.showToast({
-        title: `已切换至${output === 'speaker' ? '扬声器' : output === 'bluetooth' ? '蓝牙' : '听筒'}`,
-        icon: 'none'
-      });
-    });
-  }
 });

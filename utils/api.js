@@ -26,6 +26,7 @@ const responseInterceptor = (response) => {
   }
   
   // 其他状态码需要跳转登录页
+  app().globalData.token= null;
   wx.removeStorageSync('token');
   wx.removeStorageSync('userInfo');
   wx.removeStorageSync('cpuId');
@@ -37,7 +38,7 @@ const responseInterceptor = (response) => {
     url: '/pages/login/login'
   });
   throw new Error('登录已过期');
-  return response.data.data;
+ 
 };
 
 // 统一请求方法

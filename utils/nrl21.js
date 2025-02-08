@@ -85,7 +85,14 @@ function createPacket({ callSign, cpuId, type }) {
 
 function decodePacket(data) {
     const byteArray = new Uint8Array(data);
-    const callSignStr = String.fromCharCode.apply(null, byteArray.slice(24, 30));
+
+    let endIndex = 30;
+
+    if (byteArray[29] === 0) {
+        endIndex = 29;
+    }
+
+    const callSignStr = String.fromCharCode.apply(null, byteArray.slice(24, endIndex));
 
     return {
       type: byteArray[20],

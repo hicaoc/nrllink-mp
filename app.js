@@ -84,12 +84,15 @@ App({
     const token = wx.getStorageSync('token');
     if (token) {
       this.globalData.token = token;
+      wx.reLaunch({
+        url: '/pages/voice/voice'
+      });
+  
+
       return;
     }
 
-    wx.reLaunch({
-      url: '/pages/login/login'
-    });
+ 
   },
 
   onShow() {

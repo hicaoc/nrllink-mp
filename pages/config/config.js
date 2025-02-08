@@ -24,7 +24,7 @@ Page({
 
     const app = getApp();
 
-    await app.globalData.getGroupList()
+    //await app.globalData.getGroupList()
     const groups = app.globalData.availableGroups
     this.setData({ groups });
 
