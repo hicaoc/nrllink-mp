@@ -75,13 +75,18 @@ Page({
       this.mdcPacket = new Uint8Array(512);
     }
 
+
     wx.setKeepScreenOn({
-      keepScreenOn: true
+      keepScreenOn: true, // 设置屏幕常亮
+      success() {
+        console.log("Screen will stay on.");
+      },
+      fail(err) {
+        console.error("Failed to keep screen on:", err);
+      }
     });
 
     // 初始化udpClient
-
-
 
 
     // 预创建音频包实例
@@ -100,7 +105,7 @@ Page({
 
     this.refreshData()
 
-   
+
   },
 
   onUnload() {
@@ -114,6 +119,18 @@ Page({
   },
 
   onShow() {
+
+    wx.setKeepScreenOn({
+      keepScreenOn: true, // 设置屏幕常亮
+      success() {
+        console.log("Screen will stay on.");
+      },
+      fail(err) {
+        console.error("Failed to keep screen on:", err);
+      }
+    });
+
+    
     this.checkConnection();
     this.getCurrentGroup();
 
@@ -122,9 +139,9 @@ Page({
   async refreshData() {
 
     const app = getApp();
-    
-     await app.globalData.getGroupList()
-     await app.globalData.getDeviceList()
+
+    await app.globalData.getGroupList()
+    await app.globalData.getDeviceList()
 
     const groups = app.globalData.availableGroups
     const devices = app.globalData.availableDevices
@@ -144,7 +161,7 @@ Page({
     // const groups = Object.values(groupsRes.items || {});
     //const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
 
-    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100  )
+    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100)
 
     let currentGroup = null;
 
@@ -205,7 +222,7 @@ Page({
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);
 
-    this.lastMessageTime =  Date.now();
+    this.lastMessageTime = Date.now();
 
     // 根据消息类型分发
     switch (packet.type) {
@@ -218,7 +235,7 @@ Page({
             CallSign: packet.callSign || '未知',
             SSID: packet.ssid || '00'
           },
-         
+
         });
 
         break;

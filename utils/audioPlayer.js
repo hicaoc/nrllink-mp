@@ -3,12 +3,14 @@ const webAudioContext = wx.createWebAudioContext();
 
 // 音频流相关参数
 const SAMPLE_RATE = 8000;
-const BUFFER_SIZE = 1024;
+const BUFFER_SIZE = 1024; // 建议选择较小的值，以降低延迟
 
 // WebAudio 资源
 const audioContext = webAudioContext;
 const gainNode = audioContext.createGain();
 gainNode.connect(audioContext.destination);
+
+//gainNode.gain.value = 1.0;
 
 let scriptProcessorNode = null;
 
@@ -16,25 +18,53 @@ let scriptProcessorNode = null;
 import * as g711 from './audioG711';
 const g711Codec = new g711.G711Codec();
 
-// 用于保存 source 节点，防止被垃圾回收
-let currentSource = null;
+// 用于存储未播放的 PCM 数据
+let pcmBuffer = new Float32Array(0);
 
-// 初始化 WebAudio
+
+
+// 调试 Web Audio 初始化
 function initWebAudio() {
-    scriptProcessorNode = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
 
-    scriptProcessorNode.onaudioprocess = (audioProcessingEvent) => {
-        const outputBuffer = audioProcessingEvent.outputBuffer;
-        const outputData = outputBuffer.getChannelData(0);
 
-        // 静音填充
-        for (let i = 0; i < BUFFER_SIZE; i++) {
-            outputData[i] = 0; // 默认填充静音
-        }
-    };
 
-    scriptProcessorNode.connect(gainNode);
+    try {
+        scriptProcessorNode = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
+        scriptProcessorNode.connect(gainNode);
+
+   
+
+        scriptProcessorNode.onaudioprocess = (audioProcessingEvent) => {
+            //  console.log("onaudioprocess triggered");
+            const outputBuffer = audioProcessingEvent.outputBuffer;
+            const outputData = outputBuffer.getChannelData(0);
+
+            if (pcmBuffer.length >= BUFFER_SIZE) {
+                for (let i = 0; i < BUFFER_SIZE; i++) {
+                    outputData[i] = pcmBuffer[i];
+                }
+                pcmBuffer = pcmBuffer.slice(BUFFER_SIZE);
+            } else {
+                for (let i = 0; i < BUFFER_SIZE; i++) {
+                    outputData[i] = 0;
+                }
+            }
+        };
+
+        audioContext.resume().then(() => {
+            console.log("AudioContext resumed.");
+        }).catch((err) => {
+            console.error("Failed to resume AudioContext:", err);
+        });
+
+
+
+        console.log("Web Audio initialized successfully.");
+    } catch (err) {
+        console.error("Failed to initialize Web Audio:", err);
+    }
 }
+
 
 // 接收 G.711 数据并解码
 async function play(data, type) {
@@ -44,39 +74,37 @@ async function play(data, type) {
             pcmData[i] = g711Codec.alaw2linear(data[i]);
         }
 
-       
-        // 直接播放 PCM 数据
-        playPCMData(pcmData);
+        const float32Data = new Float32Array(pcmData.length);
+        for (let i = 0; i < pcmData.length; i++) {
+            float32Data[i] = Math.max(-1, Math.min(1, pcmData[i] / 32768.0));
+        }
+
+        // 采样率转换
+        const resampledData = resamplePCM(float32Data, SAMPLE_RATE, audioContext.sampleRate);
+
+        // 合并 PCM 数据
+        const newPcmBuffer = new Float32Array(pcmBuffer.length + resampledData.length);
+        newPcmBuffer.set(pcmBuffer, 0);
+        newPcmBuffer.set(resampledData, pcmBuffer.length);
+        pcmBuffer = newPcmBuffer;
     }
 }
 
-// 播放 PCM 数据
-function playPCMData(pcmData) {
-    //console.log("pcmData.length:", pcmData.length);  // 调试
+function resamplePCM(input, inputSampleRate, outputSampleRate) {
+    const ratio = outputSampleRate / inputSampleRate;
+    const outputLength = Math.round(input.length * ratio);
+    const output = new Float32Array(outputLength);
 
-    const buffer = audioContext.createBuffer(1, pcmData.length, SAMPLE_RATE);
-    const channelData = buffer.getChannelData(0);
+    for (let i = 0; i < outputLength; i++) {
+        const originalIndex = i / ratio;
+        const lowerIndex = Math.floor(originalIndex);
+        const upperIndex = Math.min(Math.ceil(originalIndex), input.length - 1);
+        const weight = originalIndex - lowerIndex;
 
-    for (let i = 0; i < pcmData.length; i++) {
-        channelData[i] = pcmData[i] / 32768.0;
+        output[i] = input[lowerIndex] * (1 - weight) + input[upperIndex] * weight;
     }
 
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(gainNode);
-
-    // 保存 source 引用，防止被垃圾回收
-    currentSource = source;
-
-    source.onended = () => {
-        // 播放结束后释放资源
-        source.disconnect();
-        currentSource = null;
-        
-    };
-
-    source.start(0);
-    
+    return output;
 }
 
 module.exports = {

@@ -96,9 +96,9 @@ App({
   },
 
   onShow() {
-    if (this.globalData.udpClient) {
-      this.globalData.udpClient.reconnect();
-    }
+    // if (this.globalData.udpClient) {
+    //   this.globalData.udpClient.reconnect();
+    // }
   },
 
   onHide() {
