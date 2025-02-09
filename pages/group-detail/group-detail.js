@@ -318,7 +318,11 @@ Page({
       const formatCache = new Map();
 
       const formatIfNeeded = (timeStr) => {
-        timeStr
+        if (!timeStr || timeStr === "0001-01-01T00:00:00Z") {
+          return "N/A"; // 如果是无效时间，返回占位符
+        }
+        let date = new Date(timeStr);
+        return date.toLocaleString("zh-CN", { hour12: false }); 
       };
 
       // 优化设备映射，在线设备优先
@@ -375,6 +379,7 @@ Page({
         } catch (error) {
           console.warn('Error parsing device rf type/status:', error);
         }
+        console.log('Parsed device:', device);
 
         devmap[i] = {
           ...device,
@@ -436,6 +441,8 @@ Page({
       console.error('Load group detail error:', error)
     }
   },
+
+  
 
   onShow() {
     // 页面显示时刷新数据

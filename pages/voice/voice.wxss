@@ -109,11 +109,11 @@ page {
   overflow-y: auto;
   background-color: #fff;
   border-radius: 8px;
-  padding: 10px;
+  padding: 10px 0; /* Remove horizontal padding */
 }
 
 .call-item {
-  padding: 6px 10px; /* Reduced padding */
+  padding: 6px 4px; /* Further reduce horizontal padding */
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;

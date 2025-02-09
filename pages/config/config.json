@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "配置",
-  "usingComponents": {}
+  "usingComponents": {},
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f7f7f7",
+  "backgroundTextStyle": "dark"
 }

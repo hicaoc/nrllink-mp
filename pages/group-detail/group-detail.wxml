@@ -80,7 +80,7 @@
         </view>
         <view class="info-row">
           <text class="label">最后语音：</text>
-          <text class="value">{{item.last_voice_begin_time || '无'}} - {{item.last_voice_end_time || '无'}}</text>
+          <text class="value">{{item.last_voice_end_time || '无'}}</text>
         </view>
         <view class="info-row">
           <text class="label">语音时长：</text>

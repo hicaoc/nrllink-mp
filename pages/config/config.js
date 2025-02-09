@@ -45,6 +45,25 @@ Page({
   handleLogout() {
     const app = getApp();
     app.globalData.logout();
-  }
+  },
+
+  async onPullDownRefresh() {
+    try {
+      // 下拉刷新
+      const app = getApp();
+
+      await app.globalData.getGroupList();
+     
+
+      const groups = app.globalData.availableGroups;
+      this.setData({ groups });
+
+      console.log('Pull-down refresh completed successfully.');
+    } catch (error) {
+      console.error('Error during pull-down refresh:', error);
+    } finally {
+      wx.stopPullDownRefresh();
+    }
+  },
 
 });
