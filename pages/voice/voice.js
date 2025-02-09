@@ -13,9 +13,15 @@ Page({
     server: getApp().globalData.serverConfig.host,
     port: getApp().globalData.serverConfig.port,
     serverConnected: false,
-    currentCall: {},
+    currentCall: {
+    },
     currentGroup: null,
-    mdcPacket: null
+    mdcPacket: null,
+    callHistory: [], // Array to store call history
+    lastCallUpdate: 0, // Timestamp of last call update
+    lastMessageTime: null,
+    lastCallsign: null,
+    activeCall: null // Current active call
   },
 
 
@@ -25,7 +31,14 @@ Page({
 
     this.setData({
       userInfo: app.globalData.userInfo,
+      startTime: Date.now(),
+
+
     })
+
+
+
+
     app.registerPage(this);
     console.log("app", app)
     // const callSign = app.globalData.userInfo.callsign || 'UNKNOWN';
@@ -53,6 +66,9 @@ Page({
     this.connectionCheckTimer = setInterval(() => {
       this.checkConnection();
     }, 1000);
+
+
+
 
     // MDC1200配置
     const mdcConfig = app.globalData.mdcConfig || {
@@ -130,7 +146,7 @@ Page({
       }
     });
 
-    
+
     this.checkConnection();
     this.getCurrentGroup();
 
@@ -222,21 +238,59 @@ Page({
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);
 
-    this.lastMessageTime = Date.now();
-
     // 根据消息类型分发
     switch (packet.type) {
-      case 1: // 语音消息,心跳，读参数
-
+      case 1: // 语音消息
 
         audio.play(packet.data, packet.type);
+
+        if (((this.data.currentCall.CallSign !== packet.callSign
+          && this.data.currentCall.SSID !== packet.ssid)
+          && this.data.currentCall.CallSign
+        ) || (Date.now() - this.data.lastMessageTime > 3000 && this.data.currentCall.CallSign)) {
+
+          console.log("new call",Date.now() - this.data.lastMessageTime > 3000,this.data.currentCall.CallSign,this.data.currentCall.SSID)
+
+          const item = {
+            CallSign: this.data.currentCall.CallSign,
+            SSID: this.data.currentCall.SSID,
+            duration: this.data.currentCall.duration,
+            endTime: this.formatLastVoiceTime(this.data.lastMessageTime),
+          };
+
+          const currentItems = this.data.callHistory;
+          currentItems.unshift(item);
+
+          this.setData({
+            callHistory: currentItems,
+            currentCall: {
+
+              startTime: Date.now(),
+
+            },
+
+          });
+
+
+        }
+
         this.setData({
           currentCall: {
             CallSign: packet.callSign || '未知',
-            SSID: packet.ssid || '00'
-          },
+            SSID: packet.ssid || '00',
+            duration: (this.data.lastMessageTime - this.data.currentCall.startTime) / 1000 | 0,
+            lastVoiceTime: this.formatLastVoiceTime(this.data.lastMessageTime),
+            startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
 
+          },
+          lastMessageTime: Date.now(),
+          lastCallsign: packet.callSign + packet.ssid
         });
+
+        //console.log(this.data.currentCall,this.data.lastMessageTime ,this.data.currentCall.startTime)
+
+
+
 
         break;
       // case 2: // 心跳包
@@ -257,6 +311,7 @@ Page({
     });
 
   },
+
 
   checkConnection() {
     const now = Date.now();
@@ -438,5 +493,20 @@ Page({
     }
   },
 
+  formatDuration(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  },
 
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return `${date.getHours()}:${date.getMinutes() < 10 ? '0' : ''}${date.getMinutes()}`;
+  },
+
+  formatLastVoiceTime(isoString) {
+    const date = new Date(isoString);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+  }
 });

@@ -54,7 +54,7 @@ const request = async (options, retries = 3, timeout = 10000) => {
     timeout
   });
 
-  console.log('###请求参数：', config);
+  
 
   // 检查网络状态
   const checkNetwork = () => new Promise((resolve, reject) => {

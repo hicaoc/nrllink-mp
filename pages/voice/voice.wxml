@@ -23,9 +23,24 @@
   </view> -->
 
   <!-- 当前通话信息 -->
-  <view class="current-call" wx:if="{{currentCall.CallSign}}">
-    <text class="call-info">正在与 {{currentCall.CallSign}}-{{currentCall.SSID}} 通话</text>
+
+<view class="current-call" wx:if="{{currentCall.CallSign}}">
+        <text class="call-info">{{currentCall.CallSign}}-{{currentCall.SSID}}, {{currentCall.duration}}s,  {{currentCall.lastVoiceTime}}</text>
+</view>
+
+
+<view class="history-container" wx:if="{{callHistory.length > 0}}">
+  <view class="call-container">
+    <scroll-view class="call-history" scroll-y>
+      <view class="call-item" wx:for="{{callHistory}}" wx:key="endTime">
+        <text class="call-sign">{{item.CallSign}}-{{item.SSID}}</text>
+        <text class="call-duration">{{item.duration}}s</text>
+        <text class="call-time">{{item.endTime}}</text>
+      </view>
+    </scroll-view>
   </view>
+</view>
+
 
   <!-- 通话按钮 -->
   <view class="talk-container">
