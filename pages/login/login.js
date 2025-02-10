@@ -8,7 +8,7 @@ Page({
     //tempPassword: '', // 用于临时保存密码
     //showPassword: false,
     loading: false,
-    serverList: [    
+    serverList: [
       { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
       { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
       { name: '徐州HAM互联', host: 'bd4two.nrlptt.com', port: 60050 },
@@ -24,12 +24,12 @@ Page({
     this.setData({
       serverIndex: newServerIndex
     });
-  
+
     const serverCredentials = wx.getStorageSync('serverCredentials') || {};
     console.log('serverCredentials:', serverCredentials); // 添加这行
     const currentServerCreds = serverCredentials[newServerIndex];
     console.log('currentServerCreds:', currentServerCreds); // 添加这行
-  
+
     if (currentServerCreds) {
       this.setData({
         username: currentServerCreds.username,
@@ -49,6 +49,8 @@ Page({
   },
 
   onLoad() {
+
+    this.getPlatformList()
     // 检查是否有有效 token
     const token = wx.getStorageSync('token');
     const userInfo = wx.getStorageSync('userInfo');
@@ -161,21 +163,14 @@ Page({
     const api = require('../../utils/api');
 
     // 更新服务器配置
-    if (this.data.customServer) {
-      const [host, port] = this.data.customServer.split(':');
-      app.globalData.serverConfig = {
-        name: '自定义服务器',
-        host: host,
-        port: port ? parseInt(port) : 60050
-      };
-    } else {
-      const selectedServer = this.data.serverList[this.data.serverIndex];
-      app.globalData.serverConfig = {
-        name: selectedServer.name,
-        host: selectedServer.host,
-        port: selectedServer.port
-      };
-    }
+
+    const selectedServer = this.data.serverList[this.data.serverIndex];
+    app.globalData.serverConfig = {
+      name: selectedServer.name,
+      host: selectedServer.host,
+      port: selectedServer.port
+    };
+
 
     api.login({ username, password })
       .then(res => {
@@ -207,7 +202,7 @@ Page({
         return;
       }
 
-      const cpuId = calculateCpuId(userInfo.callsign+'-'+userInfo.ssid);
+      const cpuId = calculateCpuId(userInfo.callsign + '-' + userInfo.ssid);
       wx.setStorageSync('cpuId', cpuId);
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
@@ -224,5 +219,29 @@ Page({
         icon: 'none'
       });
     }
-  }
+  },
+
+
+  getPlatformList() {
+    const url = 'https://nrlptt.com/platform/list'; // 替换为你的接口地址
+
+    wx.request({
+      url: url, // 请求地址
+      method: 'GET', // 请求方法
+      header: {
+        'content-type': 'application/json', // 默认值，告诉服务器以 JSON 格式接收数据
+      },
+      success: (res) => {        
+        this.setData({
+          serverList: res.data.data.items, // 保存结果到页面数据
+        });
+      },
+      fail: (err) => {
+        console.error('请求失败：', err);
+      },
+    });
+  },
 });
+
+
+
