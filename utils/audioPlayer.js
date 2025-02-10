@@ -33,7 +33,7 @@ function initWebAudio() {
         scriptProcessorNode = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
         scriptProcessorNode.connect(gainNode);
 
-   
+
 
         scriptProcessorNode.onaudioprocess = (audioProcessingEvent) => {
             //  console.log("onaudioprocess triggered");
@@ -57,6 +57,36 @@ function initWebAudio() {
         }).catch((err) => {
             console.error("Failed to resume AudioContext:", err);
         });
+
+
+        audioContext.resume().then(() => {
+            console.log("AudioContext resumed.");
+        }).catch((err) => {
+            console.error("Failed to resume AudioContext:", err);
+        });
+
+        console.log("Web Audio initialized successfully.");
+
+        // 添加状态监听
+        audioContext.onstatechange = () => {
+            console.log('AudioContext state changed to:', audioContext.state);
+
+            if (audioContext.state === 'suspended') {
+                console.log('AudioContext is suspended. Possibly due to backgrounding.');
+                pcmBuffer = new Float32Array(0);
+                console.log('pcmBuffer cleared.');
+                // 在这里处理音频上下文被挂起的情况
+                // 例如：保存当前状态，清除数据，停止播放等
+            } else if (audioContext.state === 'running') {
+
+                console.log('AudioContext is running.  Resetting pcmBuffer');
+                // 在这里处理音频上下文恢复运行的情况
+                // 例如：恢复播放，重新加载数据等
+                // pcmBuffer = new Float32Array(0);
+                // console.log('pcmBuffer cleared.');
+            }
+        };
+
 
 
 
