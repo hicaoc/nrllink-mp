@@ -28,6 +28,6 @@
     "ignore": [],
     "include": []
   },
-  "appid": "wx776b03fb53f1c193",
-  "projectArchitecture": "multiPlatform"
+  "projectArchitecture": "multiPlatform",
+  "appid": "wx776b03fb53f1c193"
 }

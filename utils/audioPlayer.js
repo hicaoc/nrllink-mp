@@ -9,6 +9,7 @@ const BUFFER_SIZE = 1024; // 建议选择较小的值，以降低延迟
 const audioContext = webAudioContext;
 const gainNode = audioContext.createGain();
 gainNode.connect(audioContext.destination);
+gainNode.gain.value = 2.0;
 
 //gainNode.gain.value = 1.0;
 

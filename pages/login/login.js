@@ -11,7 +11,8 @@ Page({
     serverList: [    
       { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
       { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
-      { name: '徐州HAM互联', host: 'bd4two.nrlptt.com', port: 60050 }
+      { name: '徐州HAM互联', host: 'bd4two.nrlptt.com', port: 60050 },
+      { name: 'BH4TDV实验场', host: 'bh4tdv.nrlptt.com', port: 60050 }
     ],
     serverIndex: 1, // Default to NRLPTT主站
     customServer: ''
