@@ -91,34 +91,31 @@ page {
 }
 
 .history-container {
-  margin: 8px 0; /* Further reduced margin */
-  padding: 8px;  /* Reduced padding */
+  margin: 8px 0; /* 控制上下外边距 */
+  padding: 8px; /* 控制内边距 */
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.call-container {
-  margin: 0;
+  border-radius: 16px; /* 圆角 */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 阴影效果 */
+  max-height: 150px; /* 限制容器最大高度 */
+  height: 150px; /* 确保固定高度 */
+  overflow: hidden; /* 防止溢出 */
 }
 
 .call-history {
-  max-height: 300px;
-  overflow-y: auto;
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 10px 0; /* Remove horizontal padding */
+  max-height: 100%; /* 继承父级的最大高度 */
+  overflow-y: auto; /* 启用垂直滚动 */
+  padding-right: 6px; /* 防止滚动条遮挡内容 */
+  box-sizing: border-box; /* 确保 padding 不影响宽度计算 */
 }
 
 .call-item {
-  padding: 6px 4px; /* Further reduce horizontal padding */
-  border-bottom: 1px solid #eee;
+  padding: 6px 24px; /* 增大左右内边距 */
+  border-bottom: 1px solid #eee; /* 分隔线 */
   display: flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1.2; /* Reduced line-height */
+  align-items: center; /* 垂直居中 */
+  justify-content: space-between; /* 内容均匀分布 */
+  gap: 6px; /* 控制字段间的间距 */
+  line-height: 1.2; /* 调整文本行高 */
 }
 
 .call-item:last-child {

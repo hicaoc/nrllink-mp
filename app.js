@@ -86,7 +86,7 @@ App({
     if (token) {
       this.globalData.token = token;
       wx.reLaunch({
-        url: '/pages/voice/voice'
+        url: '/pages/login/login'
       });
   
 
