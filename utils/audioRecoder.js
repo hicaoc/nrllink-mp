@@ -25,7 +25,11 @@ class AudioRecorder {
       console.log('recorder start');
     });
 
+    
+ 
     recorderManager.onFrameRecorded((res) => {
+
+
       
       if (res.frameBuffer) {
         this.frameQueue.push(res.frameBuffer);
@@ -38,6 +42,8 @@ class AudioRecorder {
   }
 
   async getNextAudioFrame() { 
+
+
     
     let frame;
     if (this.frameQueue.length > 0) {
@@ -47,6 +53,8 @@ class AudioRecorder {
         this.resolveNextFrame = resolve;
       });
     }
+
+
 
     if (this.codec === 'g711') {  
       const encoded = this.g711Codec.encode(new Int16Array(frame));

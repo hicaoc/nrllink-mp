@@ -20,11 +20,13 @@ const responseInterceptor = (response) => {
   if (response.statusCode !== 200) {
     throw new Error('网络请求失败');
   }
+
+  //console.log('response', response)
   // 20000 和 20001 都是有效状态码
-  if (response.data.code === 20000 || response.data.code === 20001) {
+  if (response.data.code === 20000 || response.data.code === 20001 || response.data.code === 60204 ) {
     return response.data.data;
   }
-  
+
   // 其他状态码需要跳转登录页
   app().globalData.token= null;
   wx.removeStorageSync('token');

@@ -1,4 +1,5 @@
 const { calculateCpuId } = require('../../utils/nrl21');
+const { generateAPRSPasscode } = require('../../utils/aprs');
 const app = getApp();
 
 Page({
@@ -52,10 +53,10 @@ Page({
 
     this.getPlatformList()
     // 检查是否有有效 token
-    const token = wx.getStorageSync('token');
-    const userInfo = wx.getStorageSync('userInfo');
-    const cpuId = wx.getStorageSync('cpuId');
-    const passcode = wx.getStorageSync('passcode');
+    // const token = wx.getStorageSync('token');
+    // const userInfo = wx.getStorageSync('userInfo');
+    // const cpuId = wx.getStorageSync('cpuId');
+    // const passcode = wx.getStorageSync('passcode');
     const serverCredentials = wx.getStorageSync('serverCredentials') || {};
 
     // 设置默认服务器索引
@@ -75,30 +76,17 @@ Page({
       });
     }
 
-    if (token && userInfo && cpuId && passcode) {
-      console.log('检测到有效 token，初始化全局数据');
-      app.globalData.userInfo = userInfo;
-      app.globalData.cpuId = cpuId;
-      app.globalData.passcode = passcode;
-      wx.switchTab({ url: '/pages/voice/voice' });
-      return;
-    }
+    // if (token && userInfo && cpuId && passcode) {
+    //   console.log('检测到有效 token，初始化全局数据');
+    //   app.globalData.userInfo = userInfo;
+    //   app.globalData.cpuId = cpuId;
+    //   app.globalData.passcode = passcode;
+    //   wx.switchTab({ url: '/pages/voice/voice' });
+    //   return;
+    // }
   },
 
-  generateAPRSPasscode(callsign) {
-    callsign = callsign.split('-')[0].toUpperCase();
-    let passcode = 29666;
-    let i = 0;
-    while (i < callsign.length) {
-      passcode ^= callsign.charCodeAt(i) * 256;
-      if (i + 1 < callsign.length) {
-        passcode ^= callsign.charCodeAt(i + 1);
-      }
-      i += 2;
-    }
-    passcode &= 32767;
-    return passcode;
-  },
+
 
   inputUsername(e) {
     this.setData({ username: e.detail.value });
@@ -173,9 +161,17 @@ Page({
 
 
     api.login({ username, password })
-      .then(res => {
-        wx.setStorageSync('token', res.token);
-        this.getUserInfo();
+      .then(res => {     
+
+        if (res.token) {
+          wx.setStorageSync('token', res.token);
+          this.getUserInfo();
+        }else { 
+          wx.showToast({
+            title:  '用户名或者密码错',
+            icon: 'none'
+          });
+        }
       })
       .catch(err => {
         wx.showToast({
@@ -208,7 +204,7 @@ Page({
       app.globalData.userInfo = userInfo;
       app.globalData.cpuId = cpuId;
 
-      const passcode = this.generateAPRSPasscode(userInfo.callsign);
+      const passcode = generateAPRSPasscode(userInfo.callsign);
       app.globalData.passcode = passcode;
       wx.setStorageSync('passcode', passcode);
 
@@ -231,7 +227,7 @@ Page({
       header: {
         'content-type': 'application/json', // 默认值，告诉服务器以 JSON 格式接收数据
       },
-      success: (res) => {        
+      success: (res) => {
         this.setData({
           serverList: res.data.data.items, // 保存结果到页面数据
         });

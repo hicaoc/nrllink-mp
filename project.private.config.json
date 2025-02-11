@@ -3,7 +3,8 @@
   "projectname": "NRL%E5%AF%B9%E8%AE%B2%E6%9C%BA",
   "setting": {
     "compileHotReLoad": false,
-    "urlCheck": false
+    "urlCheck": false,
+    "skylineRenderEnable": false
   },
   "libVersion": "3.7.7"
 }

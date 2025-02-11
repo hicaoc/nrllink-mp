@@ -57,6 +57,22 @@ function convertLongitude(lon) {
   return `${degrees.toString().padStart(3, '0')}${minutes.toFixed(2).padStart(5, '0')}${direction}`;
 }
 
+function generateAPRSPasscode(callsign) {
+  callsign = callsign.split('-')[0].toUpperCase();
+  let passcode = 29666;
+  let i = 0;
+  while (i < callsign.length) {
+    passcode ^= callsign.charCodeAt(i) * 256;
+    if (i + 1 < callsign.length) {
+      passcode ^= callsign.charCodeAt(i + 1);
+    }
+    i += 2;
+  }
+  passcode &= 32767;
+  return passcode;
+}
+
 module.exports = {
-  encodeAPRS
+  encodeAPRS,
+  generateAPRSPasscode
 };

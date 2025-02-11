@@ -32,17 +32,9 @@ Page({
     this.setData({
       userInfo: app.globalData.userInfo,
       startTime: Date.now(),
-
-
     })
 
-
-
-
     app.registerPage(this);
-    console.log("app", app)
-    // const callSign = app.globalData.userInfo.callsign || 'UNKNOWN';
-    // const cpuid = nrl21.calculateCpuId(callSign);
 
     const heartbeatPacket = nrl21.createPacket({
       type: 2,
@@ -66,9 +58,6 @@ Page({
     this.connectionCheckTimer = setInterval(() => {
       this.checkConnection();
     }, 1000);
-
-
-
 
     // MDC1200配置
     const mdcConfig = app.globalData.mdcConfig || {
@@ -102,7 +91,7 @@ Page({
       }
     });
 
-    // 初始化udpClient
+
 
 
     // 预创建音频包实例
@@ -125,13 +114,7 @@ Page({
   },
 
   onUnload() {
-    // const app = getApp();
-    // app.unregisterPage(this);
-    // app.globalData.onCurrentGroupChange = null;
 
-    // if (this.connectionCheckTimer) {
-    //   clearInterval(this.connectionCheckTimer);
-    // }
   },
 
   onShow() {
@@ -161,22 +144,7 @@ Page({
 
     const groups = app.globalData.availableGroups
     const devices = app.globalData.availableDevices
-
-
-    // groupsRes.items = Object.assign(
-    //   {
-    //     0: { id: 0, name: "公共大厅" },
-    //     1: { id: 1, name: "私人房间1" },
-    //     2: { id: 2, name: "私人房间2" },
-    //     3: { id: 3, name: "私人房间3" }
-    //   },
-    //   groupsRes.items || {}
-    // );
-
-    // const devices = Object.values(devicesRes.items || {});
-    // const groups = Object.values(groupsRes.items || {});
-    //const hexCpuid = nrl21.cpuIdToHex(app.globalData.cpuId);
-
+  
     const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100)
 
     let currentGroup = null;
@@ -187,8 +155,7 @@ Page({
 
     app.globalData.currentGroup = currentGroup || null;
     app.globalData.currentDevice = currentDevice || null;
-    //app.globalData.availableGroups = groups;
-    //app.globalData.availableDevices = devices;
+
 
     app.globalData.onGroupChange = (newGroup) => {
       this.setData({
@@ -200,10 +167,7 @@ Page({
       currentGroup: currentGroup ? currentGroup.name : '未加入群组'
     });
 
-    //await this.getGroupList();
-    // this.setData({ groups,devices });
-    //await this.getDeviceList();
-    //this.getCurrentGroup();
+
   },
 
   getCurrentGroup() {
@@ -227,13 +191,7 @@ Page({
     }, 2000);
   },
 
-  // // 停止心跳定时器
-  // stopHeartbeat() {
-  //   if (this.heartbeatTimer) {
-  //     clearInterval(this.heartbeatTimer);
-  //     this.heartbeatTimer = null;
-  //   }
-  // },
+
 
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);
@@ -331,6 +289,8 @@ Page({
       // 获取设备信息
       const deviceInfo = await wx.getDeviceInfo();
 
+      console.log('###设备信息deviceInfo：', deviceInfo)
+
 
       // if (!deviceInfo || !deviceInfo.microphoneSupported) {
       //   wx.showToast({
@@ -343,14 +303,21 @@ Page({
       // 检查录音权限状态
       const authSetting = await wx.getAppAuthorizeSetting();
 
-      console.log('###设备信息：', authSetting);
+      console.log('###设备信息authSetting：', authSetting);
 
-      if (authSetting['microphoneAuthorized'] !== "authorized") {
+
+
+      if (authSetting['microphoneAuthorized'] === true  ) {
+        return true
+      }
+   
+
+      if (authSetting['microphoneAuthorized'] !== "authorized"  ) {
         wx.showToast({
           title: '录音权限被拒绝，请前往设置开启',
           icon: 'none'
         });
-        throw new Error('录音权限被拒绝');
+        throw new Error('录音权限被拒绝'+authSetting['microphoneAuthorized']);
       }
 
       // 请求录音权限
@@ -361,7 +328,7 @@ Page({
       return true;
     } catch (err) {
       wx.showToast({
-        title: '获取麦克风权限失败',
+        title: '获取麦克风权限失败:'+err,
         icon: 'none'
       });
       throw err;
@@ -377,7 +344,7 @@ Page({
       await this.checkAudioPermission();
     } catch (err) {
       wx.showToast({
-        title: '麦克风权限被拒绝',
+        title: '麦克风权限被拒绝:'+err,
         icon: 'none'
       });
       return;
@@ -403,9 +370,16 @@ Page({
       let buffer = new Uint8Array(0);
       let encodedBuffer = new Uint8Array(512);
 
+      console.log('开始处理音频',this.recorder)
+
+
+ 
+
       while (this.data.isTalking) {
         try {
           const data = await this.recorder.getNextAudioFrame();
+
+ 
           if (!data) continue;
 
           const newBuffer = new Uint8Array(buffer.length + data.length);
@@ -419,9 +393,15 @@ Page({
 
             this.audioPacket.set(packetData, 48);
             getApp().globalData.udpClient.send(this.audioPacket);
+
+     
           }
         } catch (err) {
           console.error('音频处理出错:', err);
+          wx.showToast({
+            title: '音频处理出错'+err,
+            icon: 'none'
+          });
           break;
         }
       }
