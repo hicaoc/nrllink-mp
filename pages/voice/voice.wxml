@@ -25,7 +25,12 @@
   <!-- 当前通话信息 -->
 
 <view class="current-call" wx:if="{{currentCall.CallSign}}">
-        <text class="call-info">{{currentCall.CallSign}}-{{currentCall.SSID}}  {{currentCall.lastVoiceTime}}  {{currentCall.duration}}s </text>
+   <view class="call-item" >
+        <text class="call-sign">{{currentCall.CallSign}}-{{currentCall.SSID}}</text>        
+        <text class="call-duration"> {{currentCall.duration}}s</text>
+        <text class="call-time">{{currentCall.lastVoiceTime}}</text>
+      </view>
+       
 </view>
 
 
