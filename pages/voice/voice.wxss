@@ -112,7 +112,8 @@ page {
   padding: 6px 24px; /* 增大左右内边距 */
   border-bottom: 1px solid #eee; /* 分隔线 */
   display: flex;
-  align-items: center; /* 垂直居中 */
+
+  align-items: baseline; /* 垂直居中 */
   justify-content: space-between; /* 内容均匀分布 */
   gap: 6px; /* 控制字段间的间距 */
   line-height: 1.2; /* 调整文本行高 */
@@ -126,6 +127,15 @@ page {
   font-size: 14px;
   color: #333;
   font-weight: 500;
+}
+
+.call-name {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.2; /* 确保一致的行高 */
+  white-space: nowrap;       /* 防止文本换行 */
+  overflow: hidden;          /* 隐藏超出容器的内容 */
+  text-overflow: ellipsis;   /* 用省略号表示被截断的文本 */
 }
 
 .call-duration {

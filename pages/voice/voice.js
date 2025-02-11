@@ -212,11 +212,14 @@ Page({
           && this.data.currentCall.CallSign
         ) || (Date.now() - this.data.lastMessageTime > 3000 && this.data.currentCall.CallSign)) {
 
-          console.log("new call",Date.now() - this.data.lastMessageTime > 3000,this.data.currentCall.CallSign,this.data.currentCall.SSID)
+         // console.log("new call",Date.now() - this.data.lastMessageTime > 3000,this.data.currentCall.CallSign,this.data.currentCall.SSID)
+
+          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid ===  this.data.currentCall.SSID)
 
           const item = {
             CallSign: this.data.currentCall.CallSign,
             SSID: this.data.currentCall.SSID,
+            Name: currentDevice.name,
             duration: this.data.currentCall.duration,
             endTime: this.formatLastVoiceTime(this.data.lastMessageTime),
           };
