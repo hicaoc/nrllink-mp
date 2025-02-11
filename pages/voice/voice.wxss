@@ -101,7 +101,7 @@ page {
 }
 
 .call-container {
-  margin: 0;
+  margin: 10;
 }
 
 .call-history {
@@ -113,12 +113,14 @@ page {
 }
 
 .call-item {
-  padding: 6px 4px; /* Further reduce horizontal padding */
+  padding: 6px 16px;
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
   gap: 8px;
-  line-height: 1.2; /* Reduced line-height */
+  line-height: 1.2;
+  max-width: 90%;
+  margin: 16 16;
 }
 
 .call-item:last-child {
