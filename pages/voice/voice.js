@@ -117,9 +117,11 @@ Page({
     this.audioPacket.set(audioPacketHead, 0);
 
 
-    audio.initWebAudio()
+   
 
     this.refreshData()
+
+    audio.initWebAudio()
 
 
   },
@@ -146,6 +148,7 @@ Page({
       }
     });
 
+  
 
     this.checkConnection();
     this.getCurrentGroup();
@@ -223,7 +226,9 @@ Page({
     const app = getApp();
 
     this.heartbeatTimer = setInterval(() => {
+      if (app.globalData.udpClient){
       app.globalData.udpClient.send(this.heartbeatPacket);
+      }
     }, 2000);
   },
 
@@ -418,7 +423,14 @@ Page({
             buffer = buffer.slice(512);
 
             this.audioPacket.set(packetData, 48);
-            getApp().globalData.udpClient.send(this.audioPacket);
+
+            const app = getApp();
+
+            if (app.globalData.udpClient) {
+              app.globalData.udpClient.send(this.audioPacket);
+            } 
+
+          
           }
         } catch (err) {
           console.error('音频处理出错:', err);
@@ -458,7 +470,12 @@ Page({
         const chunk = mdcPacket.slice(start, end);
 
         this.audioPacket.set(chunk, 48);
-        getApp().globalData.udpClient.send(this.audioPacket);
+        const app = getApp();
+        if (app.globalData.udpClient) {
+          app.globalData.udpClient.send(this.audioPacket);
+        }
+
+        
       }
     } catch (err) {
       console.error('停止录音失败:', err);
