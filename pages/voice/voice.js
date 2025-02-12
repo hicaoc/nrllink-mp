@@ -20,6 +20,7 @@ Page({
     callHistory: [], // Array to store call history
     lastCallUpdate: 0, // Timestamp of last call update
     lastMessageTime: null,
+    lastVoiceTime: null,
     lastCallsign: null,
     activeCall: null // Current active call
   },
@@ -106,7 +107,7 @@ Page({
     this.audioPacket.set(audioPacketHead, 0);
 
 
-   
+
 
     this.refreshData()
 
@@ -131,7 +132,7 @@ Page({
       }
     });
 
-  
+
 
     this.checkConnection();
     this.getCurrentGroup();
@@ -147,7 +148,7 @@ Page({
 
     const groups = app.globalData.availableGroups
     const devices = app.globalData.availableDevices
-  
+
     const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100)
 
     let currentGroup = null;
@@ -159,7 +160,6 @@ Page({
     app.globalData.currentGroup = currentGroup || null;
     app.globalData.currentDevice = currentDevice || null;
 
-
     app.globalData.onGroupChange = (newGroup) => {
       this.setData({
         currentGroup: newGroup?.name || '未加入群组'
@@ -169,8 +169,6 @@ Page({
     this.setData({
       currentGroup: currentGroup ? currentGroup.name : '未加入群组'
     });
-
-
   },
 
   getCurrentGroup() {
@@ -190,8 +188,8 @@ Page({
     const app = getApp();
 
     this.heartbeatTimer = setInterval(() => {
-      if (app.globalData.udpClient){
-      app.globalData.udpClient.send(this.heartbeatPacket);
+      if (app.globalData.udpClient) {
+        app.globalData.udpClient.send(this.heartbeatPacket);
       }
     }, 2000);
   },
@@ -210,18 +208,16 @@ Page({
         if (((this.data.currentCall.CallSign !== packet.callSign
           && this.data.currentCall.SSID !== packet.ssid)
           && this.data.currentCall.CallSign
-        ) || (Date.now() - this.data.lastMessageTime > 3000 && this.data.currentCall.CallSign)) {
-
-         // console.log("new call",Date.now() - this.data.lastMessageTime > 3000,this.data.currentCall.CallSign,this.data.currentCall.SSID)
-
-          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid ===  this.data.currentCall.SSID)
+        ) || (Date.now() - this.data.lastVoiceTime > 3000 && this.data.currentCall.CallSign)) {
+        
+          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid === this.data.currentCall.SSID)
 
           const item = {
             CallSign: this.data.currentCall.CallSign,
             SSID: this.data.currentCall.SSID,
             Name: currentDevice.name,
             duration: this.data.currentCall.duration,
-            endTime: this.formatLastVoiceTime(this.data.lastMessageTime),
+            endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           };
 
           const currentItems = this.data.callHistory;
@@ -230,58 +226,47 @@ Page({
           this.setData({
             callHistory: currentItems,
             currentCall: {
-
               startTime: Date.now(),
-
             },
-
           });
-
-
         }
 
-        this.setData({
-          currentCall: {
-            CallSign: packet.callSign || '未知',
-            SSID: packet.ssid || '00',
-            duration: (this.data.lastMessageTime - this.data.currentCall.startTime) / 1000 | 0,
-            lastVoiceTime: this.formatLastVoiceTime(this.data.lastMessageTime),
-            startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
-
-          },
-          lastMessageTime: Date.now(),
-          lastCallsign: packet.callSign + packet.ssid
-        });
-
-        //console.log(this.data.currentCall,this.data.lastMessageTime ,this.data.currentCall.startTime)
-
-
-
-
+        if (Date.now() - this.data.lastVoiceTime >= 1000) {
+          this.setData({
+            currentCall: {
+              CallSign: packet.callSign || '未知',
+              SSID: packet.ssid || '00',
+              duration: (this.data.lastVoiceTime - this.data.currentCall.startTime) / 1000 + 1 | 0,
+              lastVoiceTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
+              startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
+            },
+            lastVoiceTime: Date.now(),
+            lastCallsign: packet.callSign + packet.ssid
+          });
+        }
         break;
-      // case 2: // 心跳包
 
-      //   break;
+      case 2: // 心跳包
+        this.setData({
+          lastMessageTime: Date.now(),
+          serverConnected: true
+        });
+        break;
+
       case 5: // 文本消息
         const app = getApp();
-
         if (app.globalData.messagePage) {
-
           app.globalData.messagePage.handleMessage(packet);
         }
         break;
     }
 
-    this.setData({
-      serverConnected: true
-    });
 
   },
 
 
   checkConnection() {
-    const now = Date.now();
-    if (this.lastMessageTime && now - this.lastMessageTime > 6000) {
+    if (this.lastMessageTime && Date.now() - this.lastMessageTime > 6000) {
       this.setData({
         serverConnected: false
       });
@@ -295,37 +280,22 @@ Page({
   async checkAudioPermission() {
     try {
       // 获取设备信息
-      const deviceInfo = await wx.getDeviceInfo();
+      //const deviceInfo = await wx.getDeviceInfo();
 
-      console.log('###设备信息deviceInfo：', deviceInfo)
-
-
-      // if (!deviceInfo || !deviceInfo.microphoneSupported) {
-      //   wx.showToast({
-      //     title: '当前设备不支持录音',
-      //     icon: 'none'
-      //   });
-      //   throw new Error('设备不支持录音');
-      // }
 
       // 检查录音权限状态
       const authSetting = await wx.getAppAuthorizeSetting();
 
-      console.log('###设备信息authSetting：', authSetting);
-
-
-
-      if (authSetting['microphoneAuthorized'] === true  ) {
+      if (authSetting['microphoneAuthorized'] === true) {
         return true
       }
-   
 
-      if (authSetting['microphoneAuthorized'] !== "authorized"  ) {
+      if (authSetting['microphoneAuthorized'] !== "authorized") {
         wx.showToast({
           title: '录音权限被拒绝，请前往设置开启',
           icon: 'none'
         });
-        throw new Error('录音权限被拒绝'+authSetting['microphoneAuthorized']);
+        throw new Error('录音权限被拒绝' + authSetting['microphoneAuthorized']);
       }
 
       // 请求录音权限
@@ -336,7 +306,7 @@ Page({
       return true;
     } catch (err) {
       wx.showToast({
-        title: '获取麦克风权限失败:'+err,
+        title: '获取麦克风权限失败:' + err,
         icon: 'none'
       });
       throw err;
@@ -352,7 +322,7 @@ Page({
       await this.checkAudioPermission();
     } catch (err) {
       wx.showToast({
-        title: '麦克风权限被拒绝:'+err,
+        title: '麦克风权限被拒绝:' + err,
         icon: 'none'
       });
       return;
@@ -378,16 +348,12 @@ Page({
       let buffer = new Uint8Array(0);
       let encodedBuffer = new Uint8Array(512);
 
-      console.log('开始处理音频',this.recorder)
-
-
- 
+      console.log('开始处理音频', this.recorder)
 
       while (this.data.isTalking) {
         try {
           const data = await this.recorder.getNextAudioFrame();
 
- 
           if (!data) continue;
 
           const newBuffer = new Uint8Array(buffer.length + data.length);
@@ -396,23 +362,20 @@ Page({
           buffer = newBuffer;
 
           while (buffer.length >= 512) {
+
             const packetData = buffer.slice(0, 512);
             buffer = buffer.slice(512);
-
             this.audioPacket.set(packetData, 48);
-
             const app = getApp();
 
             if (app.globalData.udpClient) {
               app.globalData.udpClient.send(this.audioPacket);
-            } 
-
-          
+            }
           }
         } catch (err) {
           console.error('音频处理出错:', err);
           wx.showToast({
-            title: '音频处理出错'+err,
+            title: '音频处理出错' + err,
             icon: 'none'
           });
           break;
@@ -455,8 +418,6 @@ Page({
         if (app.globalData.udpClient) {
           app.globalData.udpClient.send(this.audioPacket);
         }
-
-        
       }
     } catch (err) {
       console.error('停止录音失败:', err);

@@ -20,7 +20,7 @@ Page({
   },
 
   bindServerChange(e) {
-    console.log('picker发送选择改变，携带值为', e.detail.value);
+    //console.log('picker发送选择改变，携带值为', e.detail.value);
     const newServerIndex = e.detail.value;
     this.setData({
       serverIndex: newServerIndex
@@ -29,7 +29,7 @@ Page({
     const serverCredentials = wx.getStorageSync('serverCredentials') || {};
     console.log('serverCredentials:', serverCredentials); // 添加这行
     const currentServerCreds = serverCredentials[newServerIndex];
-    console.log('currentServerCreds:', currentServerCreds); // 添加这行
+    //console.log('currentServerCreds:', currentServerCreds); // 添加这行
 
     if (currentServerCreds) {
       this.setData({
