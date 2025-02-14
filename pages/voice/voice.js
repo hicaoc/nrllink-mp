@@ -205,10 +205,9 @@ Page({
 
         audio.play(packet.data, packet.type);
 
-        if (((this.data.currentCall.CallSign !== packet.callSign
-          && this.data.currentCall.SSID !== packet.ssid)
-          && this.data.currentCall.CallSign
-        ) || (Date.now() - this.data.lastVoiceTime > 3000 && this.data.currentCall.CallSign)) {
+        if ((this.data.currentCall.CallSign !== packet.callSign  && this.data.currentCall.CallSign) 
+        || (this.data.currentCall.CallSign === packet.callSign && this.data.currentCall.SSID !== packet.ssid  && this.data.currentCall.CallSign )
+        || Date.now() - this.data.lastVoiceTime > 3000 && this.data.currentCall.CallSign) {
         
           const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid === this.data.currentCall.SSID)
 

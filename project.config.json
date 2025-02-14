@@ -4,7 +4,7 @@
     "coverView": true,
     "es6": true,
     "postcss": true,
-    "minified": true,
+    "minified": false,
     "enhance": true,
     "showShadowRootInWxmlPanel": true,
     "packNpmRelationList": [],
@@ -15,8 +15,10 @@
     },
     "condition": true,
     "ignoreUploadUnusedFiles": true,
-    "compileWorklet": true,
-    "swc": true
+    "compileWorklet": false,
+    "swc": true,
+    "minifyWXML": false,
+    "minifyWXSS": false
   },
   "condition": {},
   "editorSetting": {
@@ -24,7 +26,7 @@
     "tabSize": 2
   },
   "simulatorPluginLibVersion": {
-    "wxext14566970e7e9f62": "3.6.5-16"
+    "wxext14566970e7e9f62": "3.6.5-23"
   },
   "packOptions": {
     "ignore": [],
