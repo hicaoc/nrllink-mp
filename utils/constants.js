@@ -66,6 +66,8 @@ export const DevModelOptions = [
     { id: 23, name: 'MMDVM' },
     { id: 25, name: '4G便携' },
     { id: 100, name: '微信小程序' },
+    { id: 101, name: '安卓APP' },
+    { id: 102, name: '苹果APP' },
     { id: 200, name: 'NRL-Server' },
 ];
 

@@ -1,16 +1,16 @@
 {
   "miniVersion": "v2",
   "name": "%name%",
-  "version": "0.0.1",
+  "version": "1.1.18",
   "versionCode": 100,
   "i18nFilePath": "i18n",
   "mini-android": {
     "resourcePath": "miniapp/android/nativeResources",
-    "sdkVersion": "1.6.0",
+    "sdkVersion": "1.6.1",
     "toolkitVersion": "0.11.0",
     "useExtendedSdk": {
       "media": true,
-      "bluetooth": false,
+      "bluetooth": true,
       "network": true,
       "scanner": false,
       "xweb": false
@@ -26,7 +26,7 @@
       "xhdpi": "",
       "xxhdpi": ""
     },
-    "enableVConsole": "open",
+    "enableVConsole": "close",
     "privacy": {
       "enable": true
     },
@@ -35,21 +35,26 @@
       "armeabi-v7a": true
     },
     "privateDescriptions": {
-      "RECORD_AUDIO": "true",
-      "ACCESS_FINE_LOCATION": "true",
-      "ACCESS_COARSE_LOCATION": "true"
-    }
+      "ACCESS_COARSE_LOCATION": "需要位置信息报告APRS",
+      "ACCESS_FINE_LOCATION": "需要位置信息报告APRS",
+      "RECORD_AUDIO": "需要麦克风进行通话"
+    },
+    "usePluginSdk": {
+      "map": "1.2.4"
+    },
+    "targetSdkVersion": 29
   },
   "mini-ios": {
     "sdkVersion": "1.6.1",
     "toolkitVersion": "0.0.9",
     "useExtendedSdk": {
-      "WeAppOpenFuns": true,
-      "WeAppNetwork": false,
+      "WeAppOpenFuns": false,
+      "WeAppNetwork": true,
       "WeAppBluetooth": false,
       "WeAppMedia": false,
       "WeAppLBS": false,
-      "WeAppOthers": false
+      "WeAppOthers": false,
+      "WeAppAudio": true
     },
     "enableVConsole": "open",
     "icons": {
@@ -67,8 +72,25 @@
       "customImage": ""
     },
     "privacy": {
-      "enable": false
+      "enable": true
     },
-    "enableOpenUrlNavigate": true
+    "enableOpenUrlNavigate": true,
+    "gdt": {
+      "splashAd_defaultEnable": false
+    },
+    "privateDescriptions": {
+      "NSLocationWhenInUseUsageDescription": "发送aprs数据需要位置信息",
+      "NSLocationAlwaysUsageDescription": "发送aprs数据需要位置信息",
+      "NSLocationAlwaysAndWhenInUseUsageDescription": "发送aprs数据需要位置信息"
+    }
+  },
+  "mini-plugin": {
+    "android": [
+      {
+        "open": false,
+        "pluginId": "",
+        "pluginVersion": ""
+      }
+    ]
   }
 }
