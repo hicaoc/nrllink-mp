@@ -25,7 +25,12 @@
   <!-- 当前通话信息 -->
 
 <view class="current-call" wx:if="{{currentCall.CallSign}}">
-        <text class="call-info">{{currentCall.CallSign}}-{{currentCall.SSID}}  {{currentCall.lastVoiceTime}}  {{currentCall.duration}}s </text>
+   <view class="call-item" >
+        <text class="call-sign">{{currentCall.CallSign}}-{{currentCall.SSID}}</text>        
+        <text class="call-duration"> {{currentCall.duration}}s</text>
+        <text class="call-time">{{currentCall.lastVoiceTime}}</text>
+      </view>
+       
 </view>
 
 
@@ -34,6 +39,7 @@
 <scroll-view class="call-history" scroll-y scroll-x="false">
       <view class="call-item" wx:for="{{callHistory}}" wx:key="endTime">
         <text class="call-sign">{{item.CallSign}}-{{item.SSID}}</text>
+        <text class="call-name">{{item.Name}}</text>
         <text class="call-duration">{{item.duration}}s</text>
         <text class="call-time">{{item.endTime}}</text>
       </view>

@@ -65,6 +65,7 @@ App({
 
     logout() {
       this.token = null;
+      this.udpClient = null;
       wx.removeStorageSync('token');
       wx.removeStorageSync('userInfo');
       wx.removeStorageSync('cpuId');

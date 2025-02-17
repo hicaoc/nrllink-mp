@@ -3,7 +3,15 @@ const webAudioContext = wx.createWebAudioContext();
 
 // 音频流相关参数
 const SAMPLE_RATE = 8000;
-const BUFFER_SIZE = 1024; // 建议选择较小的值，以降低延迟
+
+// 建议选择较小的值，以降低延迟
+// #if MP
+const BUFFER_SIZE = 1024; 
+// #elif IOS
+const BUFFER_SIZE = 2048; 
+// #elif ANDROID
+const BUFFER_SIZE = 4096;
+// #endif
 
 // WebAudio 资源
 const audioContext = webAudioContext;
@@ -32,8 +40,6 @@ function initWebAudio() {
     try {
         scriptProcessorNode = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
         scriptProcessorNode.connect(gainNode);
-
-
 
         scriptProcessorNode.onaudioprocess = (audioProcessingEvent) => {
             //  console.log("onaudioprocess triggered");

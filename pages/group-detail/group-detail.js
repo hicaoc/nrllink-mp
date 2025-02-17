@@ -379,7 +379,7 @@ Page({
         } catch (error) {
           console.warn('Error parsing device rf type/status:', error);
         }
-        console.log('Parsed device:', device);
+
 
         devmap[i] = {
           ...device,

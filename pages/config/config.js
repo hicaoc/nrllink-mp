@@ -44,6 +44,7 @@ Page({
   // 退出登录
   handleLogout() {
     const app = getApp();
+ 
     app.globalData.logout();
   },
 

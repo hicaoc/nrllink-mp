@@ -9,7 +9,7 @@
     "pages/group-detail/group-detail"
   ],
   "window": {
-    "navigationBarTitleText": "NRL互联1.2.13"
+    "navigationBarTitleText": "NRL互联1.2.18"
   },
   "tabBar": {
     "list": [
