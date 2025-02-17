@@ -81,16 +81,16 @@ App({
     const udp = require('./utils/udp');
     const nrl = require('./utils/nrl21');
 
-    const token = wx.getStorageSync('token');
-    if (token) {
-      this.globalData.token = token;
-      wx.reLaunch({
-        url: '/pages/login/login'
-      });
+    // const token = wx.getStorageSync('token');
+    // if (token) {
+    //   this.globalData.token = token;
+    //   wx.reLaunch({
+    //     url: '/pages/login/login'
+    //   });
   
 
-      return;
-    }
+    //   return;
+    // }
 
  
   },

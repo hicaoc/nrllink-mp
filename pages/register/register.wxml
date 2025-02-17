@@ -1,0 +1,39 @@
+<view class="container">
+  <form bindsubmit="onSubmit">
+    <view class="form-item">
+      <label>Callsign</label>
+      <input name="callsign" placeholder="请输入呼号" />
+    </view>
+    <view class="form-item">
+      <label>姓名</label>
+      <input name="name" placeholder="请输入姓名" />
+    </view>
+    <view class="form-item">
+      <label>手机号</label>
+      <input name="phone" type="number" placeholder="请输入手机号" />
+    </view>
+    <view class="form-item">
+      <label>密码</label>
+      <input name="password" password placeholder="请输入密码" />
+    </view>
+    <view class="form-item">
+      <label>地址</label>
+      <input name="address" placeholder="请输入地址" />
+    </view>
+    <view class="form-item">
+      <label>邮箱</label>
+      <input name="mail" type="email" placeholder="请输入邮箱" />
+    </view>
+    <view class="form-item">
+      <label>电台执照</label>
+      <button bindtap="chooseLicense">选择图片</button>
+      <image wx:if="{{license}}" src="{{license}}" mode="aspectFit"></image>
+    </view>
+    <view class="form-item">
+      <label>操作证</label>
+      <button bindtap="chooseCertificate">选择图片</button>
+      <image wx:if="{{certificate}}" src="{{certificate}}" mode="aspectFit"></image>
+    </view>
+    <button formType="submit">注册</button>
+  </form>
+</view>

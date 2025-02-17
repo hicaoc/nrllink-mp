@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/login/login",
+    "pages/register/register",
     "pages/config/config",
     "pages/aprs/aprs",
     "pages/message/message",

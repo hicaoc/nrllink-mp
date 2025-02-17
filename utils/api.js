@@ -148,6 +148,58 @@ const api = {
             url: '/user/info',
             method: 'GET'
         });
+    },
+
+    // 用户注册
+    register(data) {
+        return new Promise((resolve, reject) => {
+            const uploadTask = wx.uploadFile({
+                url: 'https://' + getApp().globalData.serverConfig.host + '/user/reg/create',
+                filePath: data.license,
+                name: 'license',
+                formData: {
+                    ...data,
+                    license: undefined,
+                    certificate: data.certificate
+                },
+                success: (res) => {
+                    if (res.statusCode === 200) {
+                        resolve(JSON.parse(res.data))
+                    } else {
+                        reject(new Error('注册失败'))
+                    }
+                },
+                fail: (err) => {
+                    reject(err)
+                }
+            })
+            
+            // 上传操作证
+            uploadTask.onProgressUpdate((res) => {
+                if (res.progress === 100) {
+                    wx.uploadFile({
+                        url: 'https://' + getApp().globalData.serverConfig.host + '/user/reg/create',
+                        filePath: data.certificate,
+                        name: 'certificate',
+                        formData: {
+                            ...data,
+                            license: undefined,
+                            certificate: undefined
+                        },
+                        success: (res) => {
+                            if (res.statusCode === 200) {
+                                resolve(JSON.parse(res.data))
+                            } else {
+                                reject(new Error('注册失败'))
+                            }
+                        },
+                        fail: (err) => {
+                            reject(err)
+                        }
+                    })
+                }
+            })
+        });
     }
 };
 
