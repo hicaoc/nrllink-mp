@@ -125,14 +125,16 @@ Page({
       wx.hideLoading();
       wx.showToast({
         title: '注册成功，请等待管理员审核后开通账号',
-        icon: 'success',
-        complete: () => {
-          wx.redirectTo({
-            url: '/pages/login/login'
-          })
+        showCancel: false,
+        confirmText: '确定',
+        success: (res) => {
+          if (res.confirm) {
+            wx.redirectTo({
+              url: '/pages/login/login'
+            })
+          }
         }
       });
-      wx.navigateBack();
     }).catch(err => {
       wx.hideLoading();
       wx.showToast({
