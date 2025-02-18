@@ -58,6 +58,9 @@
       >
         登录
       </button>
+      <navigator url="/pages/register/register?name={{serverList[serverIndex].name}}&host={{serverList[serverIndex].host}}" class="register-link">
+        没有账号？点击注册
+      </navigator>
     </view>
   </view>
 </view>

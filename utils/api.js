@@ -151,56 +151,84 @@ const api = {
     },
 
     // 用户注册
-    register(data) {
-        return new Promise((resolve, reject) => {
-            const uploadTask = wx.uploadFile({
-                url: 'https://' + getApp().globalData.serverConfig.host + '/user/reg/create',
-                filePath: data.license,
-                name: 'license',
-                formData: {
-                    ...data,
-                    license: undefined,
-                    certificate: data.certificate
-                },
-                success: (res) => {
-                    if (res.statusCode === 200) {
-                        resolve(JSON.parse(res.data))
-                    } else {
-                        reject(new Error('注册失败'))
-                    }
-                },
-                fail: (err) => {
-                    reject(err)
-                }
-            })
-            
-            // 上传操作证
-            uploadTask.onProgressUpdate((res) => {
-                if (res.progress === 100) {
-                    wx.uploadFile({
-                        url: 'https://' + getApp().globalData.serverConfig.host + '/user/reg/create',
-                        filePath: data.certificate,
-                        name: 'certificate',
-                        formData: {
-                            ...data,
-                            license: undefined,
-                            certificate: undefined
-                        },
-                        success: (res) => {
-                            if (res.statusCode === 200) {
-                                resolve(JSON.parse(res.data))
-                            } else {
-                                reject(new Error('注册失败'))
-                            }
-                        },
-                        fail: (err) => {
-                            reject(err)
-                        }
-                    })
-                }
-            })
-        });
-    }
+    register(data, host) {
+      return new Promise((resolve, reject) => {
+          // 封装 wx.uploadFile 为 Promise
+          const uploadFile = (url, filePath, name, formData) => {
+              return new Promise((resolve, reject) => {
+                  wx.uploadFile({
+                      url,
+                      filePath,
+                      name,
+                      formData,
+                      success: (res) => {
+                          resolve(res); // 成功时返回响应对象
+                      },
+                      fail: (err) => {
+                          reject(err); // 失败时返回错误
+                      }
+                  });
+              });
+          };
+  
+          // 构造上传任务
+          const licenseTask = uploadFile(
+              'https://' + host + '/user/reg/create',
+              data.license,
+              'license',
+              {
+                  ...data,
+                  license: undefined,
+                  certificate: undefined
+              }
+          );
+  
+          const certificateTask = uploadFile(
+              'https://' + host + '/user/reg/create',
+              data.certificate,
+              'certificate',
+              {
+                  ...data,
+                  license: undefined,
+                  certificate: undefined
+              }
+          );
+  
+          // 使用 Promise.all 处理并发任务
+          Promise.all([licenseTask, certificateTask])
+              .then(results => {
+                  const [licenseRes, certificateRes] = results;
+
+                  console.log('licenseRes', licenseRes);
+                  console.log('certificateRes', certificateRes);
+  
+                  // 检查上传结果的状态码
+                  if (!licenseRes || licenseRes.statusCode !== 200) {
+                      reject(new Error('电台执照上传失败'));
+                      return;
+                  }
+  
+                  if (!certificateRes || certificateRes.statusCode !== 200) {
+                      reject(new Error('操作证上传失败'));
+                      return;
+                  }
+  
+                  // 尝试解析响应数据
+                  try {
+                      resolve({
+                          license: JSON.parse(licenseRes.data || '{}'),
+                          certificate: JSON.parse(certificateRes.data || '{}')
+                      });
+                  } catch (e) {
+                      reject(new Error('解析响应数据失败'));
+                  }
+              })
+              .catch(err => {
+                  reject(err);
+              });
+      });
+  }
+  
 };
 
 module.exports = api;
