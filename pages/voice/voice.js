@@ -5,13 +5,15 @@ import * as g711 from '../../utils/audioG711';
 import * as nrl21 from '../../utils/nrl21';
 import * as mdc from '../../utils/mdc1200';
 
+const app = getApp();
+
 Page({
   data: {
     userInfo: {},
     isTalking: false,
     codec: 'g711',
-    server: getApp().globalData.serverConfig.host,
-    port: getApp().globalData.serverConfig.port,
+    server: app.globalData.serverConfig.host,
+    port: app.globalData.serverConfig.port,
     serverConnected: false,
 
 
@@ -25,6 +27,8 @@ Page({
     lastCallsign: null,
     CallSign: null,
     SSID: null,
+
+
     duration: null,
     startTime: null,
     activeCall: null // Current active call
@@ -33,7 +37,7 @@ Page({
 
   async onLoad() {
 
-    const app = getApp();
+
 
     this.setData({
       userInfo: app.globalData.userInfo,
@@ -136,7 +140,6 @@ Page({
 
   async refreshData() {
 
-    const app = getApp();
 
     await app.globalData.getGroupList()
     await app.globalData.getDeviceList()
@@ -150,6 +153,7 @@ Page({
 
     if (currentDevice) {
       currentGroup = groups.find(group => group.id === currentDevice.group_id);
+      currentDevice.name  = '本微信小程序';
     }
 
     app.globalData.currentGroup = currentGroup || null;
@@ -167,7 +171,7 @@ Page({
   },
 
   getCurrentGroup() {
-    const app = getApp();
+
     const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
     this.setData({ currentGroup });
     return currentGroup;
@@ -180,7 +184,7 @@ Page({
       return;
     }
 
-    const app = getApp();
+
 
     this.heartbeatTimer = setInterval(() => {
       if (app.globalData.udpClient) {
@@ -204,7 +208,7 @@ Page({
           || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
           || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
 
-          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
+          const currentDevice = app.globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
 
           const item = {
             CallSign: this.data.CallSign,
@@ -214,30 +218,30 @@ Page({
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           };
 
-          getApp().globalData.callHistory = getApp().globalData.callHistory.slice(-30)
-          getApp().globalData.callHistory.push(item)
+          app.globalData.callHistory = app.globalData.callHistory.slice(-30)
+          app.globalData.callHistory.push(item)
 
           this.setData({
-            callHistory: [...getApp().globalData.callHistory].reverse(),
+            callHistory: [...app.globalData.callHistory].reverse(),
             startTime: Date.now(),
           });
         }
 
         this.setData({
-          lastVoiceTime: Date.now(),        
+          lastVoiceTime: Date.now(),
         });
 
         if (this.data.lastCallsign !== packet.callSign + packet.ssid) {
           this.setData({
-            startTime: Date.now(),    
+            startTime: Date.now(),
             CallSign: packet.callSign || '未知',
-            SSID: packet.ssid || '00',            
+            SSID: packet.ssid || '00',
           });
-        } 
+        }
 
         this.setData({
           duration: (this.data.lastVoiceTime - this.data.startTime) / 1000 + 1 | 0,
-          lastVoiceDisplayTime: this.formatLastVoiceTime(this.data.lastVoiceTime),   
+          lastVoiceDisplayTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           lastCallsign: packet.callSign + packet.ssid
         });
 
@@ -253,7 +257,7 @@ Page({
         break;
 
       case 5: // 文本消息
-        const app = getApp();
+
         if (app.globalData.messagePage) {
           app.globalData.messagePage.handleMessage(packet);
         }
@@ -339,9 +343,9 @@ Page({
       return;
     }
 
-    wx.setKeepScreenOn({
-      keepScreenOn: true
-    });
+    // wx.setKeepScreenOn({
+    //   keepScreenOn: true
+    // });
 
     const processAudio = async () => {
       let buffer = new Uint8Array(0);
@@ -365,7 +369,6 @@ Page({
             const packetData = buffer.slice(0, 512);
             buffer = buffer.slice(512);
             this.audioPacket.set(packetData, 48);
-            const app = getApp();
 
             if (app.globalData.udpClient) {
               app.globalData.udpClient.send(this.audioPacket);
@@ -401,7 +404,6 @@ Page({
         recoder.stopRecording(this.recorder);
       }
 
-      const app = getApp();
       const mdcPacket = app.globalData.mdcPacket;
 
       const packetSize = 512;
@@ -413,7 +415,7 @@ Page({
         const chunk = mdcPacket.slice(start, end);
 
         this.audioPacket.set(chunk, 48);
-        const app = getApp();
+
         if (app.globalData.udpClient) {
           app.globalData.udpClient.send(this.audioPacket);
         }
@@ -435,8 +437,28 @@ Page({
   toggleTalk() {
     if (this.data.isTalking) {
       this.stopRecording();
+      const item = {
+        CallSign: app.globalData.currentDevice.callsign,
+        SSID: app.globalData.currentDevice.ssid,
+        Name: '本微信小程序',
+        duration: (Date.now() - app.globalData.recoderStartTime) / 1000 + 1 | 0,
+        endTime: this.formatLastVoiceTime(Date.now()),
+      };
+
+      app.globalData.callHistory = app.globalData.callHistory.slice(-30)
+      app.globalData.callHistory.push(item)
+
+      this.setData({
+        callHistory: [...app.globalData.callHistory].reverse(),
+
+      });
     } else {
       this.startRecording();
+      app.globalData.recoderStartTime = Date.now()
+
+
+
+
     }
   },
 

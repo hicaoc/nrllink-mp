@@ -9,6 +9,7 @@ App({
     currentGroup: null,
     currentDevice: null,
     callHistory: [],
+    recoderStartTime: null,
     availableGroups: {},
     availableDevices: {},
     voicePage: null,

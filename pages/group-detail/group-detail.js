@@ -7,6 +7,7 @@ import {
 } from '../../utils/constants.js';
 
 const api = require('../../utils/api');
+const app = getApp()
 
 Page({
   data: {
@@ -40,6 +41,11 @@ Page({
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
 
+
+
+    this.setData({ selectedDevice: app.globalData.currentDevice  })
+
+    
     try {
       if (options && options.group) {
         const group = JSON.parse(decodeURIComponent(options.group))
@@ -64,7 +70,7 @@ Page({
   // 加载设备列表
   async loadDeviceList() {
     try {
-      const app = getApp()
+
       const userInfo = app.globalData.userInfo
       let devlist = app.globalData.availableDevices || []
       const currentCallsign = userInfo?.callsign
@@ -127,7 +133,7 @@ Page({
     })
 
     try {
-      const app = getApp()
+     
       await api.updateDevice({
         ...selectedDevice,
         group_id: this.groupData.id
@@ -164,6 +170,16 @@ Page({
       wx.hideLoading()
     }
   },
+
+ formatGoTime(goTime) {
+    if (goTime.length >= 19 && goTime.includes("T")) {
+        const trimmedTime = goTime.substring(0, 19);
+        return trimmedTime.replace("T", " ");
+    } else {
+       return '-';
+    }
+},
+
 
 
   // 获取设备类型名称
@@ -229,7 +245,6 @@ Page({
 
     //console.log('device:',device);
 
-    const app = getApp()
     const userInfo = app.globalData.userInfo
 
     const currentCallsign = userInfo?.callsign
@@ -314,16 +329,16 @@ Page({
     try {
       // 将设备map转换为数组
       // 优化性能：先处理时间格式
-      const now = Date.now();
-      const formatCache = new Map();
+      // const now = Date.now();
+      // const formatCache = new Map();
 
-      const formatIfNeeded = (timeStr) => {
-        if (!timeStr || timeStr === "0001-01-01T00:00:00Z") {
-          return "N/A"; // 如果是无效时间，返回占位符
-        }
-        let date = new Date(timeStr);
-        return date.toLocaleString("zh-CN", { hour12: false }); 
-      };
+      // const formatIfNeeded = (timeStr) => {
+      //   if (!timeStr || timeStr === "0001-01-01T00:00:00Z") {
+      //     return "N/A"; // 如果是无效时间，返回占位符
+      //   }
+      //   let date = new Date(timeStr);
+      //   return date.toLocaleString("zh-CN", { hour12: false }); 
+      // };
 
       // 优化设备映射，在线设备优先
       const devices = Object.values(group.devmap || {});
@@ -395,12 +410,12 @@ Page({
           statusClass: this.getStatusClass(statusId),
           rfTypeClass: this.getRFtypeClass(rfTypeId),
           groupTypeClass: this.getGroupTypeClass(groupTypeId),
-          last_packet_time: formatIfNeeded(device.last_packet_time),
-          last_voice_begin_time: formatIfNeeded(device.last_voice_begin_time),
-          last_voice_end_time: formatIfNeeded(device.last_voice_end_time),
-          create_time: formatIfNeeded(device.create_time),
-          update_time: formatIfNeeded(device.update_time),
-          online_time: formatIfNeeded(device.online_time)
+          last_packet_time: device.last_packet_time,
+          last_voice_begin_time: device.last_voice_begin_time,
+          last_voice_end_time: this.formatGoTime(device.last_voice_end_time),
+          create_time: device.create_time,
+          update_time: device.update_time,
+          online_time: device.online_time
         };
       }
 
