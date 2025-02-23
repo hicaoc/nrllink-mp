@@ -7,17 +7,5 @@
     "skylineRenderEnable": false
   },
   "libVersion": "3.7.7",
-  "condition": {
-    "miniprogram": {
-      "list": [
-        {
-          "name": "pages/register/register",
-          "pathName": "pages/register/register",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        }
-      ]
-    }
-  }
+  "condition": {}
 }

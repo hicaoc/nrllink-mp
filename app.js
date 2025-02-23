@@ -8,6 +8,7 @@ App({
     passcode: null,
     currentGroup: null,
     currentDevice: null,
+    callHistory: [],
     availableGroups: {},
     availableDevices: {},
     voicePage: null,

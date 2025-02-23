@@ -13,15 +13,20 @@ Page({
     server: getApp().globalData.serverConfig.host,
     port: getApp().globalData.serverConfig.port,
     serverConnected: false,
-    currentCall: {
-    },
+
+
     currentGroup: null,
     mdcPacket: null,
     callHistory: [], // Array to store call history
     lastCallUpdate: 0, // Timestamp of last call update
     lastMessageTime: null,
     lastVoiceTime: null,
+    lastVoiceDisplayTime: null,
     lastCallsign: null,
+    CallSign: null,
+    SSID: null,
+    duration: null,
+    startTime: null,
     activeCall: null // Current active call
   },
 
@@ -81,16 +86,6 @@ Page({
       this.mdcPacket = new Uint8Array(512);
     }
 
-
-    wx.setKeepScreenOn({
-      keepScreenOn: true, // 设置屏幕常亮
-      success() {
-        console.log("Screen will stay on.");
-      },
-      fail(err) {
-        console.error("Failed to keep screen on:", err);
-      }
-    });
 
 
 
@@ -205,44 +200,49 @@ Page({
 
         audio.play(packet.data, packet.type);
 
-        if ((this.data.currentCall.CallSign !== packet.callSign  && this.data.currentCall.CallSign) 
-        || (this.data.currentCall.CallSign === packet.callSign && this.data.currentCall.SSID !== packet.ssid  && this.data.currentCall.CallSign )
-        || Date.now() - this.data.lastVoiceTime > 3000 && this.data.currentCall.CallSign) {
-        
-          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid === this.data.currentCall.SSID)
+        if ((this.data.CallSign !== packet.callSign && this.data.CallSign)
+          || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
+          || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
+
+          const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
 
           const item = {
-            CallSign: this.data.currentCall.CallSign,
-            SSID: this.data.currentCall.SSID,
+            CallSign: this.data.CallSign,
+            SSID: this.data.SSID,
             Name: currentDevice.name,
-            duration: this.data.currentCall.duration,
+            duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           };
 
-          const currentItems = this.data.callHistory;
-          currentItems.unshift(item);
+          getApp().globalData.callHistory = getApp().globalData.callHistory.slice(-30)
+          getApp().globalData.callHistory.push(item)
 
           this.setData({
-            callHistory: currentItems,
-            currentCall: {
-              startTime: Date.now(),
-            },
+            callHistory: [...getApp().globalData.callHistory].reverse(),
+            startTime: Date.now(),
           });
         }
 
-        if (Date.now() - this.data.lastVoiceTime >= 1000) {
+        this.setData({
+          lastVoiceTime: Date.now(),        
+        });
+
+        if (this.data.lastCallsign !== packet.callSign + packet.ssid) {
           this.setData({
-            currentCall: {
-              CallSign: packet.callSign || '未知',
-              SSID: packet.ssid || '00',
-              duration: (this.data.lastVoiceTime - this.data.currentCall.startTime) / 1000 + 1 | 0,
-              lastVoiceTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
-              startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
-            },
-            lastVoiceTime: Date.now(),
-            lastCallsign: packet.callSign + packet.ssid
+            startTime: Date.now(),    
+            CallSign: packet.callSign || '未知',
+            SSID: packet.ssid || '00',            
           });
-        }
+        } 
+
+        this.setData({
+          duration: (this.data.lastVoiceTime - this.data.startTime) / 1000 + 1 | 0,
+          lastVoiceDisplayTime: this.formatLastVoiceTime(this.data.lastVoiceTime),   
+          lastCallsign: packet.callSign + packet.ssid
+        });
+
+
+
         break;
 
       case 2: // 心跳包
