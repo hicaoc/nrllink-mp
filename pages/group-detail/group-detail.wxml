@@ -25,7 +25,7 @@
       <!-- <text class="count">{{group.deviceCount}} 台设备</text> -->
     </view>
 
-    <view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId">
+<view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId" bindtap="navigateToDeviceSettings" data-device="{{item}}">
       <view class="title-container">
         <view class="title-row">
           <!-- <text class="title-label">设备：</text> -->

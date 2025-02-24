@@ -22,7 +22,8 @@ Page({
     selectedDevice: null, // 当前选择的设备
     expandedDetails: {}, // 用于存储每个设备的展开状态
     showDetails: false, // 控制详细信息显示
-    DevStatusOptions: DevStatusOptions // 添加状态选项
+    DevStatusOptions: DevStatusOptions, // 添加状态选项
+    relayOptions: []
   },
 
   // 切换详细信息显示
@@ -59,6 +60,14 @@ Page({
       })
       console.error('Group data parse error:', error)
     }
+  },
+
+  loadReayList(){
+
+    api.fetchRelayList({}).then((response) => {
+      this.relayOptions = response.data.items
+    })
+
   },
 
   // 加载设备列表
@@ -462,4 +471,11 @@ Page({
     wx.stopPullDownRefresh()
   },
 
+  // Navigate to device settings page
+  navigateToDeviceSettings(e) {
+    const device = e.currentTarget.dataset.device;
+    wx.navigateTo({
+      url: `/pages/device-settings/device-settings?device=${encodeURIComponent(JSON.stringify(device))}`
+    });
+  }
 })

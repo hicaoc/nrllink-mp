@@ -1,0 +1,234 @@
+<!-- pages/deviceParams/deviceParams.wxml -->
+<view class="container">
+  <view class="dialog-title">参数修改</view>
+
+  <form bindsubmit="submitForm">
+    <!-- 设备信息 -->
+    <view class="form-item">
+      <text class="label">设备:</text>
+      <text class="device-info">{{temp.callsign}}-{{temp.ssid}} {{temp.name}}</text>
+    </view>
+
+    <!-- 折叠面板 -->
+    <view class="collapse">
+      <!-- IP和密码设置 -->
+      <view class="collapse-item">
+        <view class="collapse-title" bindtap="toggleCollapse" data-name="1">
+          <text>IP和密码设置</text>
+          <text>{{collapseOpen['1'] ? '收起' : '展开'}}</text>
+        </view>
+        <view class="collapse-content" wx:if="{{collapseOpen['1']}}">
+          <view class="form-item">
+            <text class="label">本机密码:</text>
+            <input class="input" value="{{temp.device_parm.local_password}}" disabled />
+          </view>
+          <view class="form-item">
+            <text class="label">本机IP:</text>
+            <input class="input" name="local_ipaddr" value="{{temp.device_parm.local_ipaddr}}" bindinput="updateInput" data-field="local_ipaddr" />
+          </view>
+          <view class="form-item">
+            <text class="label">掩码:</text>
+            <input class="input" name="netmask" value="{{temp.device_parm.netmask}}" bindinput="updateInput" data-field="netmask" />
+          </view>
+          <view class="form-item">
+            <text class="label">网关:</text>
+            <input class="input" name="gateway" value="{{temp.device_parm.gateway}}" bindinput="updateInput" data-field="gateway" />
+          </view>
+          <view class="form-item">
+            <text class="label">DNS地址:</text>
+            <input class="input" name="dns_ipaddr" value="{{temp.device_parm.dns_ipaddr}}" bindinput="updateInput" data-field="dns_ipaddr" />
+          </view>
+          <view class="form-item">
+            <text class="label">目标IP地址:</text>
+            <input class="input" name="dest_domainname" value="{{temp.device_parm.dest_domainname}}" bindinput="updateInput" data-field="dest_domainname" />
+            <button class="save-btn" bindtap="confirmIPChange">保存</button>
+          </view>
+          <view class="form-item">
+            <text class="label">对端CPUID:</text>
+            <input class="input" value="{{temp.device_parm.peer_password}}" disabled />
+          </view>
+          <view class="form-item">
+            <text class="label">对端密码:</text>
+            <input class="input" value="{{temp.device_parm.peer_password}}" disabled />
+          </view>
+        </view>
+      </view>
+
+      <!-- 参数设置 -->
+      <view class="collapse-item">
+        <view class="collapse-title" bindtap="toggleCollapse" data-name="2">
+          <text>参数设置</text>
+          <text>{{collapseOpen['2'] ? '收起' : '展开'}}</text>
+        </view>
+        <view class="collapse-content" wx:if="{{collapseOpen['2']}}">
+          <view class="form-item">
+            <text class="label">DCD选择:</text>
+            <radio-group name="dcd_select" bindchange="updateRadio" data-field="dcd_select">
+              <label class="radio" wx:for="{{dcdOptions}}" wx:key="value">
+                <radio value="{{item.value}}" checked="{{temp.device_parm.dcd_select === item.value}}" />{{item.label}}
+              </label>
+            </radio-group>
+          </view>
+          <view class="form-item">
+            <text class="label">PTT允许:</text>
+            <switch checked="{{temp.device_parm.ptt_enable === 1}}" bindchange="updateSwitch" data-field="ptt_enable" />
+          </view>
+          <view class="form-item">
+            <text class="label">PTT电平:</text>
+            <radio-group name="ptt_level_reversed" bindchange="updateRadio" data-field="ptt_level_reversed">
+              <label class="radio"><radio value="1" checked="{{temp.device_parm.ptt_level_reversed === 1}}" />高电平</label>
+              <label class="radio"><radio value="0" checked="{{temp.device_parm.ptt_level_reversed === 0}}" />低电平</label>
+            </radio-group>
+          </view>
+          <view class="form-item">
+            <text class="label">M/Y PTT:</text>
+            <switch checked="{{temp.device_parm.ptt_resistive === 1}}" bindchange="updateSwitch" data-field="ptt_resistive" />
+          </view>
+          <view class="form-item">
+            <text class="label">监听:</text>
+            <switch checked="{{temp.device_parm.monitor === 1}}" bindchange="updateSwitch" data-field="monitor" />
+          </view>
+          <view class="form-item">
+            <text class="label">继电器:</text>
+            <switch checked="{{temp.device_parm.realy_status === 1}}" bindchange="updateSwitch" data-field="realy_status" />
+          </view>
+          <view class="form-item">
+            <text class="label">模块电源:</text>
+            <switch checked="{{temp.device_parm.one_uv_power === 1}}" bindchange="updateSwitch" data-field="one_uv_power" />
+          </view>
+          <view class="form-item">
+            <text class="label">按键功能:</text>
+            <radio-group name="key_func" bindchange="updateRadio" data-field="key_func">
+              <label class="radio"><radio value="0" checked="{{temp.device_parm.key_func === 0}}" />继电器</label>
+              <label class="radio"><radio value="1" checked="{{temp.device_parm.key_func === 1}}" />PTT</label>
+            </radio-group>
+          </view>
+          <view class="form-item">
+            <text class="label">添加尾音:</text>
+            <slider value="{{temp.device_parm.add_tail_voice}}" min="15" max="1000" show-value bindchange="updateSlider" data-field="add_tail_voice" />
+          </view>
+          <view class="form-item">
+            <text class="label">消除尾音:</text>
+            <slider value="{{temp.device_parm.remove_tail_voice}}" max="1000" show-value bindchange="updateSlider" data-field="remove_tail_voice" />
+          </view>
+        </view>
+      </view>
+
+      <!-- Moto 3188/3688 -->
+      <view class="collapse-item">
+        <view class="collapse-title" bindtap="toggleCollapse" data-name="3">
+          <text>Moto 3188/3688</text>
+          <text>{{collapseOpen['3'] ? '收起' : '展开'}}</text>
+        </view>
+        <view class="collapse-content" wx:if="{{collapseOpen['3']}}">
+          <view class="form-item">
+            <text class="label">信道切换:</text>
+            <picker mode="selector" range="{{motoChannelOptions}}" value="{{motoChannelIndex}}" bindchange="updateMotoChannel">
+              <view class="picker">{{temp.device_parm.moto_channel}}</view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <!-- 内置1W模块参数设置 -->
+      <view class="collapse-item">
+        <view class="collapse-title" bindtap="toggleCollapse" data-name="4">
+          <text>内置1W模块参数设置</text>
+          <text>{{collapseOpen['4'] ? '收起' : '展开'}}</text>
+        </view>
+        <view class="collapse-content" wx:if="{{collapseOpen['4']}}">
+          <view class="form-item">
+            <text class="label">1w接收频率:</text>
+            <input class="input" name="one_recive_freq" value="{{temp.device_parm.one_recive_freq}}" bindinput="updateInput" data-field="one_recive_freq" />
+          </view>
+          <view class="form-item">
+            <text class="label">1w发射频率:</text>
+            <input class="input" name="one_transmit_freq" value="{{temp.device_parm.one_transmit_freq}}" bindinput="updateInput" data-field="one_transmit_freq" />
+          </view>
+          <view class="form-item">
+            <text class="label">1w接收哑音:</text>
+            <picker mode="selector" range="{{ctcssOptions}}" range-key="name" value="{{ctcssIndex1wRecive}}" bindchange="updateCtcss" data-field="one_recive_cxcss">
+              <view class="picker">{{one_recive_cxcss}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">1w发射哑音:</text>
+            <picker mode="selector" range="{{ctcssOptions}}" range-key="name" value="{{ctcssIndex1wTransmit}}" bindchange="updateCtcss" data-field="one_transmit_cxcss">
+              <view class="picker">{{one_transmit_cxcss}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">1W音量:</text>
+            <slider value="{{temp.device_parm.one_volume}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_volume" />
+          </view>
+          <view class="form-item">
+            <text class="label">1W SQL:</text>
+            <slider value="{{temp.device_parm.one_sql_level}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_sql_level" />
+          </view>
+          <view class="form-item">
+            <text class="label">1w话筒增益:</text>
+            <slider value="{{temp.device_parm.one_mic_sensitivity}}" min="0" max="8" show-value bindchange="updateSlider" data-field="one_mic_sensitivity" />
+          </view>
+          <view class="form-item">
+            <text class="label">频点模板:</text>
+            <picker mode="selector" range="{{relayOptions}}" range-key="label" value="{{relayIndex}}" bindchange="applyRelay">
+              <view class="picker">{{current_relay_label}}</view>
+            </picker>
+          </view>
+          <button class="save-btn" bindtap="update1w">1w参数保存</button>
+        </view>
+      </view>
+
+      <!-- 内置2W模块参数设置 -->
+      <view class="collapse-item">
+        <view class="collapse-title" bindtap="toggleCollapse" data-name="5">
+          <text>内置2W模块参数设置</text>
+          <text>{{collapseOpen['5'] ? '收起' : '展开'}}</text>
+        </view>
+        <view class="collapse-content" wx:if="{{collapseOpen['5']}}">
+          <view class="form-item">
+            <text class="label">2W接收频率:</text>
+            <input class="input" name="two_recive_freq" value="{{temp.device_parm.two_recive_freq}}" bindinput="updateInput" data-field="two_recive_freq" />
+          </view>
+          <view class="form-item">
+            <text class="label">2W发送频率:</text>
+            <input class="input" name="two_transmit_freq" value="{{temp.device_parm.two_transmit_freq}}" bindinput="updateInput" data-field="two_transmit_freq" />
+          </view>
+          <view class="form-item">
+            <text class="label">2w接收哑音:</text>
+            <picker mode="selector" range="{{ctcssOptions}}" range-key="name" value="{{ctcssIndex2wRecive}}" bindchange="updateCtcss" data-field="two_recive_cxcss">
+              <view class="picker">{{temp.device_parm.two_recive_cxcss}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">2w发射哑音:</text>
+            <picker mode="selector" range="{{ctcssOptions}}" range-key="name" value="{{ctcssIndex2wTransmit}}" bindchange="updateCtcss" data-field="two_transmit_cxcss">
+              <view class="picker">{{temp.device_parm.two_transmit_cxcss}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">2W音量:</text>
+            <slider value="{{temp.device_parm.two_volume}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_volume" />
+          </view>
+          <view class="form-item">
+            <text class="label">2W SQL:</text>
+            <slider value="{{temp.device_parm.two_sql_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_sql_level" />
+          </view>
+          <view class="form-item">
+            <text class="label">2w话筒增益:</text>
+            <slider value="{{temp.device_parm.two_mic_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_mic_level" />
+          </view>
+          <view class="form-item">
+            <text class="label">频点模板:</text>
+            <picker mode="selector" range="{{relayOptions}}" range-key="label" value="{{relayIndex}}" bindchange="applyRelay2w">
+              <view class="picker">{{current_relay_label}}</view>
+            </picker>
+          </view>
+          <button class="save-btn" bindtap="update2w">2w参数保存</button>
+        </view>
+      </view>
+    </view>
+
+
+  </form>
+</view>

@@ -32,6 +32,7 @@ Page({
 
     this.setData({
       userInfo: app.globalData.userInfo,
+      callHistory: app.globalData.callHistory.reverse(),
       startTime: Date.now(),
     })
 
@@ -81,16 +82,6 @@ Page({
       this.mdcPacket = new Uint8Array(512);
     }
 
-
-    wx.setKeepScreenOn({
-      keepScreenOn: true, // 设置屏幕常亮
-      success() {
-        console.log("Screen will stay on.");
-      },
-      fail(err) {
-        console.error("Failed to keep screen on:", err);
-      }
-    });
 
 
 
@@ -205,10 +196,11 @@ Page({
 
         audio.play(packet.data, packet.type);
 
-        if ((this.data.currentCall.CallSign !== packet.callSign  && this.data.currentCall.CallSign) 
-        || (this.data.currentCall.CallSign === packet.callSign && this.data.currentCall.SSID !== packet.ssid  && this.data.currentCall.CallSign )
-        || Date.now() - this.data.lastVoiceTime > 3000 && this.data.currentCall.CallSign) {
-        
+
+        if ((this.data.currentCall.CallSign !== packet.callSign && this.data.currentCall.CallSign)
+          || (this.data.currentCall.CallSign === packet.callSign && this.data.currentCall.SSID !== packet.ssid && this.data.currentCall.CallSign)
+          || Date.now() - this.data.lastVoiceTime > 2000 && this.data.currentCall.CallSign) {
+
           const currentDevice = getApp().globalData.availableDevices.find(device => device.callsign === this.data.currentCall.CallSign && device.ssid === this.data.currentCall.SSID)
 
           const item = {
@@ -219,11 +211,12 @@ Page({
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           };
 
-          const currentItems = this.data.callHistory;
-          currentItems.unshift(item);
+
+          getApp().globalData.callHistory.push(item);       
+
 
           this.setData({
-            callHistory: currentItems,
+            callHistory: [...getApp().globalData.callHistory].reverse(),
             currentCall: {
               startTime: Date.now(),
             },
@@ -237,12 +230,15 @@ Page({
               SSID: packet.ssid || '00',
               duration: (this.data.lastVoiceTime - this.data.currentCall.startTime) / 1000 + 1 | 0,
               lastVoiceTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
-              startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
+              //startTime: this.data.lastCallsign !== packet.callSign + packet.ssid ? Date.now() : this.data.currentCall.startTime
             },
             lastVoiceTime: Date.now(),
             lastCallsign: packet.callSign + packet.ssid
           });
         }
+
+
+
         break;
 
       case 2: // 心跳包
@@ -285,6 +281,10 @@ Page({
       // 检查录音权限状态
       const authSetting = await wx.getAppAuthorizeSetting();
 
+
+
+      console.log('设备信息：', authSetting)
+
       if (authSetting['microphoneAuthorized'] === true) {
         return true
       }
@@ -320,6 +320,7 @@ Page({
     try {
       await this.checkAudioPermission();
     } catch (err) {
+      console.log(err)
       wx.showToast({
         title: '麦克风权限被拒绝:' + err,
         icon: 'none'
