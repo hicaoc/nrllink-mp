@@ -19,6 +19,26 @@
     </view>
   </view>
 
+  
+    <!-- 加入群组操作 -->
+    <view class="join-container">
+      <picker 
+        mode="selector" 
+        range="{{devices}}" 
+        range-key="displayName"
+        bindchange="selectDevice">
+        <view class="picker">
+          选择设备：{{selectedDevice ? selectedDevice.displayName : '请选择'}}
+        </view>
+      </picker>
+      <button 
+        class="join-btn"
+        bindtap="joinGroup"
+        disabled="{{!selectedDevice}}">
+        加入当前群组
+      </button>
+    </view>
+
   <view class="device-list">
     <view class="header">
       <text>设备列表</text>
@@ -94,23 +114,5 @@
  
     </view>
 
-    <!-- 加入群组操作 -->
-    <view class="join-container">
-      <picker 
-        mode="selector" 
-        range="{{devices}}" 
-        range-key="displayName"
-        bindchange="selectDevice">
-        <view class="picker">
-          选择设备：{{selectedDevice ? selectedDevice.displayName : '请选择'}}
-        </view>
-      </picker>
-      <button 
-        class="join-btn"
-        bindtap="joinGroup"
-        disabled="{{!selectedDevice}}">
-        加入当前群组
-      </button>
-    </view>
   </view>
 </view>

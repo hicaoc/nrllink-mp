@@ -71,8 +71,6 @@ function initWebAudio() {
             console.error("Failed to resume AudioContext:", err);
         });
 
-
-
         // 添加状态监听
         audioContext.onstatechange = () => {
             console.log('AudioContext state changed to:', audioContext.state);

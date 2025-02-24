@@ -24,11 +24,11 @@
 
   <!-- 当前通话信息 -->
 
-<view class="current-call" wx:if="{{currentCall.CallSign}}">
+<view class="current-call" wx:if="{{CallSign}}">
    <view class="call-item" >
-        <text class="call-sign">{{currentCall.CallSign}}-{{currentCall.SSID}}</text>        
-        <text class="call-duration"> {{currentCall.duration}}s</text>
-        <text class="call-time">{{currentCall.lastVoiceTime}}</text>
+        <text class="call-sign">{{CallSign}}-{{SSID}}</text>        
+        <text class="call-duration"> {{duration}}s</text>
+        <text class="call-time">{{lastVoiceDisplayTime}}</text>
       </view>
        
 </view>
