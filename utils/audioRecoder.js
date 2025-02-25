@@ -32,6 +32,7 @@ class AudioRecorder {
 
       
       if (res.frameBuffer) {
+       // console.log('getNextAudioFrame', res.frameBuffer);
         this.frameQueue.push(res.frameBuffer);
         if (this.resolveNextFrame) {
           this.resolveNextFrame(this.frameQueue.shift());

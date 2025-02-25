@@ -18,7 +18,8 @@
     "compileWorklet": false,
     "swc": true,
     "minifyWXML": true,
-    "minifyWXSS": true
+    "minifyWXSS": true,
+    "disableSWC": false
   },
   "condition": {},
   "editorSetting": {

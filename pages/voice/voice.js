@@ -88,7 +88,7 @@ Page({
       app.globalData.mdcPacket = g711.g711Encode(mdcPacket);
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
-      this.mdcPacket = new Uint8Array(512);
+      this.mdcPacket = new Uint8Array(500);
     }
 
 
@@ -103,7 +103,7 @@ Page({
     });
 
     const audioPacketHead = new Uint8Array(audioPacket.getBuffer());
-    this.audioPacket = new Uint8Array(560);
+    this.audioPacket = new Uint8Array(548);
     this.audioPacket.set(audioPacketHead, 0);
 
 
@@ -355,13 +355,15 @@ Page({
 
     const processAudio = async () => {
       let buffer = new Uint8Array(0);
-      let encodedBuffer = new Uint8Array(512);
+      let encodedBuffer = true
 
       console.log('开始处理音频', this.recorder)
 
       while (this.data.isTalking) {
         try {
           const data = await this.recorder.getNextAudioFrame();
+
+          //console.log('处理音频:', data.length)
 
           if (!data) continue;
 
@@ -370,14 +372,17 @@ Page({
           newBuffer.set(new Uint8Array(data), buffer.length);
           buffer = newBuffer;
 
-          while (buffer.length >= 512) {
+          while (buffer.length >= 500) {
 
-            const packetData = buffer.slice(0, 512);
-            buffer = buffer.slice(512);
+            const packetData = buffer.slice(0, 500);
+            buffer = buffer.slice(500);
             this.audioPacket.set(packetData, 48);
 
             if (app.globalData.udpClient) {
-              app.globalData.udpClient.send(this.audioPacket);
+              await new Promise(resolve => {
+                app.globalData.udpClient.send(this.audioPacket);
+                setTimeout(resolve, 50);
+              });
             }
           }
         } catch (err) {
@@ -412,7 +417,7 @@ Page({
 
       const mdcPacket = app.globalData.mdcPacket;
 
-      const packetSize = 512;
+      const packetSize = 500;
       const totalPackets = Math.ceil(mdcPacket.length / packetSize);
 
       for (let i = 0; i < totalPackets; i++) {

@@ -217,7 +217,7 @@ class MDC1200Encoder {
     const finalPacket = new Uint8Array([...data, ...encodedData]);
     
     // 确保数据包长度为512字节以匹配音频帧大小
-    const paddedPacket = new Uint8Array(512);
+    const paddedPacket = new Uint8Array(500);
     paddedPacket.set(finalPacket);
     
     return this.xorModulation(paddedPacket);
