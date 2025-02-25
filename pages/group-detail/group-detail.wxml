@@ -19,50 +19,56 @@
     </view>
   </view>
 
-  
-    <!-- 加入群组操作 -->
-    <view class="join-container">
-      <picker 
-        mode="selector" 
-        range="{{devices}}" 
-        range-key="displayName"
-        bindchange="selectDevice">
-        <view class="picker">
-          选择设备：{{selectedDevice ? selectedDevice.displayName : '请选择'}}
-        </view>
-      </picker>
-      <button 
-        class="join-btn"
-        bindtap="joinGroup"
-        disabled="{{!selectedDevice}}">
-        加入当前群组
-      </button>
-    </view>
+  <!-- 加入群组操作 -->
+  <view class="join-container">
+    <picker 
+      mode="selector" 
+      range="{{devices}}" 
+      range-key="displayName"
+      bindchange="selectDevice">
+      <view class="picker">
+        选择设备：{{selectedDevice ? selectedDevice.displayName : '请选择'}}
+      </view>
+    </picker>
+    <button 
+      class="join-btn"
+      bindtap="joinGroup"
+      disabled="{{!selectedDevice}}">
+      加入当前群组
+    </button>
+  </view>
 
   <view class="device-list">
     <view class="header">
-      <text>设备列表</text>
+      <text>设备列表</text> 
+          <input 
+      class="search-input" 
+      placeholder="输入设备呼号搜索" 
+      bindinput="onSearchInput" />
       <!-- <text class="count">{{group.deviceCount}} 台设备</text> -->
     </view>
 
-<view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId" data-device="{{item}}">
+    <!-- Search Box -->
+
+
+    <view class="device-item" wx:for="{{filteredDevices}}" wx:key="deviceId" data-device="{{item}}">
       <view class="title-container">
         <view class="title-row">
           <!-- <text class="title-label">设备：</text> -->
           <tag class="title-value {{item.is_online ? 'online' : 'offline'}}">{{item.callsign}}-{{item.ssid}}</tag>
           <view class="status-button-group" data-device="{{item}}">
-          <view 
-            class="status-button {{status.id === item.status ? 'active' : ''}}" 
-            wx:for="{{DevStatusOptions}}" 
-            wx:key="id"
-            wx:for-item="status" 
-            bindtap="handleStatusChange"
-            data-value="{{status.id}}"
-            data-device="{{item}}"
-          >
-            <text class="button-text">{{status.name}}</text>
+            <view 
+              class="status-button {{status.id === item.status ? 'active' : ''}}" 
+              wx:for="{{DevStatusOptions}}" 
+              wx:key="id"
+              wx:for-item="status" 
+              bindtap="handleStatusChange"
+              data-value="{{status.id}}"
+              data-device="{{item}}"
+            >
+              <text class="button-text">{{status.name}}</text>
+            </view>
           </view>
-           </view>
         </view>
      
         <!-- <view class="title-row">
@@ -111,8 +117,6 @@
           <text class="value">{{item.traffic || 0}}字节</text>
         </view>
       </view>
- 
     </view>
-
   </view>
 </view>

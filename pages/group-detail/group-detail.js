@@ -24,28 +24,20 @@ Page({
     expandedDetails: {}, // 用于存储每个设备的展开状态
     showDetails: false, // 控制详细信息显示
     DevStatusOptions: DevStatusOptions, // 添加状态选项
-    relayOptions: []
+    relayOptions: [],
+    searchInput: '', // 新增搜索输入
+    filteredDevices: [] // 新增过滤后的设备列表
   },
-
-  // 切换详细信息显示
-  toggleDetails(e) {
-    const index = e.currentTarget.dataset.index;
-    this.setData({
-      [`expandedDetails.${index}`]: !this.data.expandedDetails[index],
-      showDetails: !this.data.showDetails
-    });
-  },
-
   onLoad(options) {
     // 绑定所有需要的方法
 
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
-
-
+    this.onSearchInput = this.onSearchInput.bind(this); // 绑定搜索输入方法
+    this.toggleDetails = this.toggleDetails.bind(this); // 绑定展开详细信息方法
+    this.navigateToDeviceSettings = this.navigateToDeviceSettings.bind(this); // 绑定导航到设备设置页面方法
 
     this.setData({ selectedDevice: app.globalData.currentDevice })
-
 
     try {
       if (options && options.group) {
@@ -67,7 +59,6 @@ Page({
       console.error('Group data parse error:', error)
     }
   },
-
   loadReayList() {
 
     api.fetchRelayList({}).then((response) => {
@@ -75,7 +66,6 @@ Page({
     })
 
   },
-
   // 加载设备列表
   async loadDeviceList() {
     try {
@@ -83,8 +73,6 @@ Page({
       const userInfo = app.globalData.userInfo
       let devlist = app.globalData.availableDevices || []
       const currentCallsign = userInfo?.callsign
-
-
 
       // 如果不是管理员，只显示当前用户的设备
       if (!userInfo?.roles?.includes('admin')) {
@@ -96,6 +84,8 @@ Page({
 
       const devices = Object.values(devlist)
 
+      const filteredDevices = devices
+
       // 排序规则：当前用户设备 > 其他设备
 
       devices.sort((a, b) => {
@@ -106,7 +96,14 @@ Page({
         return 0
       })
 
-      this.setData({ devices })
+      
+
+      filteredDevices.sort((a, b) => {
+        if (a.is_online === b.is_online) return 0;
+        return a.is_online ? -1 : 1;
+      });
+
+      this.setData({ devices, filteredDevices }) // 初始化filteredDevices
     } catch (error) {
       console.error('Error loading device list:', error)
       wx.showToast({
@@ -115,7 +112,6 @@ Page({
       })
     }
   },
-
   // 选择设备
   selectDevice(e) {
     const index = e.detail.value
@@ -124,7 +120,6 @@ Page({
       this.setData({ selectedDevice: device })
     }
   },
-
   // 加入当前群组
   async joinGroup() {
     const { selectedDevice } = this.data
@@ -179,7 +174,6 @@ Page({
       wx.hideLoading()
     }
   },
-
   formatGoTime(goTime) {
     if (goTime.length >= 19 && goTime.includes("T")) {
       const trimmedTime = goTime.substring(0, 19);
@@ -188,21 +182,16 @@ Page({
       return '-';
     }
   },
-
-
-
   // 获取设备类型名称
   getDevTypeName(typeId) {
     const type = DevTypeOptions.find(t => t.id === typeId);
     return type ? type.name : typeId;
   },
-
   // 获取设备型号名称
   getDevModelName(modelId) {
     const model = DevModelOptions.find(m => m.id === modelId);
     return model ? model.name : modelId;
   },
-
   // 获取设备射频类型名称
   getDevRFtypeName(rfTypeId) {
     if (typeof rfTypeId !== 'number') {
@@ -212,7 +201,6 @@ Page({
     const rfType = DevRFtypeOptions.find(r => r.id === rfTypeId);
     return rfType ? rfType.name : rfTypeId;
   },
-
   // 获取群组类型名称
   getGroupTypeName(groupTypeId) {
     if (typeof groupTypeId !== 'number') {
@@ -222,7 +210,6 @@ Page({
     const groupType = groupTypeOptions.find(g => g.id === groupTypeId);
     return groupType ? groupType.name : groupTypeId;
   },
-
   // 获取设备状态名称
   getDevStatusName(statusId) {
     if (typeof statusId !== 'number') {
@@ -232,7 +219,6 @@ Page({
     const status = DevStatusOptions.find(s => s.id === statusId);
     return status ? status.name : statusId;
   },
-
   // 获取设备状态对应的样式类
   getStatusClass(statusId) {
     const status = DevStatusOptions.find(s => s.id === statusId);
@@ -246,7 +232,6 @@ Page({
       default: return 'unknown';
     }
   },
-
   // 处理状态选择
   async handleStatusChange(e) {
     const statusId = e.currentTarget.dataset.value;
@@ -300,7 +285,6 @@ Page({
       wx.hideLoading();
     }
   },
-
   // 获取射频类型对应的样式类
   getRFtypeClass(rfTypeId) {
     const rfType = DevRFtypeOptions.find(r => r.id === rfTypeId);
@@ -313,7 +297,6 @@ Page({
       default: return 'unknown';
     }
   },
-
   // 获取群组类型对应的样式类
   getGroupTypeClass(groupTypeId) {
     const groupType = groupTypeOptions.find(g => g.id === groupTypeId);
@@ -327,8 +310,6 @@ Page({
       default: return 'other';
     }
   },
-
-
   loadGroupDetail(group) {
     if (!group) {
       console.warn('No group data provided')
@@ -465,9 +446,6 @@ Page({
       console.error('Load group detail error:', error)
     }
   },
-
-
-
   onShow() {
     // 页面显示时刷新数据
     if (this.groupData) {
@@ -475,7 +453,6 @@ Page({
     }
     this.loadDeviceList()
   },
-
   onPullDownRefresh() {
     // 下拉刷新
     if (this.groupData) {
@@ -485,18 +462,48 @@ Page({
 
     wx.stopPullDownRefresh()
   },
-
+  // 切换详细信息显示
+  toggleDetails(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({
+      [`expandedDetails.${index}`]: !this.data.expandedDetails[index],
+      showDetails: !this.data.showDetails
+    });
+  },
   // Navigate to device settings page
   navigateToDeviceSettings(e) {
     const userInfo = app.globalData.userInfo
 
     const device = e.currentTarget.dataset.device;
     // 如果不是管理员，只显示当前用户的设备
-    if ((userInfo?.roles?.includes('admin') || device.callsign ===  userInfo?.callsign) && device.device_parm ) {
+    if ( device.is_online &&
+    (userInfo?.roles?.includes('admin') || device.callsign ===  userInfo?.callsign) &&
+     device.device_parm 
+    ) {
    
       wx.navigateTo({
         url: `/pages/device-settings/device-settings?device=${encodeURIComponent(JSON.stringify(device))}`
       });
     }
+  },
+  // 处理搜索输入
+  onSearchInput(e) {
+    const searchInput = e.detail.value.toLowerCase();
+    const filteredDevices = this.data.devices.filter(device => device.callsign.toLowerCase().includes(searchInput));
+
+    filteredDevices.sort((a, b) => {
+      if (a.is_online === b.is_online) return 0;
+      return a.is_online ? -1 : 1;
+    });
+
+
+    // filteredDevices.sort((a, b) => {
+    //   const isCurrentA = a.callsign === app.globalData.userInfo.callsign
+    //   const isCurrentB = b.callsign === app.globalData.userInfo.callsign
+    //   if (isCurrentA && !isCurrentB) return -1
+    //   if (!isCurrentA && isCurrentB) return 1
+    //   return 0
+    // });
+    this.setData({ searchInput, filteredDevices });
   }
 })
