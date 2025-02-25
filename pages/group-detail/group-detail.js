@@ -29,10 +29,13 @@ Page({
     filteredDevices: [] // 新增过滤后的设备列表
   },
   onLoad(options) {
+
+
     // 绑定所有需要的方法
 
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
+
     this.onSearchInput = this.onSearchInput.bind(this); // 绑定搜索输入方法
     this.toggleDetails = this.toggleDetails.bind(this); // 绑定展开详细信息方法
     this.navigateToDeviceSettings = this.navigateToDeviceSettings.bind(this); // 绑定导航到设备设置页面方法
@@ -43,8 +46,12 @@ Page({
       if (options && options.group) {
         const group = JSON.parse(decodeURIComponent(options.group))
         this.groupData = group // 保存group数据用于刷新
+
+
+
         this.loadGroupDetail(group)
         this.loadDeviceList()
+        //this.loadGroupDeviceList(group)
       } else {
         wx.showToast({
           title: '缺少群组数据',
@@ -84,7 +91,7 @@ Page({
 
       const devices = Object.values(devlist)
 
-      const filteredDevices = devices
+      const filteredDevices = this.groupData.devmap
 
       // 排序规则：当前用户设备 > 其他设备
 
@@ -98,12 +105,7 @@ Page({
 
       
 
-      filteredDevices.sort((a, b) => {
-        if (a.is_online === b.is_online) return 0;
-        return a.is_online ? -1 : 1;
-      });
-
-      this.setData({ devices, filteredDevices }) // 初始化filteredDevices
+      this.setData({ devices }) // 初始化filteredDevices
     } catch (error) {
       console.error('Error loading device list:', error)
       wx.showToast({
@@ -112,6 +114,31 @@ Page({
       })
     }
   },
+
+  // async loadGroupDeviceList(group) {
+  //   try {
+
+  
+
+  //     const filteredDevices =  Object.values(group.devmap || {});
+
+
+  //     filteredDevices.sort((a, b) => {
+  //       if (a.is_online === b.is_online) return 0;
+  //       return a.is_online ? -1 : 1;
+  //     });
+
+  //     this.setData({ filteredDevices }) // 初始化filteredDevices
+  //   } catch (error) {
+  //     console.error('Error loading group device list:', error)
+  //     wx.showToast({
+  //       title: '获取群组设备列表失败',
+  //       icon: 'none'
+  //     })
+  //   }
+  // },
+
+
   // 选择设备
   selectDevice(e) {
     const index = e.detail.value
@@ -426,6 +453,7 @@ Page({
         'group.deviceCount': devmap.length,
         'group.onlineCount': onlineCount,
         'group.devmap': devmap,
+        filteredDevices: devmap,
         'group.type': this.getGroupTypeName(groupTypeId),
         'group.typeName': this.getGroupTypeName(groupTypeId)
       };
@@ -437,7 +465,8 @@ Page({
       //   update['group.statusText'] = group.statusText;
       // }
 
-      this.setData(update);
+      this.setData(update );
+      
     } catch (error) {
       wx.showToast({
         title: '加载群组详情失败',
@@ -489,7 +518,7 @@ Page({
   // 处理搜索输入
   onSearchInput(e) {
     const searchInput = e.detail.value.toLowerCase();
-    const filteredDevices = this.data.devices.filter(device => device.callsign.toLowerCase().includes(searchInput));
+    const filteredDevices = this.data.group.devmap.filter(device => device.callsign.toLowerCase().includes(searchInput));
 
     filteredDevices.sort((a, b) => {
       if (a.is_online === b.is_online) return 0;

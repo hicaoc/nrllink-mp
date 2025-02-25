@@ -39,8 +39,10 @@
             <input class="input" name="dns_ipaddr" value="{{temp.device_parm.dns_ipaddr}}" bindinput="updateInput" data-field="dns_ipaddr" />
           </view>
           <view class="form-item">
-            <text class="label">目标IP地址:</text>
-            <input class="input" name="dest_domainname" value="{{temp.device_parm.dest_domainname}}" bindinput="updateInput" data-field="dest_domainname" />
+            <text class="label">目标地址:</text>
+            <picker mode="selector" range="{{platformOptions}}" range-key="name" value="{{platformIndex}}" bindchange="updatePlatform">
+              <view class="picker">{{temp.device_parm.dest_domainname || '请选择'}}</view>
+            </picker>
             <button class="save-btn" bindtap="confirmIPChange">保存</button>
           </view>
           <view class="form-item">

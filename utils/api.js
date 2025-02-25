@@ -129,6 +129,17 @@ const api = {
     });
   },
 
+    // 获取设备列表
+    getplatformList() {
+      return request({
+        url: '/platform/list', // 修改为新的接口地址
+        method: 'POST'
+      });
+    },
+
+  
+  
+
   // 更新设备信息
   updateDevice(device) {
     return request({

@@ -2,8 +2,7 @@ import {
   ctcssOptions
 } from '../../utils/constants.js';
 
-const { fetchRelayList, changeDeviceParm,changeDevice1w } = require('../../utils/api');
-
+const { fetchRelayList, changeDeviceParm, changeDevice1w, getplatformList } = require('../../utils/api');
 
 // pages/deviceParams/deviceParams.js
 Page({
@@ -65,13 +64,15 @@ Page({
     ],
     motoChannelOptions: Array.from({ length: 17 }, (_, i) => i),
     ctcssOptions: [], // 需从外部引入或定义
-    relayOptions: [], // 需从外部引入或定义
+    relayOptions: [], // 需从 API 或本地定义
+    platformOptions: [], // 新增平台列表选项
     volumeOptions: Array.from({ length: 9 }, (_, i) => i + 1),
     sqlOptions: Array.from({ length: 9 }, (_, i) => i + 1),
     micOptions: Array.from({ length: 9 }, (_, i) => i + 1),
     motoChannelIndex: 0,
     ctcssIndex: 0,
     relayIndex: 0,
+    platformIndex: 0, // 新增平台索引
     current_relay_label: '空模板'
   },
 
@@ -85,30 +86,30 @@ Page({
       this.updatePickerIndex();
     }
 
-    //console.log('onLoad:', ctcssOptions)
     // 假设 ctcssOptions 和 relayOptions 从外部获取
     this.setData({
       ctcssOptions: ctcssOptions || [],
       relayOptions: this.fetchRelayOptions() // 需要从 API 或本地定义
     });
+
+    // 新增调用获取平台列表的方法
+    this.fetchPlatformList();
   },
 
   // 更新选择器索引
   updatePickerIndex() {
-   // console.log('updatePickerIndex:', ctcssOptions, typeof(this.data.temp.device_parm.one_recive_cxcss),this.data.temp.device_parm.one_recive_cxcss, this.data.ctcssOptions.find(item => item.id === this.data.temp.device_parm.one_recive_cxcss)?.name);
     this.setData({
       motoChannelIndex: this.data.temp.device_parm.moto_channel,
       ctcssIndex: ctcssOptions.findIndex(item => item.id === this.data.temp.device_parm.one_recive_cxcss),
       one_recive_cxcss: ctcssOptions.find(item => item.id === this.data.temp.device_parm.one_recive_cxcss)?.name,
-      one_transmit_cxcss: ctcssOptions.find(item => item.id === this.data.temp.device_parm.one_transmit_cxcss)?.name
-    
+      one_transmit_cxcss: ctcssOptions.find(item => item.id === this.data.temp.device_parm.one_transmit_cxcss)?.name,
+      platformIndex: this.data.platformOptions.findIndex(item => item.ipaddr === this.data.temp.device_parm.dest_domainname) || 0
     });
   },
 
   // 格式化 relayOptions
   fetchRelayOptions() {
     fetchRelayList({}).then(resp => {
-     // console.log('fetchRelayList:', resp);
       this.setData({
         relayOptions: [
           { id: 0, name: '空模板', up_freq: '430.0000', down_freq: '430.0000', send_ctss: "0", recive_ctss: "0" },
@@ -177,12 +178,13 @@ Page({
     });
   },
 
-  // 其他选择器更新
-  updatePicker(e) {
-    const field = e.currentTarget.dataset.field;
-    const value = parseInt(e.detail.value) + 1;
+  // 平台选择更新
+  updatePlatform(e) {
+    const index = e.detail.value;
+    const platform = this.data.platformOptions[index];
     this.setData({
-      [`temp.device_parm.${field}`]: value
+      'temp.device_parm.dest_domainname': platform.host,
+      platformIndex: index
     });
   },
 
@@ -202,21 +204,8 @@ Page({
     this.updatePickerIndex();
 
     console.log('applyRelay:', relay);
-    console.log('applyRelay:', this.data.temp.device_parm)
+    console.log('applyRelay:', this.data.temp.device_parm);
   },
-
-  // applyRelay2w(e) {
-  //   const relay = this.data.relayOptions[e.detail.value];
-
-  //   this.setData({
-  //     'temp.device_parm.two_recive_freq': relay.down_freq + '0',
-  //     'temp.device_parm.two_transmit_freq': relay.up_freq + '0',
-  //     'temp.device_parm.two_recive_cxcss': relay.recive_ctss,
-  //     'temp.device_parm.two_transmit_cxcss': relay.send_ctss,
-  //     relayIndex: e.detail.value,
-  //     current_relay_name: relay.name
-  //   });
-  // },
 
   // 保存 IP 设置
   confirmIPChange() {
@@ -231,30 +220,9 @@ Page({
     });
   },
 
-  // changeIP() {
-  //   const { local_ipaddr, gateway, netmask, dns_ipaddr, dest_domainname } = this.data.temp.device_parm;
-  //   wx.request({
-  //     url: 'YOUR_API_URL/changeDeviceParm',
-  //     method: 'POST',
-  //     data: {
-  //       CPUID: this.data.temp.cpuid,
-  //       callsign: this.data.temp.callsign,
-  //       ssid: this.data.temp.ssid,
-  //       local_ipaddr,
-  //       gateway,
-  //       netmask,
-  //       dns_ipaddr,
-  //       dest_domainname
-  //     },
-  //     success: (res) => {
-  //       wx.showToast({ title: res.data.message || '保存成功', icon: 'success' });
-  //     }
-  //   });
-  // },
-
   changeIP() {
     const { local_ipaddr, gateway, netmask, dns_ipaddr, dest_domainname } = this.data.temp.device_parm;
-    const { cpuid, callsign,ssid } = this.data.temp;
+    const { cpuid, callsign, ssid } = this.data.temp;
     changeDeviceParm(
       'CPUID=' +
         cpuid +
@@ -273,31 +241,13 @@ Page({
         '&dest_domainname=' +
         dest_domainname
     ).then((response) => {
-      wx.showToast({ title: response.data.message || '保存成功', icon: 'success' });
-    })
+      wx.showToast({ title: response.message || '保存成功', icon: 'success' });
+    });
   },
 
-
   // 保存单个参数
-  // changeByte(name, value) {
-  //   wx.request({
-  //     url: 'YOUR_API_URL/changeDeviceParm',
-  //     method: 'POST',
-  //     data: {
-  //       CPUID: this.data.temp.cpuid,
-  //       callsign: this.data.temp.callsign,
-  //       ssid: this.data.temp.ssid,
-  //       [name]: value
-  //     },
-  //     success: (res) => {
-  //       wx.showToast({ title: res.data.message || '保存成功', icon: 'success' });
-  //     }
-  //   });
-  // },
-
-  changeByte(name,value) {
-    const { cpuid, callsign,ssid } = this.data.temp;
-
+  changeByte(name, value) {
+    const { cpuid, callsign, ssid } = this.data.temp;
     changeDeviceParm(
       'CPUID=' +
         cpuid +
@@ -311,46 +261,15 @@ Page({
         value
     ).then((response) => {
       wx.showToast({ title: response.message || '保存成功', icon: 'success' });
-    })
+    });
   },
-
 
   // 保存 1W 参数
-  // update1w() {
-  //   wx.request({
-  //     url: 'YOUR_API_URL/changeDevice1w',
-  //     method: 'POST',
-  //     data: this.data.temp.device_parm,
-  //     success: (res) => {
-  //       wx.showToast({ title: res.data.message || '1w参数保存成功', icon: 'success' });
-  //     }
-  //   });
-  // },
-
   update1w() {
-
-   
-        changeDevice1w(this.data.temp.device_parm).then((response) => {
-          //console.log("1w参数保存:",response)
-     
-          wx.showToast({ title: response.message || '1w参数保存成功', icon: 'success' });
-        })
-      
-
-    //    tempData.timestamp = +new Date(tempData.timestamp); // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
+    changeDevice1w(this.data.temp.device_parm).then((response) => {
+      wx.showToast({ title: response.message || '1w参数保存成功', icon: 'success' });
+    });
   },
-
-  // 保存 2W 参数
-  // update2w() {
-  //   wx.request({
-  //     url: 'YOUR_API_URL/changeDevice2w',
-  //     method: 'POST',
-  //     data: this.data.temp.device_parm,
-  //     success: (res) => {
-  //       wx.showToast({ title: res.data.message || '2w参数保存成功', icon: 'success' });
-  //     }
-  //   });
-  // },
 
   // 切换折叠面板
   toggleCollapse(e) {
@@ -368,5 +287,22 @@ Page({
   // 表单提交（如果需要整体保存）
   submitForm() {
     // 可选：整体保存逻辑
+  },
+
+  // 获取平台列表
+  fetchPlatformList() {
+    getplatformList().then((response) => {
+      this.setData({
+        platformOptions: response.items,
+        platformIndex: response.items.findIndex(item => item.ipaddr === this.data.temp.device_parm.dest_domainname) || 0
+      });
+      this.updatePickerIndex();
+    }).catch((error) => {
+      console.error('获取平台列表失败', error);
+      wx.showToast({
+        title: '获取平台列表失败',
+        icon: 'none'
+      });
+    });
   }
 });
