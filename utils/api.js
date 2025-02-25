@@ -48,14 +48,19 @@ const request = async (options, retries = 3, timeout = 10000) => {
 
   const app = getApp();
 
+  //console.log('request.header:', options.header);
+
   const config = requestInterceptor({
     url: 'https://' + app.globalData.serverConfig.host + options.url,
     method: options.method || 'GET',
-    header: Object.assign({}, getDefaultHeaders(), options.headers || {}),
+    header: {
+      ...getDefaultHeaders(), // 获取默认的 header
+      ...options.header       // 覆盖 options.header 中的字段
+    },
+
     data: options.data || {},
     timeout
   });
-
 
 
   // 检查网络状态
@@ -168,9 +173,18 @@ const api = {
   },
 
   changeDeviceParm(data) {
+    // const formData = Object.keys(data)
+    // .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
+    // .join('&');
+
+    console.log(data);
+
     return request({
       url: '/device/change',
-      method: 'post',
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/x-www-form-urlencoded',      
+      },
       data
     })
   },

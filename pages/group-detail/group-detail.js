@@ -44,9 +44,9 @@ Page({
 
 
 
-    this.setData({ selectedDevice: app.globalData.currentDevice  })
+    this.setData({ selectedDevice: app.globalData.currentDevice })
 
-    
+
     try {
       if (options && options.group) {
         const group = JSON.parse(decodeURIComponent(options.group))
@@ -68,7 +68,7 @@ Page({
     }
   },
 
-  loadReayList(){
+  loadReayList() {
 
     api.fetchRelayList({}).then((response) => {
       this.relayOptions = response.data.items
@@ -84,7 +84,7 @@ Page({
       let devlist = app.globalData.availableDevices || []
       const currentCallsign = userInfo?.callsign
 
-      
+
 
       // 如果不是管理员，只显示当前用户的设备
       if (!userInfo?.roles?.includes('admin')) {
@@ -142,7 +142,7 @@ Page({
     })
 
     try {
-     
+
       await api.updateDevice({
         ...selectedDevice,
         group_id: this.groupData.id
@@ -153,19 +153,19 @@ Page({
         icon: 'success'
       })
 
-      await app.globalData.getGroupList()   
+      await app.globalData.getGroupList()
 
       const group = app.globalData.availableGroups.find(group => group.id === this.groupData.id)
       this.groupData = group
       this.loadGroupDetail(group)
       this.loadDeviceList()
-      
+
       if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
         app.globalData.currentGroup = this.groupData;
-        app.globalData.currentDevice = selectedDevice;   
-      } 
+        app.globalData.currentDevice = selectedDevice;
+      }
 
-       wx.showToast({
+      wx.showToast({
         title: '数据刷新完成',
         icon: 'success'
       })
@@ -180,14 +180,14 @@ Page({
     }
   },
 
- formatGoTime(goTime) {
+  formatGoTime(goTime) {
     if (goTime.length >= 19 && goTime.includes("T")) {
-        const trimmedTime = goTime.substring(0, 19);
-        return trimmedTime.replace("T", " ");
+      const trimmedTime = goTime.substring(0, 19);
+      return trimmedTime.replace("T", " ");
     } else {
-       return '-';
+      return '-';
     }
-},
+  },
 
 
 
@@ -466,7 +466,7 @@ Page({
     }
   },
 
-  
+
 
   onShow() {
     // 页面显示时刷新数据
@@ -488,9 +488,15 @@ Page({
 
   // Navigate to device settings page
   navigateToDeviceSettings(e) {
+    const userInfo = app.globalData.userInfo
+
     const device = e.currentTarget.dataset.device;
-    wx.navigateTo({
-      url: `/pages/device-settings/device-settings?device=${encodeURIComponent(JSON.stringify(device))}`
-    });
+    // 如果不是管理员，只显示当前用户的设备
+    if ((userInfo?.roles?.includes('admin') || device.callsign ===  userInfo?.callsign) && device.device_parm ) {
+   
+      wx.navigateTo({
+        url: `/pages/device-settings/device-settings?device=${encodeURIComponent(JSON.stringify(device))}`
+      });
+    }
   }
 })

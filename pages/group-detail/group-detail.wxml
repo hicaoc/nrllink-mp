@@ -45,7 +45,7 @@
       <!-- <text class="count">{{group.deviceCount}} 台设备</text> -->
     </view>
 
-<view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId" bindtap="navigateToDeviceSettings" data-device="{{item}}">
+<view class="device-item" wx:for="{{group.devmap}}" wx:key="deviceId" data-device="{{item}}">
       <view class="title-container">
         <view class="title-row">
           <!-- <text class="title-label">设备：</text> -->
@@ -76,12 +76,12 @@
         <text>{{item.name}}</text>
         <image class="icon" src="/images/arrow-down.png" mode="aspectFit"></image>
       </view>
-      <view class="collapsible-details" wx:if="{{expandedDetails[index]}}">
-        <view class="info-row">
+      <view class="collapsible-details" wx:if="{{expandedDetails[index]}}"  bindtap="navigateToDeviceSettings" data-device="{{item}}" >
+        <!-- <view class="info-row">
           <text class="label">设备类型：</text>
           <text class="value">{{item.type || '未知'}}</text>
         </view>
-    
+     -->
         <view class="info-row">
           <text class="label">射频类型：</text>
           <text class="value">{{item.rfTypeText}}</text>

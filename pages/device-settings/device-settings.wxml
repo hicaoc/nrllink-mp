@@ -105,11 +105,11 @@
           </view>
           <view class="form-item">
             <text class="label">添加尾音:</text>
-            <slider value="{{temp.device_parm.add_tail_voice}}" min="15" max="1000" show-value bindchange="updateSlider" data-field="add_tail_voice" />
+            <slider class="slider"  value="{{temp.device_parm.add_tail_voice}}" min="15" max="1000" show-value bindchange="updateSlider" data-field="add_tail_voice" />
           </view>
           <view class="form-item">
             <text class="label">消除尾音:</text>
-            <slider value="{{temp.device_parm.remove_tail_voice}}" max="1000" show-value bindchange="updateSlider" data-field="remove_tail_voice" />
+            <slider  class="slider" value="{{temp.device_parm.remove_tail_voice}}" max="1000" show-value bindchange="updateSlider" data-field="remove_tail_voice" />
           </view>
         </view>
       </view>
@@ -159,19 +159,19 @@
           </view>
           <view class="form-item">
             <text class="label">1W音量:</text>
-            <slider value="{{temp.device_parm.one_volume}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_volume" />
+            <slider  class="slider" value="{{temp.device_parm.one_volume}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_volume" />
           </view>
           <view class="form-item">
             <text class="label">1W SQL:</text>
-            <slider value="{{temp.device_parm.one_sql_level}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_sql_level" />
+            <slider  class="slider" value="{{temp.device_parm.one_sql_level}}" min="0" max="9" show-value bindchange="updateSlider" data-field="one_sql_level" />
           </view>
           <view class="form-item">
             <text class="label">1w话筒增益:</text>
-            <slider value="{{temp.device_parm.one_mic_sensitivity}}" min="0" max="8" show-value bindchange="updateSlider" data-field="one_mic_sensitivity" />
+            <slider  class="slider" value="{{temp.device_parm.one_mic_sensitivity}}" min="0" max="8" show-value bindchange="updateSlider" data-field="one_mic_sensitivity" />
           </view>
           <view class="form-item">
             <text class="label">频点模板:</text>
-            <picker mode="selector" range="{{relayOptions}}" range-key="label" value="{{relayIndex}}" bindchange="applyRelay">
+            <picker mode="selector" range="{{relayOptions}}" range-key="name" value="{{relayIndex}}" bindchange="applyRelay">
               <view class="picker">{{current_relay_label}}</view>
             </picker>
           </view>
@@ -180,13 +180,13 @@
       </view>
 
       <!-- 内置2W模块参数设置 -->
-      <view class="collapse-item">
-        <view class="collapse-title" bindtap="toggleCollapse" data-name="5">
+      <!-- <view class="collapse-item"> -->
+        <!-- <view class="collapse-title" bindtap="toggleCollapse" data-name="5">
           <text>内置2W模块参数设置</text>
           <text>{{collapseOpen['5'] ? '收起' : '展开'}}</text>
-        </view>
-        <view class="collapse-content" wx:if="{{collapseOpen['5']}}">
-          <view class="form-item">
+        </view> -->
+        <!-- <view class="collapse-content" wx:if="{{collapseOpen['5']}}"> -->
+          <!-- <view class="form-item">
             <text class="label">2W接收频率:</text>
             <input class="input" name="two_recive_freq" value="{{temp.device_parm.two_recive_freq}}" bindinput="updateInput" data-field="two_recive_freq" />
           </view>
@@ -208,25 +208,26 @@
           </view>
           <view class="form-item">
             <text class="label">2W音量:</text>
-            <slider value="{{temp.device_parm.two_volume}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_volume" />
+            <slider  class="slider" value="{{temp.device_parm.two_volume}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_volume" />
           </view>
           <view class="form-item">
             <text class="label">2W SQL:</text>
-            <slider value="{{temp.device_parm.two_sql_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_sql_level" />
+            <slider  class="slider" value="{{temp.device_parm.two_sql_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_sql_level" />
           </view>
           <view class="form-item">
             <text class="label">2w话筒增益:</text>
-            <slider value="{{temp.device_parm.two_mic_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_mic_level" />
+            <slider  class="slider" value="{{temp.device_parm.two_mic_level}}" min="1" max="9" show-value bindchange="updateSlider" data-field="two_mic_level" />
           </view>
           <view class="form-item">
             <text class="label">频点模板:</text>
             <picker mode="selector" range="{{relayOptions}}" range-key="label" value="{{relayIndex}}" bindchange="applyRelay2w">
               <view class="picker">{{current_relay_label}}</view>
             </picker>
-          </view>
-          <button class="save-btn" bindtap="update2w">2w参数保存</button>
-        </view>
-      </view>
+          </view> -->
+          <!-- <button class="save-btn" bindtap="update2w">2w参数保存</button> -->
+        <!-- </view> -->
+      <!-- </view> -->
+      
     </view>
 
 

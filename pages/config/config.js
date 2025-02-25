@@ -35,7 +35,7 @@ Page({
   // 跳转到群组详情页面
   navigateToGroupDetail(e) {
     const group = e.currentTarget.dataset.group;
-    console.log("group:", group, e);
+    //console.log("group:", group, e);
     wx.navigateTo({
       url: `/pages/group-detail/group-detail?group=${encodeURIComponent(JSON.stringify(group))}`
     });

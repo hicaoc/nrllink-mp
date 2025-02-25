@@ -19,7 +19,7 @@ Page({
 
   // 处理接收到的消息
   handleMessage(packet) {
-    console.log('收到消息:', packet);
+    //console.log('收到消息:', packet);
     if (packet.type !== 5) return;
 
     const message = {
@@ -31,7 +31,7 @@ Page({
       isSelf: false
     };
 
-    console.log(message);
+    //console.log(message);
 
     this.setData({
       messages: this.data.messages.concat([message])
@@ -40,7 +40,7 @@ Page({
 
   decodeUint8ArrayToText(data) {
 
-    console.log(data);
+    //console.log(data);
     if (!data || !data.length) return '';
     
     try {
