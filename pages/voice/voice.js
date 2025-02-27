@@ -268,6 +268,16 @@ Page({
 
   },
 
+  onChooseAvatar(e) {
+
+    const { avatarUrl } = e.detail 
+
+    app.globalData.userInfo.avatar = avatarUrl
+    this.setData({
+      userInfo:  app.globalData.userInfo
+    })
+  },
+
 
   checkConnection() {
     if (this.lastMessageTime && Date.now() - this.lastMessageTime > 6000) {
@@ -381,7 +391,7 @@ Page({
             if (app.globalData.udpClient) {
               await new Promise(resolve => {
                 app.globalData.udpClient.send(this.audioPacket);
-                setTimeout(resolve, 50);
+                setTimeout(resolve, 55);
               });
             }
           }
@@ -428,7 +438,11 @@ Page({
         this.audioPacket.set(chunk, 48);
 
         if (app.globalData.udpClient) {
-          app.globalData.udpClient.send(this.audioPacket);
+          await new Promise(resolve => {
+            app.globalData.udpClient.send(this.audioPacket);
+            setTimeout(resolve, 62);
+          });
+          
         }
       }
     } catch (err) {

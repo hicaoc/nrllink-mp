@@ -1,9 +1,17 @@
 <view class="container">
   <!-- 用户信息卡片 -->
   <view class="user-card">
-    <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+
+
+<button class="avatar-wrapper"  open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+  <image  class="avatar" src="{{userInfo.avatar}}"></image>
+</button> 
+
+
+    <!-- <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image> -->
     <view class="info">
       <text class="name">{{userInfo.name}}</text>
+      <!-- <input type="nickname" class="weui-input" placeholder="请输入昵称"/> -->
       <text class="call-sign">{{userInfo.callsign}}-100</text>
       <text class="current-group" wx:if="{{currentGroup}}">{{currentGroup}}</text>
     </view>

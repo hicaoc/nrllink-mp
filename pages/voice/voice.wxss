@@ -17,6 +17,36 @@ page {
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  position: relative;
+}
+
+.avatar-wrapper {
+  width: 76px; /* 外层容器大小 */
+  height: 76px;
+  border-radius: 50%; /* 圆形 */
+  overflow: hidden; /* 确保内部元素不会溢出 */
+  padding: 0; /* 移除按钮的默认内边距 */
+  border: none; /* 移除按钮的默认边框 */
+  background: none; /* 移除按钮的默认背景 */
+  display: flex; /* 确保内容居中对齐 */
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 24px; /* Fixed position from the left */
+  z-index: 1; /* Ensure the avatar-wrapper is above other elements */
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* .avatar-wrappe{
+  width: 72px;
+  height: 72px;
 }
 
 .avatar {
@@ -26,11 +56,12 @@ page {
   margin-right: 20px;
   border: 2px solid #ffffff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+} */
 
 .info {
   display: flex;
   flex-direction: column;
+  margin-left: 116px; /* Margin to the right of the avatar-wrapper */
 }
 
 .name {
@@ -112,7 +143,6 @@ page {
   padding: 6px 24px; /* 增大左右内边距 */
   border-bottom: 1px solid #eee; /* 分隔线 */
   display: flex;
-
   align-items: baseline; /* 垂直居中 */
   justify-content: space-between; /* 内容均匀分布 */
   gap: 6px; /* 控制字段间的间距 */
