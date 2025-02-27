@@ -30,8 +30,8 @@
       {
         "pagePath": "pages/message/message",
         "text": "消息",
-        "iconPath": "images/message.jpg",
-        "selectedIconPath": "images/message-active.jpg"
+        "iconPath": "images/message.png",
+        "selectedIconPath": "images/message-active.png"
       },
       {
         "pagePath": "pages/config/config",
