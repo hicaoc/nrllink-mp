@@ -8,6 +8,8 @@ import {
 
 const api = require('../../utils/api');
 const app = getApp()
+let groupData = {}
+let searchInput = ''
 
 Page({
   data: {
@@ -18,7 +20,7 @@ Page({
       onlineCount: 0,
       devmap: []
     },
-    groupData: {},
+
     devices: [], // 所有设备列表
     selectedDevice: null, // 当前选择的设备
     expandedDetails: {}, // 用于存储每个设备的展开状态
@@ -45,7 +47,7 @@ Page({
     try {
       if (options && options.group) {
         const group = JSON.parse(decodeURIComponent(options.group))
-        this.groupData = group // 保存group数据用于刷新
+        groupData = group // 保存group数据用于刷新
 
 
 
@@ -91,7 +93,7 @@ Page({
 
       const devices = Object.values(devlist)
 
-      const filteredDevices = this.groupData.devmap
+      const filteredDevices = groupData.devmap
 
       // 排序规则：当前用户设备 > 其他设备
 
@@ -103,7 +105,7 @@ Page({
         return 0
       })
 
-      
+
 
       this.setData({ devices }) // 初始化filteredDevices
     } catch (error) {
@@ -118,7 +120,7 @@ Page({
   // async loadGroupDeviceList(group) {
   //   try {
 
-  
+
 
   //     const filteredDevices =  Object.values(group.devmap || {});
 
@@ -167,7 +169,7 @@ Page({
 
       await api.updateDevice({
         ...selectedDevice,
-        group_id: this.groupData.id
+        group_id: groupData.id
       })
 
       wx.showToast({
@@ -177,13 +179,13 @@ Page({
 
       await app.globalData.getGroupList()
 
-      const group = app.globalData.availableGroups.find(group => group.id === this.groupData.id)
-      this.groupData = group
+      const group = app.globalData.availableGroups.find(group => group.id === groupData.id)
+      groupData = group
       this.loadGroupDetail(group)
       this.loadDeviceList()
 
       if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
-        app.globalData.currentGroup = this.groupData;
+        app.globalData.currentGroup = groupData;
         app.globalData.currentDevice = selectedDevice;
       }
 
@@ -238,33 +240,46 @@ Page({
     return groupType ? groupType.name : groupTypeId;
   },
   // 获取设备状态名称
-  getDevStatusName(statusId) {
-    if (typeof statusId !== 'number') {
-      console.warn('Invalid statusId:', statusId);
-      return statusId;
-    }
-    const status = DevStatusOptions.find(s => s.id === statusId);
-    return status ? status.name : statusId;
-  },
+  // getDevStatusName(statusId) {
+  //   if (typeof statusId !== 'number') {
+  //     console.warn('Invalid statusId:', statusId);
+  //     return statusId;
+  //   }
+  //   const status = DevStatusOptions.find(s => s.id === statusId);
+  //   return status ? status.name : statusId;
+  // },
   // 获取设备状态对应的样式类
   getStatusClass(statusId) {
     const status = DevStatusOptions.find(s => s.id === statusId);
     if (!status) return 'unknown';
 
     switch (status.name) {
-      case '全开': return 'normal';
+      // case '全开': return 'normal';
       case '禁收': return 'disabled-receive';
       case '禁发': return 'disabled-send';
-      case '双禁': return 'disabled-both';
+      // case '双禁': return 'disabled-both';
       default: return 'unknown';
     }
   },
+  // getStatusBool(status){
+  //   let statusArray = []
+  //   if ((status & 1) === 1) {
+  //     statusArray.push(1)
+  //   }
+  //   if ((status & 2) === 2) {
+  //     statusArray.push(2)
+  //   }
+  //   if ((status & 4) === 4) {
+  //     statusArray.push(4)
+  //   }
+  //   return statusArray
+  // },
   // 处理状态选择
   async handleStatusChange(e) {
     const statusId = e.currentTarget.dataset.value;
     const device = e.currentTarget.dataset.device;
 
-    //console.log('device:',device);
+
 
     const userInfo = app.globalData.userInfo
 
@@ -275,10 +290,9 @@ Page({
         title: '权限不够',
         icon: 'errorerror'
       });
-
       return
-
     }
+
 
 
     wx.showLoading({
@@ -286,10 +300,40 @@ Page({
       mask: true
     });
 
+    if (statusId === "1") {
+      device.statusReceive = !device.statusReceive
+    }
+    if (statusId === "2") {
+      device.statusSend = !device.statusSend
+    }
+    if (statusId === "4") {     
+      device.statusTransparent = !device.statusTransparent
+    }
+
+
+    let status = 0
+
+
+    if (device.statusReceive) {   
+      status  = (status|1)
+    }
+    if (device.statusSend) {
+      status  = (status|2)
+    }
+    if (device.statusTransparent) {
+      status  = (status|4)
+    }
+
+    device.status = status
+
     try {
       await api.updateDevice({
         ...device,
-        status: statusId
+        status: status,
+        last_voice_begin_time: "0001-01-01T00:00:00Z",
+        last_voice_end_time: "0001-01-01T00:00:00Z",
+
+
       });
 
       wx.showToast({
@@ -298,10 +342,10 @@ Page({
       });
 
 
-      this.groupData.devmap[device.id].status = statusId;
+      groupData.devmap[device.id] = device;
 
       //this.setData({ devices });
-      this.loadGroupDetail(this.groupData)
+     this.loadGroupDetail(groupData)
     } catch (error) {
       wx.showToast({
         title: error.message || '状态更新失败',
@@ -358,12 +402,19 @@ Page({
       // };
 
       // 优化设备映射，在线设备优先
-      const devices = Object.values(group.devmap || {});
+      const devlist = Object.values(group.devmap || {});
+      const devices = devlist.filter(device => device.callsign.toLowerCase().includes(searchInput));
+
+
       // 按在线状态排序，在线设备在前
       devices.sort((a, b) => {
         if (a.is_online === b.is_online) return 0;
         return a.is_online ? -1 : 1;
       });
+
+
+
+
       const devmap = new Array(devices.length);
       let onlineCount = 0;
 
@@ -403,11 +454,11 @@ Page({
             rfTypeId = 0;
           }
 
-          statusId = Number(device.status);
-          if (isNaN(statusId)) {
-            console.warn('Invalid device status:', device.status);
-            statusId = 0;
-          }
+          // statusId = Number(device.status);
+          // if (isNaN(statusId)) {
+          //   console.warn('Invalid device status:', device.status);
+          //   statusId = 0;
+          // }
         } catch (error) {
           console.warn('Error parsing device rf type/status:', error);
         }
@@ -423,8 +474,13 @@ Page({
           rfType: rfTypeId,
           rfTypeText: this.getDevRFtypeName(rfTypeId),
           status: statusId,
-          statusText: this.getDevStatusName(statusId),
-          statusClass: this.getStatusClass(statusId),
+
+          statusReceive: ((device.status & 1) === 1) ? true : false,
+          statusSend: ((device.status & 2) === 2) ? true : false,
+          statusTransparent: ((device.status & 4) === 4) ? true : false,
+          //statusText: this.getDevStatusName(statusId),
+
+          //statusClass: this.getStatusClass(statusId),
           rfTypeClass: this.getRFtypeClass(rfTypeId),
           groupTypeClass: this.getGroupTypeClass(groupTypeId),
           last_packet_time: device.last_packet_time,
@@ -449,6 +505,8 @@ Page({
         console.warn('Error parsing group type:', error);
       }
 
+  
+
       const update = {
         'group.deviceCount': devmap.length,
         'group.onlineCount': onlineCount,
@@ -465,8 +523,8 @@ Page({
       //   update['group.statusText'] = group.statusText;
       // }
 
-      this.setData(update );
-      
+      this.setData(update);
+
     } catch (error) {
       wx.showToast({
         title: '加载群组详情失败',
@@ -477,15 +535,15 @@ Page({
   },
   onShow() {
     // 页面显示时刷新数据
-    if (this.groupData) {
-      this.loadGroupDetail(this.groupData)
+    if (groupData) {
+      this.loadGroupDetail(groupData)
     }
     this.loadDeviceList()
   },
   onPullDownRefresh() {
     // 下拉刷新
-    if (this.groupData) {
-      this.loadGroupDetail(this.groupData)
+    if (groupData) {
+      this.loadGroupDetail(groupData)
     }
     this.loadDeviceList()
 
@@ -505,11 +563,11 @@ Page({
 
     const device = e.currentTarget.dataset.device;
     // 如果不是管理员，只显示当前用户的设备
-    if ( device.is_online &&
-    (userInfo?.roles?.includes('admin') || device.callsign ===  userInfo?.callsign) &&
-     device.device_parm 
+    if (device.is_online &&
+      (userInfo?.roles?.includes('admin') || device.callsign === userInfo?.callsign) &&
+      device.device_parm
     ) {
-   
+
       wx.navigateTo({
         url: `/pages/device-settings/device-settings?device=${encodeURIComponent(JSON.stringify(device))}`
       });
@@ -517,13 +575,13 @@ Page({
   },
   // 处理搜索输入
   onSearchInput(e) {
-    const searchInput = e.detail.value.toLowerCase();
+    searchInput = e.detail.value.toLowerCase();
     const filteredDevices = this.data.group.devmap.filter(device => device.callsign.toLowerCase().includes(searchInput));
 
-    filteredDevices.sort((a, b) => {
-      if (a.is_online === b.is_online) return 0;
-      return a.is_online ? -1 : 1;
-    });
+    // filteredDevices.sort((a, b) => {
+    //   if (a.is_online === b.is_online) return 0;
+    //   return a.is_online ? -1 : 1;
+    // });
 
 
     // filteredDevices.sort((a, b) => {

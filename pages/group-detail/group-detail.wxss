@@ -285,15 +285,15 @@ tag.offline {
 }
 
 .status-button:nth-child(1).active {
-  background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%);
+  background: linear-gradient(135deg, #eb0303 0%, #eb0303 100%);
 }
 
 .status-button:nth-child(2).active {
-  background: linear-gradient(135deg, #E6A23C 0%, #ebb563  100%);
+  background: linear-gradient(135deg, #eb0303 0%, #eb0303  100%);
 }
 
 .status-button:nth-child(3).active {
-  background: linear-gradient(135deg, #E6A23C 0%, #ebb563 100%);
+  background: linear-gradient(135deg, #85ce61 0%, #85ce61 100%);
 }
 
 .status-button:nth-child(4).active {

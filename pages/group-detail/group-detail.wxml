@@ -58,15 +58,29 @@
           <tag class="title-value {{item.is_online ? 'online' : 'offline'}}">{{item.callsign}}-{{item.ssid}}</tag>
           <view class="status-button-group" data-device="{{item}}">
             <view 
-              class="status-button {{status.id === item.status ? 'active' : ''}}" 
-              wx:for="{{DevStatusOptions}}" 
-              wx:key="id"
-              wx:for-item="status" 
+              class="status-button {{item.statusReceive ? 'active' : ''}}"           
               bindtap="handleStatusChange"
-              data-value="{{status.id}}"
+              data-value="1"
               data-device="{{item}}"
             >
-              <text class="button-text">{{status.name}}</text>
+              <text class="button-text">禁收</text>
+            </view>
+            <view 
+              class="status-button {{item.statusSend ? 'active' : ''}}"        
+              bindtap="handleStatusChange"
+              data-value="2"
+              data-device="{{item}}"
+            >
+              <text class="button-text">禁发</text>
+            </view>
+            
+            <view wx:if="{{item.ssid === '200'}}"
+              class="status-button {{item.statusTransparent ? 'active' : ''}}"            
+              bindtap="handleStatusChange"
+              data-value="4"
+              data-device="{{item}}"
+            >
+              <text class="button-text">透明</text>
             </view>
           </view>
         </view>

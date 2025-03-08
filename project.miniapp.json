@@ -1,12 +1,12 @@
 {
   "miniVersion": "v2",
   "name": "%name%",
-  "version": "1.1.18",
+  "version": "1.2.26",
   "versionCode": 100,
   "i18nFilePath": "i18n",
   "mini-android": {
     "resourcePath": "miniapp/android/nativeResources",
-    "sdkVersion": "1.6.1",
+    "sdkVersion": "1.6.2",
     "toolkitVersion": "0.11.0",
     "useExtendedSdk": {
       "media": true,
@@ -45,7 +45,7 @@
     "targetSdkVersion": 29
   },
   "mini-ios": {
-    "sdkVersion": "1.6.1",
+    "sdkVersion": "1.6.3",
     "toolkitVersion": "0.0.9",
     "useExtendedSdk": {
       "WeAppOpenFuns": false,
