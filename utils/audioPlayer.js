@@ -65,12 +65,6 @@ function initWebAudio() {
         });
 
 
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed.");
-        }).catch((err) => {
-            console.error("Failed to resume AudioContext:", err);
-        });
-
         // 添加状态监听
         audioContext.onstatechange = () => {
             console.log('AudioContext state changed to:', audioContext.state);
@@ -84,6 +78,12 @@ function initWebAudio() {
             } else if (audioContext.state === 'running') {
 
                 console.log('AudioContext is running.  Resetting pcmBuffer');
+                audioContext.resume().then(() => {
+                    console.log("AudioContext resumed.");
+                }).catch((err) => {
+                    console.error("Failed to resume AudioContext:", err);
+                });
+        
                 // 在这里处理音频上下文恢复运行的情况
                 // 例如：恢复播放，重新加载数据等
                 // pcmBuffer = new Float32Array(0);
