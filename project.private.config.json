@@ -6,7 +6,7 @@
     "urlCheck": true,
     "skylineRenderEnable": false
   },
-  "libVersion": "3.6.6",
+  "libVersion": "3.7.10",
   "condition": {
     "miniprogram": {
       "list": [

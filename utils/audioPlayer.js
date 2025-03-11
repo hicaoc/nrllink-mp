@@ -1,14 +1,15 @@
 // audioPlayer.js
 const webAudioContext = wx.createWebAudioContext();
 
+
 // 音频流相关参数
 const SAMPLE_RATE = 8000;
 
 // 建议选择较小的值，以降低延迟
 // #if MP
-const BUFFER_SIZE = 1024; 
+const BUFFER_SIZE = 1024;
 // #elif IOS
-const BUFFER_SIZE = 2048; 
+const BUFFER_SIZE = 2048;
 // #elif ANDROID
 const BUFFER_SIZE = 4096;
 // #endif
@@ -58,20 +59,30 @@ function initWebAudio() {
             }
         };
 
+        wx.onAudioInterruptionEnd(() => {
+            audioContext.resume().then(() => {
+                console.log("AudioContext resumed app.");
+            }).catch((err) => {
+                console.error("Failed to resume AudioContext:", err);
+            });
+        })
+
+
         audioContext.resume().then(() => {
-            console.log("AudioContext resumed.");
+            console.log("AudioContext resumed 1.");
         }).catch((err) => {
             console.error("Failed to resume AudioContext:", err);
         });
 
+        // audioContext.suspend().then(() => {
+        //     console.log("AudioContext suspend.");
+        // }).catch((err) => {
+        //     console.error("Failed to suspend AudioContext:", err);
+        // });
 
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed.");
-        }).catch((err) => {
-            console.error("Failed to resume AudioContext:", err);
-        });
 
-        // 添加状态监听
+
+        //添加状态监听
         audioContext.onstatechange = () => {
             console.log('AudioContext state changed to:', audioContext.state);
 
@@ -83,7 +94,13 @@ function initWebAudio() {
                 // 例如：保存当前状态，清除数据，停止播放等
             } else if (audioContext.state === 'running') {
 
-                console.log('AudioContext is running.  Resetting pcmBuffer');
+                console.log('AudioContext is running');
+                // audioContext.resume().then(() => {
+                //     console.log("AudioContext resumed 2.");
+                // }).catch((err) => {
+                //     console.error("Failed to resume AudioContext:", err);
+                // });
+
                 // 在这里处理音频上下文恢复运行的情况
                 // 例如：恢复播放，重新加载数据等
                 // pcmBuffer = new Float32Array(0);
@@ -91,14 +108,19 @@ function initWebAudio() {
             }
         };
 
-
-
-
         console.log("Web Audio initialized successfully.");
     } catch (err) {
         console.error("Failed to initialize Web Audio:", err);
     }
 }
+
+// function resume() {
+//     audioContext.resume().then(() => {
+//         console.log("AudioContext resumed 3.");
+//     }).catch((err) => {
+//         console.error("Failed to resume AudioContext:", err);
+//     });
+// }
 
 
 // 接收 G.711 数据并解码
@@ -145,4 +167,5 @@ function resamplePCM(input, inputSampleRate, outputSampleRate) {
 module.exports = {
     initWebAudio,
     play,
+
 };
