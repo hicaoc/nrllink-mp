@@ -47,7 +47,7 @@
 <scroll-view class="call-history" scroll-y scroll-x="false">
       <view class="call-item" wx:for="{{callHistory}}" wx:key="endTime">
         <text class="call-sign">{{item.CallSign}}-{{item.SSID}}</text>
-        <text class="call-name">{{item.Name}}</text>
+        <text class="call-name">{{item.QTH}}</text>
         <text class="call-duration">{{item.duration}}s</text>
         <text class="call-time">{{item.endTime}}</text>
       </view>

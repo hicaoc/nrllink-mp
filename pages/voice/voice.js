@@ -214,7 +214,9 @@ Page({
           const item = {
             CallSign: this.data.CallSign,
             SSID: this.data.SSID,
-            Name: currentDevice.name,
+            // Name: currentDevice.name,
+            QTH: currentDevice.qth,
+            startTime: this.formatLastVoiceTime(this.data.startTime),
             duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           };
