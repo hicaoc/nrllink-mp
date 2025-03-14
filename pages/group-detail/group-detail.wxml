@@ -111,6 +111,10 @@
           <text class="value">{{item.model || '未知'}}</text>
         </view>
         <view class="info-row">
+          <text class="label">QTH：</text>
+          <text class="value">{{item.qth || '未知'}}</text>
+        </view>
+        <view class="info-row">
           <text class="label">创建时间：</text>
           <text class="value">{{item.create_time || '无'}}</text>
         </view>

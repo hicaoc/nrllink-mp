@@ -486,6 +486,7 @@ Page({
           last_packet_time: device.last_packet_time,
           last_voice_begin_time: device.last_voice_begin_time,
           last_voice_end_time: this.formatGoTime(device.last_voice_end_time),
+          qth: device.qth,
           create_time: device.create_time,
           update_time: device.update_time,
           online_time: device.online_time
