@@ -72,6 +72,12 @@
   <view class="server-status">
     <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
     <text class="status-text">{{serverConnected ? '服务器在线' : '服务器离线'}}</text>
+    <text class="thanks-text" style="display: block;" bindtap="showThanksList">！感谢！</text>
   </view>
+
+  <!-- 弹出列表 -->
+<view class="thanks-list" wx:if="{{showList}}">
+  <view class="list-item" wx:for="{{thanksItems}}" wx:key="index">{{item}}</view>
+</view>
 
 </view>

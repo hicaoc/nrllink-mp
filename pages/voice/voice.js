@@ -17,7 +17,23 @@ Page({
     server: app.globalData.serverConfig.host,
     port: app.globalData.serverConfig.port,
     serverConnected: false,
+    showList: false,
+    thanksItems: [
+      'BG6FCS', 
+      'BH4TIH', 
+      'BA4RN',
+      'BA4QEK',
+      'BA4QAO',
+      'BD4VKI',
+      'BH4VAP',
+      'BH4TDV',
+      'BI4UMD',
+      'BA4QGT',
+      'BH1OSW',
+      '还有很多，列表放不下了'
+      
 
+    ], // 测试数据
 
     currentGroup: null,
     mdcPacket: null,
@@ -30,19 +46,12 @@ Page({
     CallSign: null,
     SSID: null,
 
-
-
-
     duration: null,
     startTime: null,
     activeCall: null // Current active call
   },
 
-
   async onLoad() {
-
-
-
     this.setData({
       userInfo: app.globalData.userInfo,
       callHistory: app.globalData.callHistory.reverse(),
@@ -61,9 +70,7 @@ Page({
     app.globalData.udpClient = new udp.UDPClient({
       host: app.globalData.serverConfig.host,
       port: app.globalData.serverConfig.port,
-
       onMessage: this.handleMessage.bind(this)
-
     });
 
     // 启动心跳定时器
@@ -95,10 +102,6 @@ Page({
       this.mdcPacket = new Uint8Array(500);
     }
 
-
-
-
-
     // 预创建音频包实例
     const audioPacket = nrl21.createPacket({
       type: 1,
@@ -110,16 +113,12 @@ Page({
     this.audioPacket = new Uint8Array(548);
     this.audioPacket.set(audioPacketHead, 0);
 
-
-    qthmap =  await app.globalData.getQTHmap()
+    qthmap = await app.globalData.getQTHmap()
     //console.log("qthmap",qthmap)
-
 
     //this.refreshData()
 
     audio.initWebAudio()
-
-
   },
 
   onUnload() {
@@ -127,7 +126,6 @@ Page({
   },
 
   onShow() {
-
     wx.setKeepScreenOn({
       keepScreenOn: true, // 设置屏幕常亮
       success() {
@@ -138,23 +136,15 @@ Page({
       }
     });
 
-
     this.refreshData()
-
     this.checkConnection();
-
-
   },
 
   async refreshData() {
+    const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100)
+    app.globalData.currentDevice = currentDevice
 
-    //await app.globalData.getDeviceList()
-
-   const currentDevice =  await app.globalData.getDevice(app.globalData.userInfo.callsign,100)
-
-   app.globalData.currentDevice = currentDevice
-
-   //console.log("currentDevice",currentDevice)
+    //console.log("currentDevice",currentDevice)
 
     let currentGroup = await app.globalData.getGroup(currentDevice?.group_id)
 
@@ -163,21 +153,25 @@ Page({
     });
   },
 
-  // getCurrentGroup() {
+  showThanksList() {
+    console.log('showList before toggle:', this.data.showList);
+    this.setData({
+      showList: !this.data.showList
+    });
+    console.log('showList after toggle:', this.data.showList);
+  },
 
+  // getCurrentGroup() {
   //   const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
   //   this.setData({ currentGroup });
   //   return currentGroup;
   // },
-
 
   // 启动心跳定时器
   startHeartbeat() {
     if (this.heartbeatTimer) {
       return;
     }
-
-
 
     this.heartbeatTimer = setInterval(() => {
       if (app.globalData.udpClient) {
@@ -186,30 +180,22 @@ Page({
     }, 2000);
   },
 
-
-
   handleMessage(data) {
     const packet = nrl21.decodePacket(data);
 
     // 根据消息类型分发
     switch (packet.type) {
       case 1: // 语音消息
-
         audio.play(packet.data, packet.type);
 
         if ((this.data.CallSign !== packet.callSign && this.data.CallSign)
           || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
           || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
 
-         // const Device = app.globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
-          
-         //console.log("handleMessage",packet.callSign+packet.ssid,qthmap)
-
           const item = {
             CallSign: this.data.CallSign,
             SSID: this.data.SSID,
-            // Name: currentDevice.name,
-            QTH: qthmap[this.data.CallSign+'-'+this.data.SSID],
+            QTH: qthmap[this.data.CallSign + '-' + this.data.SSID],
             startTime: this.formatLastVoiceTime(this.data.startTime),
             duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
@@ -241,9 +227,6 @@ Page({
           lastVoiceDisplayTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
           lastCallsign: packet.callSign + packet.ssid
         });
-
-
-
         break;
 
       case 2: // 心跳包
@@ -254,26 +237,20 @@ Page({
         break;
 
       case 5: // 文本消息
-
         if (app.globalData.messagePage) {
           app.globalData.messagePage.handleMessage(packet);
         }
         break;
     }
-
-
   },
 
   onChooseAvatar(e) {
-
-    const { avatarUrl } = e.detail 
-
+    const { avatarUrl } = e.detail
     app.globalData.userInfo.avatar = avatarUrl
     this.setData({
-      userInfo:  app.globalData.userInfo
+      userInfo: app.globalData.userInfo
     })
   },
-
 
   checkConnection() {
     if (this.lastMessageTime && Date.now() - this.lastMessageTime > 6000) {
@@ -289,15 +266,7 @@ Page({
 
   async checkAudioPermission() {
     try {
-      // 获取设备信息
-      //const deviceInfo = await wx.getDeviceInfo();
-
-
-      // 检查录音权限状态
       const authSetting = await wx.getAppAuthorizeSetting();
-
-
-
       console.log('设备信息：', authSetting)
 
       if (authSetting['microphoneAuthorized'] === true) {
@@ -312,7 +281,6 @@ Page({
         throw new Error('录音权限被拒绝' + authSetting['microphoneAuthorized']);
       }
 
-      // 请求录音权限
       await wx.authorize({
         scope: 'scope.record'
       });
@@ -355,10 +323,6 @@ Page({
       return;
     }
 
-    // wx.setKeepScreenOn({
-    //   keepScreenOn: true
-    // });
-
     const processAudio = async () => {
       let buffer = new Uint8Array(0);
       let encodedBuffer = true
@@ -369,8 +333,6 @@ Page({
         try {
           const data = await this.recorder.getNextAudioFrame();
 
-          //console.log('处理音频:', data.length)
-
           if (!data) continue;
 
           const newBuffer = new Uint8Array(buffer.length + data.length);
@@ -379,7 +341,6 @@ Page({
           buffer = newBuffer;
 
           while (buffer.length >= 500) {
-
             const packetData = buffer.slice(0, 500);
             buffer = buffer.slice(500);
             this.audioPacket.set(packetData, 48);
@@ -438,7 +399,6 @@ Page({
             app.globalData.udpClient.send(this.audioPacket);
             setTimeout(resolve, 62);
           });
-          
         }
       }
     } catch (err) {
@@ -453,7 +413,6 @@ Page({
     }
   },
 
-  // 点击切换通话状态
   // 点击切换通话状态
   toggleTalk() {
     if (this.data.isTalking) {
@@ -471,15 +430,10 @@ Page({
 
       this.setData({
         callHistory: [...app.globalData.callHistory].reverse(),
-
       });
     } else {
       this.startRecording();
       app.globalData.recoderStartTime = Date.now()
-
-
-
-
     }
   },
 

@@ -140,7 +140,7 @@ page {
 }
 
 .call-item {
-  padding: 6px 24px; /* 增大左右内边距 */
+  padding: 6px 6px; /* 增大左右内边距 */
   border-bottom: 1px solid #eee; /* 分隔线 */
   display: flex;
   align-items: baseline; /* 垂直居中 */
@@ -242,6 +242,8 @@ page {
   display: flex;
   align-items: center;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  position: relative;
+  z-index: 1;
 }
 
 .status-indicator {
@@ -268,6 +270,42 @@ page {
   font-weight: 500;
 }
 
+.thanks-text {
+  margin-left: auto; /* 靠右 */
+  font-size: 16px;   /* 增大字体大小 */
+  color: #07c160;    /* 使用主题绿色 */
+  font-weight: 500;  /* 加粗 */
+  padding: 8px 16px; /* 增加内边距 */
+  background: rgba(7,193,96,0.1); /* 浅绿色背景 */
+  border-radius: 20px; /* 圆角 */
+  cursor: pointer; /* 添加鼠标指针样式 */
+  transition: all 0.2s ease;
+}
+
+.thanks-text:active {
+  background: rgba(7,193,96,0.2); /* 点击时加深背景 */
+  transform: scale(0.95);
+}
+
+.thanks-list {
+  position: fixed;
+  bottom: 100px; /* 根据需要调整位置 */
+  right: 24px; /* 根据需要调整位置 */
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  padding: 12px;
+  z-index: 1000;
+}
+
+.list-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
 .audio-output-select {
   margin: 20px 0;
   padding: 16px;
