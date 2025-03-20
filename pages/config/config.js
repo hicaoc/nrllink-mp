@@ -17,7 +17,7 @@ Page({
   },
 
   onShow() {
-    this.refreshData();
+    // this.refreshData();
   },
 
   async refreshData() {
@@ -25,7 +25,16 @@ Page({
     const app = getApp();
 
     //await app.globalData.getGroupList()
-    const groups = app.globalData.availableGroups
+    const groups = await app.globalData.getGroupList();
+
+          // 按在线状态排序，在线设备在前
+          groups.sort((a, b) => {
+            if (a.id === b.id) return 0;
+            return a.id < b.id ? -1 : 1;
+          });
+    
+    
+
     this.setData({ groups });
 
   },
@@ -51,13 +60,7 @@ Page({
   async onPullDownRefresh() {
     try {
       // 下拉刷新
-      const app = getApp();
-
-      await app.globalData.getGroupList();
-     
-
-      const groups = app.globalData.availableGroups;
-      this.setData({ groups });
+      this.refreshData();
 
       console.log('Pull-down refresh completed successfully.');
     } catch (error) {

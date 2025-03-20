@@ -7,6 +7,8 @@ import * as mdc from '../../utils/mdc1200';
 
 const app = getApp();
 
+let qthmap = {}
+
 Page({
   data: {
     userInfo: {},
@@ -27,6 +29,8 @@ Page({
     lastCallsign: null,
     CallSign: null,
     SSID: null,
+
+
 
 
     duration: null,
@@ -107,9 +111,11 @@ Page({
     this.audioPacket.set(audioPacketHead, 0);
 
 
+    qthmap =  await app.globalData.getQTHmap()
+    //console.log("qthmap",qthmap)
 
 
-    this.refreshData()
+    //this.refreshData()
 
     audio.initWebAudio()
 
@@ -133,50 +139,36 @@ Page({
     });
 
 
+    this.refreshData()
 
     this.checkConnection();
-    this.getCurrentGroup();
+
 
   },
 
   async refreshData() {
 
+    //await app.globalData.getDeviceList()
 
-    await app.globalData.getGroupList()
-    await app.globalData.getDeviceList()
+   const currentDevice =  await app.globalData.getDevice(app.globalData.userInfo.callsign,100)
 
-    const groups = app.globalData.availableGroups
-    const devices = app.globalData.availableDevices
+   app.globalData.currentDevice = currentDevice
 
-    const currentDevice = devices.find(device => device.callsign === app.globalData.userInfo.callsign && device.ssid === 100)
+   //console.log("currentDevice",currentDevice)
 
-    let currentGroup = null;
-
-    if (currentDevice) {
-      currentGroup = groups.find(group => group.id === currentDevice.group_id);
-      currentDevice.name  = '本微信小程序';
-    }
-
-    app.globalData.currentGroup = currentGroup || null;
-    app.globalData.currentDevice = currentDevice || null;
-
-    app.globalData.onGroupChange = (newGroup) => {
-      this.setData({
-        currentGroup: newGroup?.name || '未加入群组'
-      });
-    };
+    let currentGroup = await app.globalData.getGroup(currentDevice?.group_id)
 
     this.setData({
       currentGroup: currentGroup ? currentGroup.name : '未加入群组'
     });
   },
 
-  getCurrentGroup() {
+  // getCurrentGroup() {
 
-    const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
-    this.setData({ currentGroup });
-    return currentGroup;
-  },
+  //   const currentGroup = app.globalData.currentGroup?.name || '未加入群组';
+  //   this.setData({ currentGroup });
+  //   return currentGroup;
+  // },
 
 
   // 启动心跳定时器
@@ -209,13 +201,15 @@ Page({
           || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
           || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
 
-          const currentDevice = app.globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
+         // const Device = app.globalData.availableDevices.find(device => device.callsign === this.data.CallSign && device.ssid === this.data.SSID)
+          
+         //console.log("handleMessage",packet.callSign+packet.ssid,qthmap)
 
           const item = {
             CallSign: this.data.CallSign,
             SSID: this.data.SSID,
             // Name: currentDevice.name,
-            QTH: currentDevice.qth,
+            QTH: qthmap[this.data.CallSign+'-'+this.data.SSID],
             startTime: this.formatLastVoiceTime(this.data.startTime),
             duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),

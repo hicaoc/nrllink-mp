@@ -42,7 +42,11 @@ Page({
     this.toggleDetails = this.toggleDetails.bind(this); // 绑定展开详细信息方法
     this.navigateToDeviceSettings = this.navigateToDeviceSettings.bind(this); // 绑定导航到设备设置页面方法
 
-    this.setData({ selectedDevice: app.globalData.currentDevice })
+    let currentDevice = app.globalData.currentDevice
+
+    currentDevice.displayName = currentDevice.callsign + '-' + currentDevice.ssid + '-' + currentDevice.cpuid + '-' + currentDevice.id
+
+    this.setData({ selectedDevice: currentDevice })
 
     try {
       if (options && options.group) {
@@ -51,8 +55,7 @@ Page({
 
 
 
-        this.loadGroupDetail(group)
-        this.loadDeviceList()
+        //this.refreshData(group?.group_id)
         //this.loadGroupDeviceList(group)
       } else {
         wx.showToast({
@@ -68,6 +71,16 @@ Page({
       console.error('Group data parse error:', error)
     }
   },
+
+  async refreshData() {
+
+
+    let currentGroup = await app.globalData.getGroup(groupData.id)
+
+    this.loadGroupDetail(currentGroup)
+    this.loadDeviceList()
+   },
+ 
   loadReayList() {
 
     api.fetchRelayList({}).then((response) => {
@@ -79,31 +92,33 @@ Page({
   async loadDeviceList() {
     try {
 
-      const userInfo = app.globalData.userInfo
-      let devlist = app.globalData.availableDevices || []
-      const currentCallsign = userInfo?.callsign
-
-      // 如果不是管理员，只显示当前用户的设备
-      if (!userInfo?.roles?.includes('admin')) {
-
-        devlist = devlist.filter(device => device.callsign === currentCallsign)
-      }
+     
+      let devlist = await app.globalData.getMyDevices() || []
+    
+   
+      
 
       //console.log("devices:", devlist)
 
-      const devices = Object.values(devlist)
+      //const devices = Object.values(devlist.items)
 
-      const filteredDevices = groupData.devmap
+      const devices = Object.values(devlist.items).map(device => ({
+        ...device,
+        displayName: `${device.callsign}-${device.ssid}(${device.cpuid}-${device.id})`
+      }));
+
+
+      //const filteredDevices = groupData.devmap
 
       // 排序规则：当前用户设备 > 其他设备
 
-      devices.sort((a, b) => {
-        const isCurrentA = a.callsign === currentCallsign
-        const isCurrentB = b.callsign === currentCallsign
-        if (isCurrentA && !isCurrentB) return -1
-        if (!isCurrentA && isCurrentB) return 1
-        return 0
-      })
+      // devices.sort((a, b) => {
+      //   const isCurrentA = a.callsign === currentCallsign
+      //   const isCurrentB = b.callsign === currentCallsign
+      //   if (isCurrentA && !isCurrentB) return -1
+      //   if (!isCurrentA && isCurrentB) return 1
+      //   return 0
+      // })
 
 
 
@@ -177,11 +192,12 @@ Page({
         icon: 'success'
       })
 
-      await app.globalData.getGroupList()
+      //await app.globalData.getGroupList()
+      groupData = await app.globalData.getGroup(groupData.id)
 
-      const group = app.globalData.availableGroups.find(group => group.id === groupData.id)
-      groupData = group
-      this.loadGroupDetail(group)
+      //const group = app.globalData.availableGroups.find(group => group.id === groupData.id)
+      //groupData = group
+      this.loadGroupDetail(groupData)
       this.loadDeviceList()
 
       if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
@@ -507,6 +523,8 @@ Page({
       }
 
   
+  
+      //console.log('Load group detail:', group);
 
       const update = {
         'group.deviceCount': devmap.length,
@@ -514,12 +532,13 @@ Page({
         'group.devmap': devmap,
         filteredDevices: devmap,
         'group.type': this.getGroupTypeName(groupTypeId),
-        'group.typeName': this.getGroupTypeName(groupTypeId)
+        'group.typeName': this.getGroupTypeName(groupTypeId),
+        'group.displayName': group?.id + '-' +group?.name
       };
 
-      if (group.displayName !== this.data.group.displayName) {
-        update['group.displayName'] = group.displayName;
-      }
+      // if (group.displayName !== this.data.group.displayName) {
+      //   update['group.displayName'] = group.displayName;
+      // }
       // if (group.statusText !== this.data.group.statusText) {
       //   update['group.statusText'] = group.statusText;
       // }
@@ -531,13 +550,14 @@ Page({
         title: '加载群组详情失败',
         icon: 'none'
       })
-      console.error('Load group detail error:', error)
+      //console.error('Load group detail error:', error)
     }
   },
   onShow() {
     // 页面显示时刷新数据
     if (groupData) {
-      this.loadGroupDetail(groupData)
+      this.refreshData()
+      //this.loadGroupDetail(groupData)
     }
     this.loadDeviceList()
   },

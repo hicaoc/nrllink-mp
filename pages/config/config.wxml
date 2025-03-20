@@ -9,10 +9,10 @@
         class="group-item"
         bindtap="navigateToGroupDetail"
         data-group="{{item}}">
-        <text class="group-name">{{item.displayName}}</text>
+        <text class="group-name">{{item.id}}-{{item.name}}</text>
         <view class="group-stats">
-          <text class="online-count">{{item.onlineCount || 0}}</text>
-          <text class="total-count">/{{item.deviceCount || 0}}</text>
+          <text class="online-count">{{item.online_dev_number || 0}}</text>
+          <text class="total-count">/{{item.total_dev_number || 0}}</text>
         </view>
       </view>
     </view>

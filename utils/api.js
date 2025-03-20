@@ -121,6 +121,25 @@ const api = {
     });
   },
 
+  // 获取群组mini列表
+  getGroup(data) {
+    return request({
+      url: '/group/get',
+      method: 'POST',
+      data
+    });
+  },
+
+  // 获取群组mini列表
+  getGroupListMini() {
+    return request({
+      url: '/group/list/mini',
+      method: 'POST'
+    });
+  },
+
+
+
   // 获取设备列表
   getDeviceList() {
     return request({
@@ -129,16 +148,52 @@ const api = {
     });
   },
 
-    // 获取设备列表
-    getplatformList() {
-      return request({
-        url: '/platform/list', // 修改为新的接口地址
-        method: 'POST'
-      });
-    },
+  // 获取设备列表
+  getDevice(data) {
+    return request({
+      url: '/device/get', // 修改为新的接口地址
+      method: 'POST',
+      data
+    });
+  },
+
+  getMyDevices() {
+    return request({
+      url: '/device/mydevlist', // 修改为新的接口地址
+      method: 'GET',
+    });
+  },
+
+  getQTH(data) {
+    return request({
+      url: '/device/qth', // 修改为新的接口地址
+      method: 'POST',
+      data
+    });
+  },
+
 
   
-  
+  getQTHmap() {
+    return request({
+      url: '/device/qthmap', // 修改为新的接口地址
+      method: 'GET',
+    });
+  },
+
+
+
+
+  // 获取设备列表
+  getplatformList() {
+    return request({
+      url: '/platform/list', // 修改为新的接口地址
+      method: 'POST'
+    });
+  },
+
+
+
 
   // 更新设备信息
   updateDevice(device) {
@@ -188,13 +243,13 @@ const api = {
     // .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
     // .join('&');
 
-    console.log(data);
+    //console.log(data);
 
     return request({
       url: '/device/change',
       method: 'POST',
       header: {
-        'Content-Type': 'application/x-www-form-urlencoded',      
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       data
     })
@@ -224,7 +279,7 @@ const api = {
     })
   },
 
-fetchRelayList(data) {
+  fetchRelayList(data) {
     return request({
       url: '/relay/list',
       method: 'post',
