@@ -1,7 +1,7 @@
 {
   "miniVersion": "v2",
   "name": "%name%",
-  "version": "1.3.2",
+  "version": "1.5.2",
   "versionCode": 100,
   "i18nFilePath": "i18n",
   "mini-android": {

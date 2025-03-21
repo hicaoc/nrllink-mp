@@ -3,10 +3,10 @@
   "projectname": "NRL互联",
   "setting": {
     "compileHotReLoad": true,
-    "urlCheck": true,
+    "urlCheck": false,
     "skylineRenderEnable": false
   },
-  "libVersion": "3.7.10",
+  "libVersion": "development",
   "condition": {
     "miniprogram": {
       "list": [

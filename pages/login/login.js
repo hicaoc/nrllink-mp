@@ -6,8 +6,6 @@ Page({
   data: {
     username: '',
     password: '',
-    //tempPassword: '', // 用于临时保存密码
-    //showPassword: false,
     loading: false,
     serverList: [
       { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
@@ -16,20 +14,19 @@ Page({
       { name: 'BH4TDV实验场', host: 'bh4tdv.nrlptt.com', port: 60050 }
     ],
     serverIndex: 1, // Default to NRLPTT主站
-    customServer: ''
+    customServer: '',
+    selectedOption: 'predefined' // Add selectedOption to track the selection
   },
 
   bindServerChange(e) {
-    //console.log('picker发送选择改变，携带值为', e.detail.value);
     const newServerIndex = e.detail.value;
     this.setData({
-      serverIndex: newServerIndex
+      serverIndex: newServerIndex,
+      selectedOption: 'predefined' // Set selectedOption to predefined when server is selected
     });
 
     const serverCredentials = wx.getStorageSync('serverCredentials') || {};
-    console.log('serverCredentials:', serverCredentials); // 添加这行
     const currentServerCreds = serverCredentials[newServerIndex];
-    //console.log('currentServerCreds:', currentServerCreds); // 添加这行
 
     if (currentServerCreds) {
       this.setData({
@@ -43,23 +40,18 @@ Page({
       });
     }
   },
+
   inputCustomServer(e) {
     this.setData({
-      customServer: e.detail.value
-    })
+      customServer: e.detail.value,
+      selectedOption: 'custom' // Set selectedOption to custom when custom server is entered
+    });
   },
 
   onLoad() {
+    this.getPlatformList();
 
-    this.getPlatformList()
-    // 检查是否有有效 token
-    // const token = wx.getStorageSync('token');
-    // const userInfo = wx.getStorageSync('userInfo');
-    // const cpuId = wx.getStorageSync('cpuId');
-    // const passcode = wx.getStorageSync('passcode');
     const serverCredentials = wx.getStorageSync('serverCredentials') || {};
-
-    // 设置默认服务器索引
     const savedServerIndex = wx.getStorageSync('savedServerIndex');
     if (savedServerIndex !== undefined) {
       this.setData({
@@ -67,7 +59,6 @@ Page({
       });
     }
 
-    // 如果当前服务器有存储的凭证，自动填充
     const currentServerCreds = serverCredentials[this.data.serverIndex];
     if (currentServerCreds) {
       this.setData({
@@ -75,18 +66,7 @@ Page({
         password: currentServerCreds.password
       });
     }
-
-    // if (token && userInfo && cpuId && passcode) {
-    //   console.log('检测到有效 token，初始化全局数据');
-    //   app.globalData.userInfo = userInfo;
-    //   app.globalData.cpuId = cpuId;
-    //   app.globalData.passcode = passcode;
-    //   wx.switchTab({ url: '/pages/voice/voice' });
-    //   return;
-    // }
   },
-
-
 
   inputUsername(e) {
     this.setData({ username: e.detail.value });
@@ -95,28 +75,6 @@ Page({
   inputPassword(e) {
     this.setData({ password: e.detail.value });
   },
-
-  // togglePassword() {
-  //   console.log('togglePassword1',this.data.password);
-  //       // 1. 保存当前密码到 tempPassword
-  //        // 1. 保存当前密码到 tempPassword
-  //   this.setData({
-  //     tempPassword: this.data.password
-  //   });
-
-  //   // 2. 切换 showPassword 状态
-  //   this.setData({
-  //     showPassword: !this.data.showPassword
-  //   }, () => {
-  //     wx.nextTick(() => {
-  //       this.setData({
-  //         password: this.data.tempPassword,
-  //         tempPassword: ''
-  //       });
-  //     });
-  //   });
-  //   console.log('togglePassword2',this.data.password);
-  // },
 
   login() {
     if (this.data.loading) return;
@@ -131,13 +89,11 @@ Page({
       return;
     }
 
-    // 存储凭证
     try {
       const serverCredentials = wx.getStorageSync('serverCredentials') || {};
       serverCredentials[this.data.serverIndex] = { username, password };
       wx.setStorageSync('serverCredentials', serverCredentials);
       wx.setStorageSync('savedServerIndex', this.data.serverIndex);
-      console.log('成功存储服务器凭证');
     } catch (err) {
       wx.showToast({
         title: '存储失败，请检查存储空间',
@@ -150,25 +106,24 @@ Page({
 
     const api = require('../../utils/api');
 
-    // 更新服务器配置
+    const selectedServer = this.data.selectedOption === 'predefined' 
+      ? this.data.serverList[this.data.serverIndex] 
+      : { host: this.data.customServer };
 
-    const selectedServer = this.data.serverList[this.data.serverIndex];
     app.globalData.serverConfig = {
-      name: selectedServer.name,
+      name: selectedServer.name || 'Custom Server',
       host: selectedServer.host,
-      port: selectedServer.port
+      port: selectedServer.port || 60050 // Default port if not specified
     };
-
 
     api.login({ username, password })
       .then(res => {     
-
         if (res.token) {
           wx.setStorageSync('token', res.token);
           this.getUserInfo();
-        }else { 
+        } else { 
           wx.showToast({
-            title:  '用户名或者密码错',
+            title: '用户名或者密码错',
             icon: 'none'
           });
         }
@@ -217,19 +172,18 @@ Page({
     }
   },
 
-
   getPlatformList() {
-    const url = 'https://nrlptt.com/platform/list'; // 替换为你的接口地址
+    const url = 'https://nrlptt.com/platform/list';
 
     wx.request({
-      url: url, // 请求地址
-      method: 'GET', // 请求方法
+      url: url,
+      method: 'GET',
       header: {
-        'content-type': 'application/json', // 默认值，告诉服务器以 JSON 格式接收数据
+        'content-type': 'application/json',
       },
       success: (res) => {
         this.setData({
-          serverList: res.data.data.items, // 保存结果到页面数据
+          serverList: res.data.data.items,
         });
       },
       fail: (err) => {
@@ -237,7 +191,10 @@ Page({
       },
     });
   },
+
+  bindRadioChange(e) {
+    this.setData({
+      selectedOption: e.detail.value
+    });
+  }
 });
-
-
-

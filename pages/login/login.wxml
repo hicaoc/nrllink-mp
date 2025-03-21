@@ -6,7 +6,18 @@
     
     <view class="form">
 
-      <view class="input-group">
+<view class="input-group">
+        <radio-group bindchange="bindRadioChange">
+          <label class="radio">
+            <radio value="predefined" checked="{{selectedOption === 'predefined'}}" /> 预定义服务器
+          </label>
+          <label class="radio">
+            <radio value="custom" checked="{{selectedOption === 'custom'}}" /> 自定义服务器
+          </label>
+        </radio-group>
+      </view>
+
+      <view wx:if="{{selectedOption === 'predefined'}}" class="input-group">
         <text class="label">服务器</text>
         <picker bindchange="bindServerChange" value="{{serverIndex}}" range="{{serverList}}" range-key="name">
           <view class="picker">
@@ -15,7 +26,7 @@
         </picker>
       </view>
 
-      <!-- <view class="input-group">
+      <view wx:if="{{selectedOption === 'custom'}}" class="input-group">
         <text class="label">自定义服务器</text>
         <input 
           placeholder="请输入服务器地址" 
@@ -23,7 +34,7 @@
           class="input"
           value="{{customServer}}"
         />
-      </view> -->
+      </view>
 
       <view class="input-group">
         <text class="label">用户名</text>
