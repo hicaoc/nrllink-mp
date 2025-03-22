@@ -74,13 +74,13 @@
               <text class="button-text">禁发</text>
             </view>
             
-            <view wx:if="{{item.ssid === '200'}}"
-              class="status-button {{item.statusTransparent ? 'active' : ''}}"            
-              bindtap="handleStatusChange"
+            <view 
+              class="status-button active"            
+              bindtap="handleChangeGroup"
               data-value="4"
               data-device="{{item}}"
             >
-              <text class="button-text">透明</text>
+              <text class="button-text">换组</text>
             </view>
           </view>
         </view>

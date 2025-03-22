@@ -52,6 +52,8 @@ Page({
   },
 
   async onLoad() {
+
+    console.log('onLoad-voice')
     this.setData({
       userInfo: app.globalData.userInfo,
       callHistory: app.globalData.callHistory.reverse(),

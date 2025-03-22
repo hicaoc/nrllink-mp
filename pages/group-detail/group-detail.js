@@ -34,6 +34,7 @@ Page({
 
 
     // 绑定所有需要的方法
+    console.log('onLoad-group-detail',options)
 
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
@@ -322,9 +323,9 @@ Page({
     if (statusId === "2") {
       device.statusSend = !device.statusSend
     }
-    if (statusId === "4") {     
-      device.statusTransparent = !device.statusTransparent
-    }
+    // if (statusId === "4") {     
+    //   device.statusTransparent = !device.statusTransparent
+    // }
 
 
     let status = 0
@@ -336,9 +337,11 @@ Page({
     if (device.statusSend) {
       status  = (status|2)
     }
-    if (device.statusTransparent) {
-      status  = (status|4)
-    }
+    // if (device.statusTransparent) {
+    //   status  = (status|4)
+    // }
+
+   
 
     device.status = status
 
@@ -358,10 +361,15 @@ Page({
       });
 
 
-      groupData.devmap[device.id] = device;
+
+
+      //groupData.devmap[device.id] = device;
+
+
 
       //this.setData({ devices });
-     this.loadGroupDetail(groupData)
+     this.refreshData()
+     //this.loadGroupDetail(groupData)
     } catch (error) {
       wx.showToast({
         title: error.message || '状态更新失败',
@@ -493,7 +501,7 @@ Page({
 
           statusReceive: ((device.status & 1) === 1) ? true : false,
           statusSend: ((device.status & 2) === 2) ? true : false,
-          statusTransparent: ((device.status & 4) === 4) ? true : false,
+          //statusTransparent: ((device.status & 4) === 4) ? true : false,
           //statusText: this.getDevStatusName(statusId),
 
           //statusClass: this.getStatusClass(statusId),
