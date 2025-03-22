@@ -28,13 +28,16 @@ Page({
     DevStatusOptions: DevStatusOptions, // 添加状态选项
     relayOptions: [],
     searchInput: '', // 新增搜索输入
-    filteredDevices: [] // 新增过滤后的设备列表
+    filteredDevices: [], // 新增过滤后的设备列表
+    showChangeGroupModal: false, // 控制换组模态框显示
+    availableGroups: [], // 可用群组列表
+    selectedGroupId: null // 选择的群组ID
   },
   onLoad(options) {
 
 
     // 绑定所有需要的方法
-    console.log('onLoad-group-detail',options)
+    console.log('onLoad-group-detail')
 
     this.loadGroupDetail = this.loadGroupDetail.bind(this);
     this.loadDeviceList = this.loadDeviceList.bind(this);
@@ -185,7 +188,9 @@ Page({
 
       await api.updateDevice({
         ...selectedDevice,
-        group_id: groupData.id
+        group_id: groupData.id,
+        last_voice_begin_time: "0001-01-01T00:00:00Z",
+        last_voice_end_time: "0001-01-01T00:00:00Z",
       })
 
       wx.showToast({
@@ -295,6 +300,7 @@ Page({
   async handleStatusChange(e) {
     const statusId = e.currentTarget.dataset.value;
     const device = e.currentTarget.dataset.device;
+    console.log('handleStatusChange', device)
 
 
 
@@ -380,6 +386,84 @@ Page({
       wx.hideLoading();
     }
   },
+  // 处理换组
+  async handleChangeGroup(e) {
+    const device = e.currentTarget.dataset.device;
+    this.setData({
+      selectedDevice: device
+    });
+    this.showChangeGroupModal();
+  },
+
+  // Show change group modal
+  showChangeGroupModal() {
+    this.setData({
+      showChangeGroupModal: true,
+      availableGroups: app.globalData.availableGroups
+    });
+  },
+
+  // Hide change group modal
+  hideChangeGroupModal() {
+    // this.setData({
+    //   showChangeGroupModal: false
+    // });
+  },
+
+  // Select group
+  selectGroup(e) {
+    const selectedGroup = e.currentTarget.dataset.group;
+
+    this.setData({
+      selectedGroupId: selectedGroup.id,
+      //showChangeGroupModal: false
+    });
+  },
+
+  async confirmChangeGroup() {
+    const { selectedGroupId, selectedDevice } = this.data;
+    const self = this;
+
+   // console.log('Selected group:',selectedGroupId, selectedDevice);
+
+    if (!selectedGroupId) {
+      wx.showToast({
+        title: '请选择群组',
+        icon: 'none'
+      });
+      return;
+    }
+
+    wx.showLoading({
+      title: '正在处理中...',
+      mask: true
+    });
+
+    try {
+      await api.updateDevice({
+        ...selectedDevice,
+        group_id: selectedGroupId,
+        last_voice_begin_time: "0001-01-01T00:00:00Z",
+        last_voice_end_time: "0001-01-01T00:00:00Z",
+      });
+
+      wx.showToast({
+        title: '换组成功，正在刷新数据...',
+        icon: 'success'
+      });
+
+      await self.refreshData();
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '操作失败',
+        icon: 'none'
+      });
+      console.error('Error:', error);
+    } finally {
+      wx.hideLoading();
+      this.hideChangeGroupModal();
+    }
+  },
   // 获取射频类型对应的样式类
   getRFtypeClass(rfTypeId) {
     const rfType = DevRFtypeOptions.find(r => r.id === rfTypeId);
@@ -389,7 +473,7 @@ Page({
       case '无': return 'none';
       case '内置': return 'internal';
       case '外置': return 'external';
-      default: return 'unknown';
+      default: return 'other';
     }
   },
   // 获取群组类型对应的样式类
@@ -623,3 +707,4 @@ Page({
     this.setData({ searchInput, filteredDevices });
   }
 })
+

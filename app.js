@@ -20,7 +20,7 @@ App({
     currentDevice: null,
     callHistory: [],
     recoderStartTime: null,
-    availableGroups: {},
+    availableGroups: null,
     availableDevices: {},
     voicePage: null,
     configPage: null,
@@ -65,6 +65,7 @@ App({
         // });
 
         const data = await _getGroupListMini();
+         this.availableGroups = data;
 
         return data
         // const groups = data.map(group => {
@@ -79,7 +80,7 @@ App({
         //   };
         // });
 
-       // this.availableGroups = groups;
+      
 
       } catch (error) {
         console.error(error);

@@ -1,3 +1,5 @@
+/* pages/group-detail/group-detail.wxss */
+
 .container {
   padding: 20rpx;
   background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%);
@@ -303,4 +305,87 @@ tag.offline {
 .status-button:active {
   transform: scale(0.98);
   opacity: 0.9;
+}
+
+/* Change Group Modal Styles */
+.change-group-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 20rpx;
+  width: 80%;
+  max-height: 80%;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #eee;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.close-button {
+  font-size: 36rpx;
+  color: #999;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 30rpx;
+}
+
+.group-list {
+  height: 400rpx;
+}
+
+.group-item {
+  padding: 20rpx;
+  border-bottom: 1rpx solid #eee;
+  font-size: 28rpx;
+  color: #333;
+  cursor: pointer;
+}
+
+.group-item:last-child {
+  border-bottom: none;
+}
+
+.group-item:active {
+  background-color: #f5f5f5;
+}
+
+.group-item.selected {
+  background-color: #409EFF;
+  color: #fff;
+}
+
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20rpx 30rpx;
+  border-top: 1rpx solid #eee;
+}
+
+.confirm-button {
+  background-color: #409EFF;
+  color: #fff;
+  border-radius: 10rpx;
+  padding: 12rpx 24rpx;
+  font-size: 28rpx;
 }
