@@ -94,15 +94,14 @@
         </view>
       </view>
       <view class="modal-body">
-        <scroll-view scroll-y class="group-list">
+        <scroll-view scroll-y class="group-list" enable-flex="true" catchmove style="height: 60vh">
           <view 
-            class="group-item" 
+            class="group-item {{selectedGroupId === item.id ? 'selected' : ''}}"
             wx:for="{{availableGroups}}"
             wx:key="id"
             data-group="{{item}}"
-            class="group-item {{selectedGroupId === item.id ? 'selected' : ''}}"
             bindtap="selectGroup">
-            <text>{{item.name}}</text>
+            <text>{{item.id}}-{{item.name}}-{{item.online_dev_number || 0}}/{{item.total_dev_number || 0}}</text>
           </view>
         </scroll-view>
       </view>

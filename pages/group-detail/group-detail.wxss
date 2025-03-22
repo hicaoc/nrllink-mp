@@ -59,17 +59,16 @@
 }
 
 .device-item {
-  padding: 24rpx;
+  padding: 20rpx;
   border-bottom: 1rpx solid #eee;
   background: #fafafa;
   border-radius: 12rpx;
   margin-bottom: 16rpx;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .device-item:active {
-  transform: scale(0.98);
-  background: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 .device-item:last-child {
@@ -167,6 +166,7 @@
   color: #333;
   text-align: right;
 }
+
 .join-container {
   background: #fff;
   border-radius: 16rpx;
@@ -188,7 +188,6 @@
 }
 
 .join-btn:active {
-  transform: scale(0.98);
   box-shadow: 0 2rpx 6rpx rgba(64, 158, 255, 0.3);
 }
 
@@ -229,6 +228,7 @@ tag.offline {
   background-color: #909399;
   color: #fff;
 }
+
 .collapsible-toggle {
   display: flex;
   align-items: center;
@@ -248,7 +248,6 @@ tag.offline {
 .collapsible-toggle.expanded .icon {
   transform: rotate(180deg);
 }
-
 
 /* New status button styles */
 .status-button-group {
@@ -303,7 +302,6 @@ tag.offline {
 }
 
 .status-button:active {
-  transform: scale(0.98);
   opacity: 0.9;
 }
 
@@ -313,11 +311,8 @@ tag.offline {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   z-index: 1000;
 }
 
@@ -326,7 +321,11 @@ tag.offline {
   border-radius: 20rpx;
   width: 80%;
   max-height: 80%;
-  overflow: hidden;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  overflow: auto;
 }
 
 .modal-header {
@@ -350,19 +349,27 @@ tag.offline {
 }
 
 .group-list {
-  height: 400rpx;
+  height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .group-item {
-  padding: 20rpx;
+  padding: 12rpx;
   border-bottom: 1rpx solid #eee;
   font-size: 28rpx;
   color: #333;
   cursor: pointer;
-}
-
-.group-item:last-child {
-  border-bottom: none;
+  background: #fff;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 60rpx;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
 }
 
 .group-item:active {
@@ -372,8 +379,25 @@ tag.offline {
 .group-item.selected {
   background-color: #409EFF;
   color: #fff;
+  border-left: 4rpx solid #1890ff;
 }
 
+.group-item:last-child {
+  border-bottom: none;
+}
+
+.group-list::-webkit-scrollbar {
+  width: 6rpx;
+}
+
+.group-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3rpx;
+}
+
+.group-list::-webkit-scrollbar-track {
+  background: transparent;
+}
 
 .modal-footer {
   display: flex;
