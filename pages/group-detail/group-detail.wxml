@@ -74,16 +74,43 @@
               <text class="button-text">禁发</text>
             </view>
             
-            <view wx:if="{{item.ssid === '200'}}"
-              class="status-button {{item.statusTransparent ? 'active' : ''}}"            
-              bindtap="handleStatusChange"
+            <view 
+              class="status-button active"            
+              bindtap="handleChangeGroup"
               data-value="4"
               data-device="{{item}}"
             >
-              <text class="button-text">透明</text>
-            </view>
-          </view>
+              <text class="button-text">换组</text>
+    </view>
+  </view>
+
+  <!-- Change Group Modal -->
+  <view class="change-group-modal" wx:if="{{showChangeGroupModal}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text>选择群组</text>
+        <view class="close-button" bindtap="hideChangeGroupModal">
+          <text>X</text>
         </view>
+      </view>
+      <view class="modal-body">
+        <scroll-view scroll-y class="group-list" enable-flex="true" catchmove style="height: 60vh">
+          <view 
+            class="group-item {{selectedGroupId === item.id ? 'selected' : ''}}"
+            wx:for="{{availableGroups}}"
+            wx:key="id"
+            data-group="{{item}}"
+            bindtap="selectGroup">
+            <text>{{item.id}}-{{item.name}}-{{item.online_dev_number || 0}}/{{item.total_dev_number || 0}}</text>
+          </view>
+        </scroll-view>
+      </view>
+      <view class="modal-footer">
+        <button class="confirm-button" bindtap="confirmChangeGroup">确定</button>
+      </view>
+    </view>
+  </view>
+</view>
      
         <!-- <view class="title-row">
           <text class="title-label">名称：</text>
