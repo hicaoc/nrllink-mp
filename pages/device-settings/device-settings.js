@@ -170,11 +170,14 @@ Page({
 
   // CTCSS选择更新
   updateCtcss(e) {
+
     const field = e.currentTarget.dataset.field;
     const value = this.data.ctcssOptions[e.detail.value].id;
+
     this.setData({
       [`temp.device_parm.${field}`]: value,
-      ctcssIndex: e.detail.value
+      ctcssIndex: e.detail.value,
+      [field]: this.data.ctcssOptions[e.detail.value].name
     });
   },
 

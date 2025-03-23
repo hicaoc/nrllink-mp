@@ -54,6 +54,7 @@ Page({
       userInfo: app.globalData.userInfo,
       callHistory: app.globalData.callHistory.reverse(),
       startTime: Date.now(),
+      server: app.globalData.serverConfig
     })
 
     app.registerPage(this);
