@@ -19,6 +19,7 @@ Page({
     serverConnected: false,
     showList: false,
     thanksItems: [
+      '感谢：',
       'BG6FCS BH4TIH', 
       'BA4RN  BA1GM',  
       'BA4QEK BA4QAO',

@@ -2,11 +2,11 @@
   <!-- 用户信息卡片 -->
 
   <!-- 服务器状态 -->
-  <view class="server-status">
+  <!-- <view class="server-status">
    
     <text class="status-text">{{server.name}}-{{server.host}}</text>
  
-  </view>
+  </view> -->
 
 
   <view class="user-card">
@@ -80,8 +80,8 @@
   <!-- 服务器状态 -->
   <view class="server-status">
     <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
-    <text class="status-text">{{serverConnected ? '服务器在线' : '服务器离线'}}</text>
-    <text class="thanks-text" style="display: block;" bindtap="showThanksList">感谢！</text>
+    <text class="status-text">{{server.name}}  </text>
+    <text class="thanks-text" style="display: block;" bindtap="showThanksList">{{server.host}}</text>
   </view>
 
   <!-- 弹出列表 -->
