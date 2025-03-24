@@ -19,17 +19,14 @@ Page({
     serverConnected: false,
     showList: false,
     thanksItems: [
-      'BG6FCS', 
-      'BH4TIH', 
-      'BA4RN',
-      'BA4QEK',
-      'BA4QAO',
-      'BD4VKI',
-      'BH4VAP',
-      'BH4TDV',
-      'BI4UMD',
-      'BA4QGT',
-      'BH1OSW',
+      '感谢：',
+      'BG6FCS BH4TIH', 
+      'BA4RN  BA1GM',  
+      'BA4QEK BA4QAO',
+      'BD4VKI BH4VAP',
+      'BH4TDV BI4UMD',
+      'BA4QGT BG8EJT',
+      'BH1OSW BD4RFG',
       '还有很多，列表放不下了'
       
 
@@ -52,10 +49,13 @@ Page({
   },
 
   async onLoad() {
+
+    console.log('onLoad-voice')
     this.setData({
       userInfo: app.globalData.userInfo,
       callHistory: app.globalData.callHistory.reverse(),
       startTime: Date.now(),
+      server: app.globalData.serverConfig
     })
 
     app.registerPage(this);

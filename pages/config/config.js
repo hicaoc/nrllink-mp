@@ -17,7 +17,7 @@ Page({
   },
 
   onShow() {
-    // this.refreshData();
+    this.refreshData();
   },
 
   async refreshData() {
