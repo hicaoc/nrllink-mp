@@ -3,7 +3,7 @@ import * as audio from '../../utils/audioPlayer';
 import * as recoder from '../../utils/audioRecoder';
 import * as g711 from '../../utils/audioG711';
 import * as nrl21 from '../../utils/nrl21';
-import * as mdc from '../../utils/mdc1200';
+import * as mdc from '../../utils/mdc1200new';
 
 const app = getApp();
 
