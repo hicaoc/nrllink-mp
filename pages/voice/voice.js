@@ -3,7 +3,7 @@ import * as audio from '../../utils/audioPlayer';
 import * as recoder from '../../utils/audioRecoder';
 import * as g711 from '../../utils/audioG711';
 import * as nrl21 from '../../utils/nrl21';
-import * as mdc from '../../utils/mdc1200new';
+import * as mdc from '../../utils/mdc1200';
 
 const app = getApp();
 
@@ -84,19 +84,30 @@ Page({
     // MDC1200配置
     const mdcConfig = app.globalData.mdcConfig || {
       op: 0x01,
-      arg: 0x80,
+      arg: 0x01,
       unitId: parseInt(this.data.cpuid)
     };
 
-    this.mdcEncoder = new mdc.MDC1200Encoder();
+    const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100)
+    app.globalData.currentDevice = currentDevice
+
+    //console.log("mdcConfig",currentDevice.id,parseInt(currentDevice.id))
+
+
 
     try {
-      const mdcPacket = this.mdcEncoder.encodeSinglePacket(
-        mdcConfig.op,
-        mdcConfig.arg,
-        mdcConfig.unitId
-      );
-      app.globalData.mdcPacket = g711.g711Encode(mdcPacket);
+      this.mdcEncoder = new mdc.MDC1200Encoder();
+      //console.log("mdc:",this.mdcEncoder,mdcConfig)
+      this.mdcEncoder.setPreamble(5);  
+      // this.mdcEncoder.encodeSinglePacket(
+      //   mdcConfig.op,
+      //   mdcConfig.arg,
+      //   mdcConfig.unitId
+      // ); 
+
+      this.mdcEncoder.setDoublePacket(0x01, 0x35, parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
+      const samples = this.mdcEncoder.getSamples();      
+      app.globalData.mdcPacket = g711.MDC2g711Encode(samples);
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
       this.mdcPacket = new Uint8Array(500);

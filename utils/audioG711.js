@@ -131,9 +131,21 @@ function g711Encode(mdc1200Data, tailFrequency = 800, tailDuration = 0.1, sample
   return g711Data; // 返回 G.711 编码后的数据
 }
 
+function MDC2g711Encode(mdc1200Data) {
+
+  // 编码为 G.711 A-law 格式
+  const g711Data = new Uint8Array(mdc1200Data.length);
+  for (let i = 0; i < mdc1200Data.length; i++) {
+    g711Data[i] = g711Codec.linear2alaw(mdc1200Data[i]);
+  }
+
+  return g711Data; // 返回 G.711 编码后的数据
+}
+
 
 module.exports = {
   G711Codec,
-  g711Encode
+  g711Encode,
+  MDC2g711Encode
 };
 
