@@ -105,7 +105,7 @@ Page({
       //   mdcConfig.unitId
       // ); 
 
-      this.mdcEncoder.setDoublePacket(0x01, 0x35, parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
+      this.mdcEncoder.setDoublePacket(0x01, 0x01,parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
       const samples = this.mdcEncoder.getSamples();      
       app.globalData.mdcPacket = g711.MDC2g711Encode(samples);
     } catch (error) {
