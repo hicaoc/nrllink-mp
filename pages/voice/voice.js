@@ -98,7 +98,7 @@ Page({
     try {
       this.mdcEncoder = new mdc.MDC1200Encoder();
       //console.log("mdc:",this.mdcEncoder,mdcConfig)
-      this.mdcEncoder.setPreamble(5);  
+      this.mdcEncoder.setPreamble(10);  
       // this.mdcEncoder.encodeSinglePacket(
       //   mdcConfig.op,
       //   mdcConfig.arg,
