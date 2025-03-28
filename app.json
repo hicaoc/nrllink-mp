@@ -10,7 +10,7 @@
     "pages/device-settings/device-settings"
   ],
   "window": {
-    "navigationBarTitleText": "NRL互联1.5.10"
+    "navigationBarTitleText": "NRL互联1.5.11"
   },
   "tabBar": {
     "list": [

@@ -108,7 +108,7 @@ Page({
       //  this.mdcEncoder.setDoublePacket(0x01, 0x00,parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
       //this.mdcEncoder.setDoublePacket(0x01, 0x80,parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
 
-      this.mdcEncoder.setPacket(0x01, 0x80,parseInt(currentDevice.id))
+      this.mdcEncoder.setPacket(0x01, 0x00,parseInt(currentDevice.id))
 
       
       const samples = this.mdcEncoder.getSamples();      

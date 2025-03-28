@@ -37,7 +37,7 @@
       </view>
 
       <view class="input-group">
-        <text class="label">用户名</text>
+        <text class="label">手机</text>
         <input 
           placeholder="请输入用户名" 
           bindinput="inputUsername"
