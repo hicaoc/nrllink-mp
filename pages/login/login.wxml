@@ -39,7 +39,7 @@
       <view class="input-group">
         <text class="label">手机</text>
         <input 
-          placeholder="请输入用户名" 
+          placeholder="请输入手机号" 
           bindinput="inputUsername"
           class="input"
           value="{{username}}"
