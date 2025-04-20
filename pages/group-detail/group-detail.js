@@ -29,13 +29,16 @@ Page({
     relayOptions: [],
     searchInput: '', // 新增搜索输入
     filteredDevices: [], // 新增过滤后的设备列表
-    showChangeGroupModal: false, // 控制换组模态框显示
-    availableGroups: [], // 可用群组列表
-    selectedGroupId: null // 选择的群组ID
+    // --- 移除模态框相关 data ---
+    // showChangeGroupModal: false, 
+    // availableGroups: [], 
+    // selectedGroupId: null 
+    // --- 添加 Picker 相关 data ---
+    availableGroupsForPicker: [] // 用于 Picker 的群组列表
   },
   onLoad(options) {
     // 绑定所有需要的方法
-    console.log('onLoad-group-detail')
+    //console.log('onLoad-group-detail',app.globalData.currentDevice)
 
     // this.onSearchInput = this.onSearchInput.bind(this)
     // this.loadGroupDetail = this.loadGroupDetail.bind(this);
@@ -122,39 +125,47 @@ Page({
     })
 
     try {
-      await api.updateDevice({
+      // Capture the response from the API call
+      const response = await api.updateDevice({
         ...selectedDevice,
         group_id: groupData.id,
         last_voice_begin_time: "0001-01-01T00:00:00Z",
         last_voice_end_time: "0001-01-01T00:00:00Z",
-      })
+      });
 
+      console.log('updateDevice response:', response);
+      // Check the response code
+// Success case
       wx.showToast({
         title: '加入成功，正在刷新数据...',
-        icon: 'success'
-      })
+        icon: 'success',
+        duration: 3000 // Further increase the duration for the success message
+      });
 
-      groupData = await app.globalData.getGroup(groupData.id)
-      this.loadGroupDetail(groupData)
-      this.loadDeviceList()
+        groupData = await app.globalData.getGroup(groupData.id);
+        this.loadGroupDetail(groupData);
+        this.loadDeviceList();
 
-      if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
-        app.globalData.currentGroup = groupData;
-        app.globalData.currentDevice = selectedDevice;
-      }
+        if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
+          app.globalData.currentGroup = groupData;
+          app.globalData.currentDevice = selectedDevice;
+        }
 
-      wx.showToast({
-        title: '数据刷新完成',
-        icon: 'success'
-      })
+        // Consider removing the second success toast or making it more specific
+        // wx.showToast({
+        //   title: '数据刷新完成',
+        //   icon: 'success'
+        // });
+      
     } catch (error) {
+      // Handle network errors or exceptions during the API call
       wx.showToast({
         title: error.message || '操作失败',
         icon: 'none'
-      })
-      console.error('Error:', error)
+      });
+      console.error('Error joining group:', error);
     } finally {
-      wx.hideLoading()
+      wx.hideLoading();
     }
   },
 
@@ -275,155 +286,87 @@ Page({
     }
   },
 
-  // 处理换组
-  async handleChangeGroup(e) {
-    const device = e.currentTarget.dataset.device;
-    this.setData({
-      selectedDevice: device,
-      selectedGroupId: device.group_id
-    });
-    this.showChangeGroupModal();
-  },
+  // --- 移除模态框相关函数 ---
+  // handleChangeGroup, showChangeGroupModal, hideChangeGroupModal, selectGroup, confirmChangeGroup
 
-  // Show change group modal
-  showChangeGroupModal() {
+  // --- 新增 Picker 选择事件处理函数 ---
+  async onGroupPickerChange(e) {
     try {
-      const groups = app.globalData.availableGroups || [];
-      const validatedGroups = groups.map(group => ({
-        id: group?.id || 0,
-        name: group?.name || '未命名群组',
-        online_dev_number: group?.online_dev_number || 0,
-        total_dev_number: group?.total_dev_number || 0
-      }));
-      
-      console.log('Showing change group modal with:', {
-        groups: validatedGroups,
-        selectedDevice: this.data.selectedDevice
-      });
-      
-      this.setData({
-        showChangeGroupModal: true,
-        availableGroups: [],
-        selectedGroupId: this.data.selectedDevice?.group_id || null
-      });
-      
-      setTimeout(() => {
-        this.setData({
-          availableGroups: validatedGroups
-        });
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error showing change group modal:', error);
-      wx.showToast({
-        title: '加载群组列表失败',
-        icon: 'none'
-      });
-    }
-  },
+      const selectedIndex = e.detail.value; // 获取选中的索引
+      const selectedGroup = this.data.availableGroupsForPicker[selectedIndex]; // 获取选中的群组对象
+      const deviceToChange = e.currentTarget.dataset.device; // 获取当前操作的设备对象
 
-  // Hide change group modal
-  hideChangeGroupModal() {
-    this.setData({
-      showChangeGroupModal: false
-    });
-  },
-
-  // Select group
-  selectGroup(e) {
-    try {
-      if (!e || !e.currentTarget || !e.currentTarget.dataset) {
-        throw new Error('Invalid event data');
+      if (!selectedGroup || !deviceToChange) {
+        console.error('Picker selection error: Missing group or device data.');
+        wx.showToast({ title: '选择出错', icon: 'none' });
+        return;
       }
 
-      const selectedGroup = e.currentTarget.dataset.group;
-      
-      if (!selectedGroup) {
-        throw new Error('No group data found');
-      }
+      const newGroupId = selectedGroup.id; // 获取新群组的 ID
 
-      if (typeof selectedGroup.id === 'undefined') {
-        throw new Error('Group ID is required');
-      }
-
-      const validatedGroup = {
-        id: Number(selectedGroup.id) || 0,
-        name: String(selectedGroup.name || '未命名群组'),
-        online_dev_number: Number(selectedGroup.online_dev_number) || 0,
-        total_dev_number: Number(selectedGroup.total_dev_number) || 0
-      };
-
-      if (isNaN(validatedGroup.id)) {
-        throw new Error('Invalid group ID format');
-      }
-
-      this.setData({
-        selectedGroupId: validatedGroup.id
-      });
-
-    } catch (error) {
-      console.error('Error selecting group:', error);
-      wx.showToast({
-        title: '选择群组失败: ' + (error.message || '未知错误'),
-        icon: 'none',
-        duration: 3000
-      });
-      
-      this.setData({
-        selectedGroupId: null,
-        showChangeGroupModal: false
-      });
-    }
-  },
-
-  async confirmChangeGroup() {
-    console.log('Confirming group change...');
-    try {
-      const { selectedGroupId, selectedDevice } = this.data;
-      const self = this;
-
-      // Validate input data
-      if (selectedGroupId === null || typeof selectedGroupId !== 'number') {
-        throw new Error('Invalid group ID');
-      }
-      if (!selectedDevice) {
-        throw new Error('No device selected');
-      }
-
+      // 权限校验 (与之前 confirmChangeGroup 逻辑一致)
       const userInfo = app.globalData.userInfo;
       const currentCallsign = userInfo?.callsign;
-
-      if (!userInfo?.roles?.includes('admin') && selectedDevice.callsign !== currentCallsign) {
-        throw new Error('Insufficient permissions');
+      if (!userInfo?.roles?.includes('admin') && deviceToChange.callsign !== currentCallsign) {
+         wx.showToast({ title: '权限不足', icon: 'error' }); // 使用 error 图标
+         return;
       }
 
-      wx.showLoading({
-        title: '正在处理中...',
-        mask: true
-      });
+      // 防止重复提交或无效选择 (如果选择的群组就是当前群组)
+      if (newGroupId === deviceToChange.group_id) {
+        // wx.showToast({ title: '已在该群组', icon: 'none' });
+        return; // 静默处理或给提示
+      }
 
+
+      // 调用 API 更新设备群组
       await api.updateDevice({
-        ...selectedDevice,
-        group_id: selectedGroupId,
-        last_voice_begin_time: "0001-01-01T00:00:00Z",
+        ...deviceToChange, // 传入完整的设备信息
+        group_id: newGroupId, // 更新 group_id
+        // 确保时间字段被正确处理，如果API需要特定格式或不需要这些字段，请调整
+        last_voice_begin_time:  "0001-01-01T00:00:00Z",
         last_voice_end_time: "0001-01-01T00:00:00Z",
-      });
+      })
 
-      wx.showToast({
-        title: '换组成功，正在刷新数据...',
-        icon: 'success'
-      });
 
-      await self.refreshData();
+      wx.showToast({ title: '切换成功',  duration: 3000,  icon: 'success' });
+
+      // 刷新当前页面数据
+      await this.refreshData();
+
     } catch (error) {
-      wx.showToast({
-        title: error.message || '操作失败',
-        icon: 'none'
-      });
-      console.error('Error:', error);
-    } finally {
       wx.hideLoading();
-      this.hideChangeGroupModal();
+      wx.showToast({ title: error.message || '切换失败', icon: 'none' });
+      console.error('Error changing group via picker:', error);
+    }
+  },
+
+  // --- 新增加载可用群组列表的函数 ---
+  loadAvailableGroups() {
+    try {
+      const groups = app.globalData.availableGroups || [];
+      // 过滤无效群组并添加用于 Picker 显示的字段
+      const validatedGroups = groups.map(group => {
+        if (typeof group !== 'object' || group === null) return null;
+        const id = group.id;
+        const name = group.name;
+        const idIsValid = (typeof id === 'number' && !isNaN(id)) || (typeof id === 'string' && id.trim() !== '');
+        if (!idIsValid) return null;
+
+        return {
+          ...group, // 保留原始群组信息
+          id: id, // 确保 id 存在
+          displayGroupName: `${id} - ${typeof name === 'string' ? name : '未命名'}` // 创建 Picker 显示的名称
+        };
+      }).filter(group => group !== null);
+
+      this.setData({ availableGroupsForPicker: validatedGroups });
+      //console.log('Loaded available groups for picker:', validatedGroups);
+
+    } catch (error) {
+      console.error('Error loading available groups for picker:', error);
+      wx.showToast({ title: '加载群组列表失败', icon: 'none' });
+      this.setData({ availableGroupsForPicker: [] }); // 出错时清空列表
     }
   },
 
@@ -559,10 +502,15 @@ Page({
   },
 
   onShow() {
-    if (groupData) {
-      this.refreshData()
+    // 每次显示页面时都刷新数据和群组列表
+    if (groupData && groupData.id) { // 确保 groupData 有效
+      this.refreshData();
+    } else {
+       console.warn("Missing groupData in onShow, cannot refresh group details.");
+       // 可能需要处理 groupData 无效的情况，例如返回上一页或提示错误
     }
-    this.loadDeviceList()
+    this.loadDeviceList(); // 加载用户自己的设备列表（用于加入群组）
+    this.loadAvailableGroups(); // 加载所有可用群组列表（用于 Picker）
   },
 
   onPullDownRefresh() {

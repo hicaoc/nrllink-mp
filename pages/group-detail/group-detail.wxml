@@ -73,51 +73,34 @@
             >
               <text class="button-text">禁发</text>
             </view>
-            
-            <view 
-              class="status-button active"            
-              bindtap="handleChangeGroup"
-              data-value="4"
-              data-device="{{item}}"
-            >
-              <text class="button-text">换组</text>
-    </view>
-  </view>
 
-  <!-- Change Group Modal -->
-  <view class="change-group-modal" wx:if="{{showChangeGroupModal}}">
-    <view class="modal-content">
-      <view class="modal-header">
-        <text>选择群组</text>
-        <view class="close-button" bindtap="hideChangeGroupModal">
-          <text>X</text>
-        </view>
-      </view>
-      <view class="modal-body">
-        <scroll-view scroll-y class="group-list" enable-flex="true" catchmove style="height: 60vh">
-          <view 
-            class="group-item {{selectedGroupId === item.id ? 'selected' : ''}}"
-            wx:for="{{availableGroups}}"
-            wx:key="id"
-            data-group="{{item}}"
-            bindtap="selectGroup">
-            <text>{{item.id}}-{{item.name}}-{{item.online_dev_number || 0}}/{{item.total_dev_number || 0}}</text>
-          </view>
-        </scroll-view>
-      </view>
-      <view class="modal-footer">
-        <button class="confirm-button" bindtap="confirmChangeGroup">确定</button>
-      </view>
-    </view>
-  </view>
-</view>
-     
-        <!-- <view class="title-row">
-          <text class="title-label">名称：</text>
-          <text class="title-value">{{item.name}}</text>
-        </view> -->
-      </view>
-      <view class="name">{{item.deviceName}}</view>
+            <!-- Replace Change Group Button with Picker -->
+            <picker 
+              mode="selector" 
+              range="{{availableGroupsForPicker}}" 
+              range-key="displayGroupName" 
+              bindchange="onGroupPickerChange"
+              data-device="{{item}}"
+              class="status-button picker-button" 
+              style="background: linear-gradient(135deg, #85ce61 0%, #85ce61 100%); color: #fff;" 
+            >
+              <view class="picker-text">
+                <text class="button-text">换组</text>
+              </view>
+            </picker>
+            <!-- End Picker -->
+            
+          </view> <!-- End status-button-group -->
+        </view> <!-- End title-row -->
+      </view> <!-- End title-container -->
+
+      <!-- Removed Change Group Modal -->
+      <!-- <view class="change-group-modal" wx:if="{{showChangeGroupModal}}"> ... </view> -->
+      
+      <!-- Removed extra closing view tag that caused the error -->
+      
+      <!-- Display deviceName (assuming this is intended) -->
+      <view class="name">{{item.deviceName}}</view> 
      
       <view class="collapsible-toggle" bindtap="toggleDetails" data-index="{{index}}">
         <text>{{item.name}}</text>
@@ -161,7 +144,7 @@
           <text class="label">流量统计：</text>
           <text class="value">{{item.traffic || 0}}字节</text>
         </view>
-      </view>
-    </view>
-  </view>
-</view>
+      </view> <!-- End collapsible-details -->
+    </view> <!-- End device-item -->
+  </view> <!-- End device-list -->
+</view> <!-- End container -->

@@ -8,8 +8,10 @@ Page({
     password: '',
     loading: false,
     serverList: [
-      { name: 'NRLPTT主站', host: 'nrlptt.com', port: 60050 },
+      { name: 'NRLPTT主站', host: 'www.nrlptt.com', port: 60050 },
+      { name: '江苏省无线电运动协会', host: 'js.nrlptt.com', port: 60050 },
       { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
+      { name: '董哥集群', host: 'bh1osw.nrlptt.com', port: 60050 },
       { name: '徐州HAM互联', host: 'bd4two.nrlptt.com', port: 60050 },
       { name: 'BH4TDV实验场', host: 'bh4tdv.nrlptt.com', port: 60050 }
     ],
