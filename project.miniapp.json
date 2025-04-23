@@ -1,12 +1,12 @@
 {
   "miniVersion": "v2",
   "name": "%name%",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "versionCode": 100,
   "i18nFilePath": "i18n",
   "mini-android": {
     "resourcePath": "miniapp/android/nativeResources",
-    "sdkVersion": "1.6.7",
+    "sdkVersion": "1.6.8",
     "toolkitVersion": "0.11.0",
     "useExtendedSdk": {
       "media": true,
