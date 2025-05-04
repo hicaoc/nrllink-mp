@@ -37,6 +37,7 @@ class UDPClient {
 
   close() {
     this.socket.close();
+    console.log('UDP socket closed');
   }
 }
 

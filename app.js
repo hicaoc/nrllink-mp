@@ -1,4 +1,6 @@
 import { getQTH, getQTHmap } from './utils/api';
+import * as audio from './utils/audioPlayer';
+
 import {
   getGroupList as _getGroupList,
   getGroup as _getGroup,
@@ -19,6 +21,8 @@ App({
     currentGroup: null,
     currentDevice: null,
     callHistory: [],
+    heartbeatTimer: null,
+
     recoderStartTime: null,
     availableGroups: null,
     availableDevices: {},
@@ -181,6 +185,7 @@ App({
 
 
     logout() {
+      audio.suspend();
       this.token = null;
       this.udpClient = null;
       wx.removeStorageSync('token');

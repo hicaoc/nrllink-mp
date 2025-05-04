@@ -1,5 +1,6 @@
 // audioPlayer.js
-const webAudioContext = wx.createWebAudioContext();
+console.log("audioPlayer.js loaded");
+
 
 
 // 音频流相关参数
@@ -14,39 +15,52 @@ const BUFFER_SIZE = 2048;
 const BUFFER_SIZE = 4096;
 // #endif
 
+let pcmBuffer = new Float32Array(0);
+
 // WebAudio 资源
-const audioContext = webAudioContext;
-const gainNode = audioContext.createGain();
-gainNode.connect(audioContext.destination);
-gainNode.gain.value = 2.0;
+const webAudioContext = wx.createWebAudioContext();
+
+const gainNode = webAudioContext.createGain();
+gainNode.connect(webAudioContext.destination);
+gainNode.gain.value = 2.5;
 
 //gainNode.gain.value = 1.0;
 
-let scriptProcessorNode = null;
+
+ const scriptProcessorNode = webAudioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
+scriptProcessorNode.connect(gainNode);
+
+
+
 
 // G.711 编解码器
 import * as g711 from './audioG711';
 const g711Codec = new g711.G711Codec();
 
 // 用于存储未播放的 PCM 数据
-let pcmBuffer = new Float32Array(0);
+
 
 
 
 // 调试 Web Audio 初始化
 function initWebAudio() {
 
-
-
     try {
-        scriptProcessorNode = audioContext.createScriptProcessor(BUFFER_SIZE, 1, 1);
-        scriptProcessorNode.connect(gainNode);
+
+        // webAudioContext.close().then(() => {
+        //     console.log(audioCtx.state) // bad case：不应该在close后再访问state
+        //   })
+        // audioContext = webAudioContext;
+        // gainNode = audioContext.createGain();
+        // gainNode.connect(audioContext.destination);
+        // gainNode.gain.value = 2.0;
+        pcmBuffer = new Float32Array(0);
 
         scriptProcessorNode.onaudioprocess = (audioProcessingEvent) => {
             //  console.log("onaudioprocess triggered");
             const outputBuffer = audioProcessingEvent.outputBuffer;
             const outputData = outputBuffer.getChannelData(0);
-
+        
             if (pcmBuffer.length >= BUFFER_SIZE) {
                 for (let i = 0; i < BUFFER_SIZE; i++) {
                     outputData[i] = pcmBuffer[i];
@@ -58,9 +72,12 @@ function initWebAudio() {
                 }
             }
         };
+        
+
+
 
         wx.onAudioInterruptionEnd(() => {
-            audioContext.resume().then(() => {
+            webAudioContext.resume().then(() => {
                 console.log("AudioContext resumed app.");
             }).catch((err) => {
                 console.error("Failed to resume AudioContext:", err);
@@ -68,7 +85,7 @@ function initWebAudio() {
         })
 
 
-        audioContext.resume().then(() => {
+        webAudioContext.resume().then(() => {
             console.log("AudioContext resumed 1.");
         }).catch((err) => {
             console.error("Failed to resume AudioContext:", err);
@@ -83,16 +100,16 @@ function initWebAudio() {
 
 
         //添加状态监听
-        audioContext.onstatechange = () => {
-            console.log('AudioContext state changed to:', audioContext.state);
+        webAudioContext.onstatechange = () => {
+            console.log('AudioContext state changed to:', webAudioContext.state);
 
-            if (audioContext.state === 'suspended') {
+            if (webAudioContext.state === 'suspended') {
                 console.log('AudioContext is suspended. Possibly due to backgrounding.');
                 pcmBuffer = new Float32Array(0);
                 console.log('pcmBuffer cleared.');
                 // 在这里处理音频上下文被挂起的情况
                 // 例如：保存当前状态，清除数据，停止播放等
-            } else if (audioContext.state === 'running') {
+            } else if (webAudioContext.state === 'running') {
 
                 console.log('AudioContext is running');
                 // audioContext.resume().then(() => {
@@ -103,8 +120,8 @@ function initWebAudio() {
 
                 // 在这里处理音频上下文恢复运行的情况
                 // 例如：恢复播放，重新加载数据等
-                // pcmBuffer = new Float32Array(0);
-                // console.log('pcmBuffer cleared.');
+                pcmBuffer = new Float32Array(0);
+                console.log('pcmBuffer cleared.');
             }
         };
 
@@ -114,13 +131,24 @@ function initWebAudio() {
     }
 }
 
-// function resume() {
-//     audioContext.resume().then(() => {
-//         console.log("AudioContext resumed 3.");
-//     }).catch((err) => {
-//         console.error("Failed to resume AudioContext:", err);
-//     });
-// }
+function suspend() {
+    webAudioContext.suspend().then(() => {
+        console.log("AudioContext suspend .");
+    }).catch((err) => {
+        console.error("Failed to suspend AudioContext:", err);
+    });
+    pcmBuffer = new Float32Array(0);
+}
+
+function resume() {
+    webAudioContext.resume().then(() => {
+        console.log("AudioContext resume .");
+    }).catch((err) => {
+        console.error("Failed to resume AudioContext:", err);
+    });
+    pcmBuffer = new Float32Array(0);
+}
+
 
 
 // 接收 G.711 数据并解码
@@ -137,7 +165,7 @@ async function play(data, type) {
         }
 
         // 采样率转换
-        const resampledData = resamplePCM(float32Data, SAMPLE_RATE, audioContext.sampleRate);
+        const resampledData = resamplePCM(float32Data, SAMPLE_RATE, webAudioContext.sampleRate);
 
         // 合并 PCM 数据
         const newPcmBuffer = new Float32Array(pcmBuffer.length + resampledData.length);
@@ -167,5 +195,7 @@ function resamplePCM(input, inputSampleRate, outputSampleRate) {
 module.exports = {
     initWebAudio,
     play,
+    suspend,
+    resume,
 
 };

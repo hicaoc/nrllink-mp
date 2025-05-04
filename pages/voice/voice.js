@@ -82,11 +82,11 @@ Page({
     }, 1000);
 
     // MDC1200配置
-    const mdcConfig = app.globalData.mdcConfig || {
-      op: 0x01,
-      arg: 0x01,
-      unitId: parseInt(this.data.cpuid)
-    };
+    // const mdcConfig = app.globalData.mdcConfig || {
+    //   op: 0x01,
+    //   arg: 0x01,
+    //   unitId: parseInt(this.data.cpuid)
+    // };
 
     const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100)
     app.globalData.currentDevice = currentDevice
@@ -135,9 +135,12 @@ Page({
     //this.refreshData()
 
     audio.initWebAudio()
+    audio.resume()
   },
 
   onUnload() {
+
+    console.log("voice page onUnload.");
 
   },
 
@@ -185,11 +188,11 @@ Page({
 
   // 启动心跳定时器
   startHeartbeat() {
-    if (this.heartbeatTimer) {
+    if (app.globalData.heartbeatTimer) {
       return;
     }
 
-    this.heartbeatTimer = setInterval(() => {
+    app.globalData.heartbeatTimer = setInterval(() => {
       if (app.globalData.udpClient) {
         app.globalData.udpClient.send(this.heartbeatPacket);
       }

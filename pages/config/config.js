@@ -55,6 +55,7 @@ Page({
     const app = getApp();
  
     app.globalData.logout();
+    
   },
 
   async onPullDownRefresh() {
