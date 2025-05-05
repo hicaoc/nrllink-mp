@@ -1,4 +1,4 @@
-import { getQTH, getQTHmap } from './utils/api';
+//import { getQTH, getQTHmap,logout } from './utils/api';
 import * as audio from './utils/audioPlayer';
 
 import {
@@ -10,6 +10,7 @@ import {
   getDeviceList as _getDeviceList,
   getQTHmap as _getQTHmap,
   getQTH as _getQTH,
+  logout as _logout,
 } from '/utils/api';
 
 App({
@@ -184,15 +185,49 @@ App({
 
 
 
-    logout() {
-      audio.suspend();
-      this.token = null;
+    async logout() {
+
+      this.udpClient.close();
       this.udpClient = null;
+      audio.suspend();
+
+      try {
+
+        const data = await _logout({ssid: 100});
+      
+       console.log('logout', data)
+
+      } catch (error) {
+        wx.showToast({
+          title: error.message || '退出失败',
+          icon: 'none'
+        });
+      }
+
+  
+      this.token = null;
+
       wx.removeStorageSync('token');
       wx.removeStorageSync('userInfo');
       wx.removeStorageSync('cpuId');
       wx.removeStorageSync('passcode');
       //wx.removeStorageSync('serverCredentials');
+      // wx.restartMiniProgram({    
+      //   path: '/pages/login/login',
+      //   complete: (res) => {
+      //     console.log('restartMiniProgram complete', res);
+      //   },
+      // })
+
+      // wx.showToast({
+      //   title: '正在退出，请稍等', // 提示的内容
+      //   icon: 'loading', // 图标，有效值有 success, loading, none
+      //   duration: 2000, // 提示的延迟时间，单位毫秒，默认：1500
+      //   mask: false // 是否显示透明蒙层，防止触摸穿透，默认为 false
+      // });
+
+
+      
       wx.reLaunch({
         url: '/pages/login/login'
       });
@@ -201,8 +236,8 @@ App({
   },
 
   onLaunch() {
-    const udp = require('./utils/udp');
-    const nrl = require('./utils/nrl21');
+    // const udp = require('./utils/udp');
+    // const nrl = require('./utils/nrl21');
 
     // const token = wx.getStorageSync('token');
     // if (token) {

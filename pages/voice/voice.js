@@ -60,26 +60,6 @@ Page({
 
     app.registerPage(this);
 
-    const heartbeatPacket = nrl21.createPacket({
-      type: 2,
-      callSign: app.globalData.userInfo.callsign,
-      cpuId: app.globalData.cpuId
-    });
-
-    this.heartbeatPacket = heartbeatPacket.getBuffer();
-    app.globalData.udpClient = new udp.UDPClient({
-      host: app.globalData.serverConfig.host,
-      port: app.globalData.serverConfig.port,
-      onMessage: this.handleMessage.bind(this)
-    });
-
-    // 启动心跳定时器
-    this.startHeartbeat();
-
-    // 初始化连接检查定时器
-    this.connectionCheckTimer = setInterval(() => {
-      this.checkConnection();
-    }, 1000);
 
     // MDC1200配置
     // const mdcConfig = app.globalData.mdcConfig || {
@@ -136,6 +116,37 @@ Page({
 
     audio.initWebAudio()
     audio.resume()
+
+    
+
+    const heartbeatPacket = nrl21.createPacket({
+      type: 2,
+      callSign: app.globalData.userInfo.callsign,
+      cpuId: app.globalData.cpuId
+    });
+
+    this.heartbeatPacket = heartbeatPacket.getBuffer();
+    app.globalData.udpClient = new udp.UDPClient({
+      host: app.globalData.serverConfig.host,
+      port: app.globalData.serverConfig.port,
+      onMessage: this.handleMessage.bind(this)
+    });
+
+
+
+    // 启动心跳定时器
+    this.startHeartbeat();
+
+    // 初始化连接检查定时器
+    this.connectionCheckTimer = setInterval(() => {
+      this.checkConnection();
+    }, 2000);
+
+   
+    
+
+
+
   },
 
   onUnload() {

@@ -85,11 +85,11 @@ function initWebAudio() {
         })
 
 
-        webAudioContext.resume().then(() => {
-            console.log("AudioContext resumed 1.");
-        }).catch((err) => {
-            console.error("Failed to resume AudioContext:", err);
-        });
+        // webAudioContext.resume().then(() => {
+        //     console.log("AudioContext resumed 1.");
+        // }).catch((err) => {
+        //     console.error("Failed to resume AudioContext:", err);
+        // });
 
         // audioContext.suspend().then(() => {
         //     console.log("AudioContext suspend.");

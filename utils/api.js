@@ -25,13 +25,13 @@ const responseInterceptor = (response) => {
   // 20000 和 20001 都是有效状态码
   if (response.data.code === 20000 || response.data.code === 60204) {
     return response.data.data;
-  }else if (response.data.code === 20001) {
+  } else if (response.data.code === 20001) {
     wx.showToast({
       title: response.data.message,
       icon: 'error',
       duration: 5000 // Further increase the duration for the success message
     });
-  
+
     return
 
   }
@@ -182,7 +182,7 @@ const api = {
   },
 
 
-  
+
   getQTHmap() {
     return request({
       url: '/device/qthmap', // 修改为新的接口地址
@@ -221,6 +221,17 @@ const api = {
       data: credentials
     });
   },
+
+  // 用户登录
+  logout(data) {
+    return request({
+      url: '/user/logout',
+      method: 'POST',
+      data 
+   
+    });
+  },
+
 
   // 获取用户信息
   getUserInfo() {
