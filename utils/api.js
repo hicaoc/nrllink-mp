@@ -213,6 +213,15 @@ const api = {
     });
   },
 
+    updateAvatar(avatar) {
+    return request({
+      url: '/user/update/avatar',
+      method: 'POST',
+      data: avatar
+    });
+  },
+
+
   // 用户登录
   login(credentials) {
     return request({
@@ -336,29 +345,18 @@ const api = {
         'license',
         {
           ...data,
-          license: undefined,
-          certificate: undefined
+          license: undefined      
         }
       );
 
-      const certificateTask = uploadFile(
-        'https://' + host + '/user/reg/create',
-        data.certificate,
-        'certificate',
-        {
-          ...data,
-          license: undefined,
-          certificate: undefined
-        }
-      );
 
       // 使用 Promise.all 处理并发任务
-      Promise.all([licenseTask, certificateTask])
+      Promise.all([licenseTask])
         .then(results => {
-          const [licenseRes, certificateRes] = results;
+          const [licenseRes] = results;
 
           console.log('licenseRes', licenseRes);
-          console.log('certificateRes', certificateRes);
+          //console.log('certificateRes', certificateRes);
 
           // 检查上传结果的状态码
           if (!licenseRes || licenseRes.statusCode !== 200) {
@@ -366,16 +364,16 @@ const api = {
             return;
           }
 
-          if (!certificateRes || certificateRes.statusCode !== 200) {
-            reject(new Error('操作证上传失败'));
-            return;
-          }
+          // if (!certificateRes || certificateRes.statusCode !== 200) {
+          //   reject(new Error('操作证上传失败'));
+          //   return;
+          // }
 
           // 尝试解析响应数据
           try {
             resolve({
               license: JSON.parse(licenseRes.data || '{}'),
-              certificate: JSON.parse(certificateRes.data || '{}')
+             
             });
           } catch (e) {
             reject(new Error('解析响应数据失败'));

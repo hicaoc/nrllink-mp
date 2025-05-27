@@ -17,7 +17,7 @@
     "ignoreUploadUnusedFiles": true,
     "compileWorklet": false,
     "swc": true,
-    "minifyWXML": false,
+    "minifyWXML": true,
     "minifyWXSS": false,
     "disableSWC": false
   },

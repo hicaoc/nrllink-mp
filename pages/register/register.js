@@ -34,16 +34,6 @@ Page({
     })
   },
 
-  chooseCertificate() {
-    wx.chooseImage({
-      count: 1,
-      success: (res) => {
-        this.setData({
-          certificate: res.tempFilePaths[0]
-        })
-      }
-    })
-  },
 
   onSubmit(e) {
     const formData = e.detail.value;
@@ -99,23 +89,14 @@ Page({
     
     if (!this.data.license) {
       wx.showToast({
-        title: '请上传电台执照',
+        title: '请上传操作证和电台执照',
         icon: 'none'
       });
       return;
     }
-    
-    if (!this.data.certificate) {
-      wx.showToast({
-        title: '请上传操作证',
-        icon: 'none'
-      });
-      return;
-    }
-    
+
     formData.license = this.data.license;
-    formData.certificate = this.data.certificate;
-    
+  
     wx.showLoading({
       title: '注册中...'
     });
@@ -123,9 +104,9 @@ Page({
     register(formData, this.data.host).then((res) => {
       console.log(res);
       wx.hideLoading();
-      wx.showToast({
-        title: '注册成功，请等待管理员审核后开通账号',
-        showCancel: false,
+      wx.showModal({
+        title: '注册成功',
+        content: '请等待管理员审核，一般48小时以内完成，如急需，请主动连续管理员。',
         confirmText: '确定',
         success: (res) => {
           if (res.confirm) {
@@ -136,6 +117,7 @@ Page({
         }
       });
     }).catch(err => {
+      console.log("register err:",err);
       wx.hideLoading();
       wx.showToast({
         title: err.message || '注册失败',

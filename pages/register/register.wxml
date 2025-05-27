@@ -26,17 +26,12 @@
       <input name="mail" type="email" placeholder="请输入邮箱" />
     </view>
 <view class="form-item">
-  <button class="upload-button" bindtap="chooseLicense">电台执照</button>
+  <button class="upload-button" bindtap="chooseLicense">操作证和电台执照合影</button>
 </view>
 <view class="image-preview" wx:if="{{license}}">
   <image src="{{license}}" mode="aspectFit" class="preview-image"></image>
 </view>
-<view class="form-item">
-  <button class="upload-button" bindtap="chooseCertificate">操作证</button>
-</view>
-<view class="image-preview" wx:if="{{certificate}}">
-  <image src="{{certificate}}" mode="aspectFit" class="preview-image"></image>
-</view>
+
     <button formType="submit" class="button">注册</button>
   </form>
 </view>

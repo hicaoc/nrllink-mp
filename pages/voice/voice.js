@@ -4,6 +4,8 @@ import * as recoder from '../../utils/audioRecoder';
 import * as g711 from '../../utils/audioG711';
 import * as nrl21 from '../../utils/nrl21';
 import * as mdc from '../../utils/mdc1200';
+const { updateAvatar } = require('../../utils/api')
+
 
 const app = getApp();
 
@@ -280,6 +282,28 @@ Page({
     this.setData({
       userInfo: app.globalData.userInfo
     })
+
+
+
+    updateAvatar(app.globalData.userInfo).then((res) => {
+      console.log(res);
+      wx.hideLoading();
+      wx.showToast({
+        title: '修改完成',
+        showCancel: false,
+        confirmText: '确定',
+        success: (res) => {
+     
+        }
+      });
+    }).catch(err => {
+      wx.hideLoading();
+      wx.showToast({
+        title: err.message || '修改失败',
+        icon: 'none'
+      });
+    });
+
   },
 
   checkConnection() {
