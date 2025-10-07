@@ -111,7 +111,7 @@ Page({
     this.audioPacket = new Uint8Array(548);
     this.audioPacket.set(audioPacketHead, 0);
 
-    qthmap = await app.globalData.getQTHmap()
+    qthmap = await app.globalData.getQTH()
     //console.log("qthmap",qthmap)
 
     //this.refreshData()
@@ -224,10 +224,12 @@ Page({
           || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
           || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
 
+           const qth = qthmap[this.data.CallSign + '-' + this.data.SSID] 
+
           const item = {
             CallSign: this.data.CallSign,
             SSID: this.data.SSID,
-            QTH: qthmap[this.data.CallSign + '-' + this.data.SSID],
+            QTH: qth ? qth.qth +"\n"+ qth.name : '无数据',
             startTime: this.formatLastVoiceTime(this.data.startTime),
             duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),

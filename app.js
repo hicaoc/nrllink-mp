@@ -8,7 +8,7 @@ import {
   getMyDevices as _getMyDevices,
   getGroupListMini as _getGroupListMini,
   getDeviceList as _getDeviceList,
-  getQTHmap as _getQTHmap,
+  //getQTHmap as _getQTHmap,
   getQTH as _getQTH,
   logout as _logout,
 } from '/utils/api';
@@ -166,22 +166,22 @@ App({
     },
 
 
-    getQTHmap: async function () {
+    // getQTHmap: async function () {
 
-      try {
+    //   try {
 
-        const data = await _getQTHmap();
+    //     const data = await _getQTHmap();
       
-        return data
+    //     return data
 
-      } catch (error) {
-        wx.showToast({
-          title: error.message || '获取QTH map失败',
-          icon: 'none'
-        });
-      }
+    //   } catch (error) {
+    //     wx.showToast({
+    //       title: error.message || '获取QTH map失败',
+    //       icon: 'none'
+    //     });
+    //   }
 
-    },
+    // },
 
 
 

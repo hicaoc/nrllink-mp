@@ -358,7 +358,7 @@ class MDC1200Encoder {
 
         while (this.state === 1 && safetyCounter < maxSamples) {
             const sample = this._enc_get_samp();
-            samples.push(sample);
+            samples.push(sample*0.5); //音量小一半
             count++;
             safetyCounter++;
             // If a specific bufferSize was requested, stop when reached

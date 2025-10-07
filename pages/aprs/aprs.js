@@ -172,7 +172,7 @@ Page({
     // 格式化APRS数据包
     const latStr = this.decToAprs(lat, true);
     const lonStr = this.decToAprs(lon, false);
-    return `${callSign}-5>NRL,TCPIP*:!${latStr}/${lonStr}[A${altitude.toFixed(0)} ${deviceModel}@NRL微信小程序\n`;
+    return `${callSign}-5>NRLMP,TCPIP*:!${latStr}/${lonStr}IA${altitude.toFixed(0)} ${deviceModel}@NRL微信小程序\n`;
   },
   
   decToAprs(dec, isLat) {

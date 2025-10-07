@@ -175,7 +175,7 @@ const api = {
 
   getQTH(data) {
     return request({
-      url: '/device/qth', // 修改为新的接口地址
+      url: '/device/qths', // 修改为新的接口地址
       method: 'POST',
       data
     });
@@ -183,12 +183,12 @@ const api = {
 
 
 
-  getQTHmap() {
-    return request({
-      url: '/device/qthmap', // 修改为新的接口地址
-      method: 'GET',
-    });
-  },
+  // getQTHmap() {
+  //   return request({
+  //     url: '/device/qthmap', // 修改为新的接口地址
+  //     method: 'GET',
+  //   });
+  // },
 
 
 
