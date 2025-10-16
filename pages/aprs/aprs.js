@@ -1,5 +1,7 @@
 const { TCPClient } = require('../../utils/tcp.js');
 
+const app = getApp();
+
 Page({
   data: {
     userInfo: {    
@@ -169,10 +171,13 @@ Page({
   },
   
   formatAprsPacket(callSign, lat, lon, altitude, deviceModel) {
+
+    const server = app.globalData.serverConfig.host
+    const port = app.globalData.serverConfig.port
     // 格式化APRS数据包
     const latStr = this.decToAprs(lat, true);
     const lonStr = this.decToAprs(lon, false);
-    return `${callSign}-5>NRLMP,TCPIP*:!${latStr}/${lonStr}IA${altitude.toFixed(0)} ${deviceModel}@NRL微信小程序\n`;
+    return `${callSign}-5>NRLMP,TCPIP*:!${latStr}/${lonStr}IA${altitude.toFixed(0)} @udp://${server}:${port},${deviceModel},NRL微信小程序\n`;
   },
   
   decToAprs(dec, isLat) {
