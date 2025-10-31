@@ -124,7 +124,7 @@ Page({
       else {
         wx.showModal({
           title: '注册失败',
-          content: '手机号或者呼号已经存在，请直接登录试试。，如果失败，请连续管理员！',
+          content: '手机号或者呼号已经存在，请直接登录试试。如果失败，请联系管理员！',
           confirmText: '确定',
           success: (res) => {
             if (res.confirm) {
