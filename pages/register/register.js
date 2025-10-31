@@ -15,8 +15,8 @@ Page({
     serverConfig: null
   },
 
-  onLoad: function(options) {
-    console.log("options:",options)
+  onLoad: function (options) {
+    console.log("options:", options)
     this.setData({
       name: options.name,
       host: options.host,
@@ -37,7 +37,7 @@ Page({
 
   onSubmit(e) {
     const formData = e.detail.value;
-    
+
     // 字段验证
     if (!formData.callsign || !/^[A-Z0-9]{5,6}$/.test(formData.callsign)) {
       wx.showToast({
@@ -46,7 +46,7 @@ Page({
       });
       return;
     }
-    
+
     if (!formData.name) {
       wx.showToast({
         title: '请输入姓名',
@@ -54,7 +54,7 @@ Page({
       });
       return;
     }
-    
+
     if (!formData.phone || !/^\d{11,}$/.test(formData.phone)) {
       wx.showToast({
         title: '请输入11位以上数字的手机号',
@@ -62,7 +62,7 @@ Page({
       });
       return;
     }
-    
+
     if (!formData.password) {
       wx.showToast({
         title: '请输入密码',
@@ -70,7 +70,7 @@ Page({
       });
       return;
     }
-    
+
     if (!formData.address) {
       wx.showToast({
         title: '请输入地址',
@@ -78,7 +78,7 @@ Page({
       });
       return;
     }
-    
+
     if (!formData.mail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.mail)) {
       wx.showToast({
         title: '请输入有效的邮箱地址',
@@ -86,7 +86,7 @@ Page({
       });
       return;
     }
-    
+
     if (!this.data.license) {
       wx.showToast({
         title: '请上传操作证和电台执照',
@@ -96,28 +96,48 @@ Page({
     }
 
     formData.license = this.data.license;
-  
+
     wx.showLoading({
       title: '注册中...'
     });
 
     register(formData, this.data.host).then((res) => {
-      console.log(res);
+      console.log("res:####", res.code);
       wx.hideLoading();
-      wx.showModal({
-        title: '注册成功',
-        content: '请等待管理员审核，一般48小时以内完成，如急需，请主动连续管理员。',
-        confirmText: '确定',
-        success: (res) => {
-          if (res.confirm) {
-            wx.redirectTo({
-              url: '/pages/login/login'
-            })
+
+      if (res.code === 20000) {
+
+
+        wx.showModal({
+          title: '注册成功',
+          content: '请等待管理员审核，一般48小时以内完成，如急需，请主动连续管理员。',
+          confirmText: '确定',
+          success: (res) => {
+            if (res.confirm) {
+              wx.redirectTo({
+                url: '/pages/login/login'
+              })
+            }
           }
-        }
-      });
+        });
+      }
+      else {
+        wx.showModal({
+          title: '注册失败',
+          content: '手机号或者呼号已经存在，请直接登录试试。，如果失败，请连续管理员！',
+          confirmText: '确定',
+          success: (res) => {
+            if (res.confirm) {
+              wx.redirectTo({
+                url: '/pages/login/login'
+              })
+            }
+          }
+        });
+
+      }
     }).catch(err => {
-      console.log("register err:",err);
+      console.log("register err:", err);
       wx.hideLoading();
       wx.showToast({
         title: err.message || '注册失败',
