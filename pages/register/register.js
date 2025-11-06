@@ -102,7 +102,7 @@ Page({
     });
 
     register(formData, this.data.host).then((res) => {
-      console.log("res:####", res.code);
+       
       wx.hideLoading();
 
       if (res.code === 20000) {
