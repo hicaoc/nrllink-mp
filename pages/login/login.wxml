@@ -8,12 +8,12 @@
 
 <view class="input-group">
         <radio-group bindchange="bindRadioChange">
-          <label class="radio">
+          <!-- <label class="radio">
             <radio value="predefined" checked="{{selectedOption === 'predefined'}}" /> 预定义服务器
-          </label>
-          <label class="radio">
+          </label> -->
+          <!-- <label class="radio">
             <radio value="custom" checked="{{selectedOption === 'custom'}}" /> 自定义服务器
-          </label>
+          </label> -->
         </radio-group>
       </view>
 

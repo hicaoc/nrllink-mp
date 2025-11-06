@@ -60,6 +60,9 @@
     "getLocation",
     "onLocationChange",
     "startLocationUpdateBackground"
-  ]
+  ],
+    "useExtendedLib": {
+    "weui": true
+  }
 
 }
