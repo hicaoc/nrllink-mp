@@ -8,7 +8,9 @@
       <view class="info">
         <view class="info-top">
           <text class="name">{{userInfo.name || 'USER'}}</text>
-          <view class="call-sign-tag">{{userInfo.callsign}}-100 {{userInfo.dmrid}} {{userInfo.mdcid}}</view>
+          <view class="call-sign-tag">{{userInfo.callsign}}-100 </view>
+          <view class="call-sign-tag">  {{userInfo.dmrid}}  </view>
+          <view class="call-sign-tag"> {{userInfo.mdcid}}</view>
         </view>
         <text class="current-group">{{currentGroup || 'STANDBY'}}</text>
       </view>
