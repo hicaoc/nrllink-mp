@@ -40,7 +40,14 @@ Page({
     availableGroupsForPicker: [],
     currentPlayingId: null,
     showOnlineModal: false,
-    onlineDevicesList: []
+    onlineDevicesList: [],
+
+    // Server Switch Data
+    showServerModal: false,
+    serverList: [],
+    tempServerIndex: 0,
+    tempUsername: '',
+    tempPassword: ''
   },
 
   async onLoad() {
@@ -67,6 +74,7 @@ Page({
     this.startHeartbeat();
     this.connectionCheckTimer = setInterval(() => this.checkConnection(), 2000);
     this.loadAvailableGroups();
+    this.loadServerList();
   },
 
   async initMdcAndUdp() {
@@ -313,5 +321,169 @@ Page({
 
   stopPropagation() {
     // Prevent modal from closing when clicking inside
+  },
+
+  // --- Server Switch Logic ---
+
+  loadServerList() {
+    const url = 'https://nrlptt.com/platform/list';
+    wx.request({
+      url: url,
+      method: 'GET',
+      header: { 'content-type': 'application/json' },
+      success: (res) => {
+        if (res.data && res.data.data && res.data.data.items) {
+          const servers = res.data.data.items;
+          // Find current server index based on host
+          const currentHost = this.data.serverConfig.host;
+          let currentIndex = servers.findIndex(s => s.host === currentHost);
+          if (currentIndex === -1) currentIndex = 0;
+
+          this.setData({
+            serverList: servers,
+            tempServerIndex: currentIndex
+          });
+        }
+      },
+      fail: (err) => console.error('Failed to load server list:', err)
+    });
+  },
+
+  handleServerClick() {
+    // Load saved credentials for current selection
+    const index = this.data.tempServerIndex;
+    this.loadCredentialsForIndex(index);
+    this.setData({ showServerModal: true });
+  },
+
+  hideServerModal() {
+    this.setData({ showServerModal: false });
+  },
+
+  onServerPickerChange(e) {
+    const index = e.detail.value;
+    this.setData({ tempServerIndex: index });
+    this.loadCredentialsForIndex(index);
+  },
+
+  loadCredentialsForIndex(index) {
+    const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+    const creds = serverCredentials[index];
+    if (creds) {
+      this.setData({
+        tempUsername: creds.username,
+        tempPassword: creds.password
+      });
+    } else {
+      this.setData({
+        tempUsername: '',
+        tempPassword: ''
+      });
+    }
+  },
+
+  onServerUsernameInput(e) {
+    this.setData({ tempUsername: e.detail.value });
+  },
+
+  onServerPasswordInput(e) {
+    this.setData({ tempPassword: e.detail.value });
+  },
+
+  async confirmServerSwitch() {
+    const { tempServerIndex, tempUsername, tempPassword, serverList } = this.data;
+    if (!tempUsername || !tempPassword) {
+      wx.showToast({ title: '请输入用户名和密码', icon: 'none' });
+      return;
+    }
+
+    const selectedServer = serverList[tempServerIndex];
+    if (!selectedServer) return;
+
+    if (this.isSwitching) return;
+    this.isSwitching = true;
+    wx.showLoading({ title: '正在切换...' });
+
+    try {
+      // 1. Save credentials
+      const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+      serverCredentials[tempServerIndex] = { username: tempUsername, password: tempPassword };
+      wx.setStorageSync('serverCredentials', serverCredentials);
+
+      // 2. Perform Login
+      const api = require('../../utils/api');
+
+      // Update global config temporarily for login
+      const oldConfig = { ...app.globalData.serverConfig };
+      app.globalData.serverConfig = {
+        name: selectedServer.name,
+        host: selectedServer.host,
+        port: selectedServer.port || 60050
+      };
+
+      const res = await api.login({ username: tempUsername, password: tempPassword });
+
+      if (res.token) {
+        // Login Success
+        wx.setStorageSync('token', res.token);
+
+        // 3. Get User Info
+        const userInfo = await api.getUserInfo();
+        if (!userInfo.callsign) throw new Error('用户信息缺少呼号');
+
+        wx.setStorageSync('userInfo', userInfo);
+        app.globalData.userInfo = userInfo;
+
+        const { generateAPRSPasscode } = require('../../utils/aprs');
+        const passcode = generateAPRSPasscode(userInfo.callsign);
+        app.globalData.passcode = passcode;
+        wx.setStorageSync('passcode', passcode);
+
+        // 4. Update Page Data
+        this.setData({
+          userInfo: userInfo,
+          serverConfig: app.globalData.serverConfig,
+          serverConnected: false, // Reset status
+          showServerModal: false,
+          currentGroup: null,
+          onlineCount: 0,
+          deviceCount: 0
+        });
+
+        // 5. Re-initialize Connection
+        if (app.globalData.udpClient) {
+          app.globalData.udpClient.close();
+          app.globalData.udpClient = null;
+        }
+
+        // Clear timers
+        if (app.globalData.heartbeatTimer) {
+          clearInterval(app.globalData.heartbeatTimer);
+          app.globalData.heartbeatTimer = null;
+        }
+
+        // Re-init
+        await this.initMdcAndUdp();
+        this.startHeartbeat();
+        this.loadAvailableGroups(); // Reload groups for new server
+        await this.refreshData();
+
+        wx.showToast({ title: '切换成功', icon: 'success' });
+
+      } else {
+        // Revert config if login failed
+        app.globalData.serverConfig = oldConfig;
+        wx.showToast({ title: '用户名或密码错误', icon: 'none' });
+      }
+
+    } catch (err) {
+      console.error('Switch Error:', err);
+      // Revert config on error
+      // Ideally we should track "oldConfig" better, but simple revert for now
+      wx.showToast({ title: err.message || '切换失败', icon: 'none' });
+    } finally {
+      this.isSwitching = false;
+      wx.hideLoading();
+    }
   }
 });

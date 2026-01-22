@@ -736,3 +736,64 @@
   border-radius: 20rpx;
   font-weight: 600;
 }
+
+/* Server Switch Modal Specifics */
+.server-modal {
+  padding-bottom: 40rpx;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #5d6d7e;
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.form-input {
+  background: #f8f9fa;
+  border: 2rpx solid #edf0f2;
+  border-radius: 12rpx;
+  height: 80rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.picker-view {
+  background: #f8f9fa;
+  border: 2rpx solid #edf0f2;
+  border-radius: 12rpx;
+  height: 80rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.switch-server-btn {
+  background: linear-gradient(135deg, #06a94d, #058c40);
+  color: #fff;
+  border-radius: 40rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 40rpx;
+  border: none;
+  box-shadow: 0 8rpx 20rpx rgba(6, 169, 77, 0.3);
+}
+
+.switch-server-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}

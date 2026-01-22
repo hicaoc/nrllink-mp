@@ -119,6 +119,36 @@
       </view>
     </view>
   </view>
+  <!-- Server Switch Modal -->
+  <view class="modal-overlay {{showServerModal ? 'show' : ''}}" bindtap="hideServerModal">
+    <view class="modal-container server-modal" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">切换服务器</text>
+        <view class="modal-close" bindtap="hideServerModal">✕</view>
+      </view>
+      <view class="modal-body">
+        <!-- Server Picker -->
+        <view class="form-item">
+          <text class="form-label">选择服务器</text>
+          <picker bindchange="onServerPickerChange" value="{{tempServerIndex}}" range="{{serverList}}" range-key="name">
+            <view class="picker-view">{{serverList[tempServerIndex].name || '请选择服务器'}}</view>
+          </picker>
+        </view>
+        <!-- Username Input -->
+        <view class="form-item">
+          <text class="form-label">用户名</text>
+          <input class="form-input" placeholder="请输入手机号" bindinput="onServerUsernameInput" value="{{tempUsername}}" />
+        </view>
+        <!-- Password Input -->
+        <view class="form-item">
+          <text class="form-label">密码</text>
+          <input class="form-input" type="password" placeholder="请输入密码" bindinput="onServerPasswordInput" value="{{tempPassword}}" />
+        </view>
+        <!-- Switch Button -->
+        <button class="switch-server-btn" bindtap="confirmServerSwitch">切换服务器</button>
+      </view>
+    </view>
+  </view>
   <!-- Bottom Input & PTT Section -->
   <view class="bottom-area">
     <view class="input-bar">
