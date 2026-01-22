@@ -20,7 +20,7 @@
   <!-- Monitor Section: Digital LCD Style -->
   <view class="monitor-section">
     <view class="active-call-display" wx:if="{{CallSign}}">
-      <text class="caller-info">{{CallSign}}-{{SSID}}-{{DMRID}}</text>
+      <text class="caller-info">{{CallSign}}-{{SSID}} {{DMRID}}</text>
       <view class="call-metrics">
         <text>{{lastVoiceDisplayTime}}</text>
         <text style="color: #07C160">{{duration}}s</text>
