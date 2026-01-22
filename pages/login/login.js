@@ -1,5 +1,5 @@
-const { calculateCpuId } = require('../../utils/nrl21');
-const { generateAPRSPasscode } = require('../../utils/aprs');
+ 
+import { generateAPRSPasscode } from '../../utils/aprs';
 const app = getApp();
 
 Page({
@@ -155,11 +155,10 @@ Page({
         return;
       }
 
-      const cpuId = calculateCpuId(userInfo.callsign + '-' + userInfo.ssid);
-      wx.setStorageSync('cpuId', cpuId);
+    
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
-      app.globalData.cpuId = cpuId;
+ 
 
       const passcode = generateAPRSPasscode(userInfo.callsign);
       app.globalData.passcode = passcode;

@@ -40,7 +40,7 @@ const responseInterceptor = (response) => {
   app().globalData.token = null;
   wx.removeStorageSync('token');
   wx.removeStorageSync('userInfo');
-  wx.removeStorageSync('cpuId');
+
   wx.showToast({
     title: '登录已过期，请重新登录',
     icon: 'none'
@@ -121,7 +121,7 @@ const request = async (options, retries = 3, timeout = 10000) => {
 };
 
 // API 集合
-const api = {
+export const api = {
   // 获取群组列表
   getGroupList() {
     return request({
@@ -213,7 +213,7 @@ const api = {
     });
   },
 
-    updateAvatar(avatar) {
+  updateAvatar(avatar) {
     return request({
       url: '/user/update/avatar',
       method: 'POST',
@@ -236,8 +236,8 @@ const api = {
     return request({
       url: '/user/logout',
       method: 'POST',
-      data 
-   
+      data
+
     });
   },
 
@@ -345,7 +345,7 @@ const api = {
         'license',
         {
           ...data,
-          license: undefined      
+          license: undefined
         }
       );
 
@@ -373,7 +373,7 @@ const api = {
           try {
             resolve({
               license: JSON.parse(licenseRes.data || '{}'),
-             
+
             });
           } catch (e) {
             reject(new Error('解析响应数据失败'));
@@ -387,4 +387,28 @@ const api = {
 
 };
 
-module.exports = api;
+export const {
+  getGroupList,
+  getGroup,
+  getGroupListMini,
+  getDeviceList,
+  getDevice,
+  getMyDevices,
+  getQTH,
+  getplatformList,
+  updateDevice,
+  updateAvatar,
+  login,
+  logout,
+  getUserInfo,
+  queryDevice,
+  bingDevice,
+  changeDeviceParm,
+  changeDevice1w,
+  changeDevice2w,
+  fetchDeviceStats,
+  fetchRelayList,
+  register
+} = api;
+
+export default api;

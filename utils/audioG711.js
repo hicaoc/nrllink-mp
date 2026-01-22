@@ -1,51 +1,84 @@
 // G.711编解码器
-class G711Codec {
+export class G711Codec {
   constructor() {
     this.SEG_SHIFT = 4;
     this.QUANT_MASK = 0xf;
     this.SEG_MASK = 0x70;
     this.BIAS = 0x84;
 
-   // console.log("g711code")
+    this.initTables();
   }
 
-  
+  initTables() {
+    if (G711Codec.encodeTable) return;
 
-  linear2alaw(sample) {
+    G711Codec.encodeTable = new Uint8Array(65536);
+    G711Codec.decodeTable = new Int16Array(256);
+
+    // 预计算编码表 (PCM 16-bit to A-law)
+    for (let i = -32768; i <= 32767; i++) {
+      G711Codec.encodeTable[i + 32768] = this._linear2alaw(i);
+    }
+
+    // 预计算解码表 (A-law to PCM 16-bit)
+    for (let i = 0; i < 256; i++) {
+      G711Codec.decodeTable[i] = this._alaw2linear(i);
+    }
+  }
+
+  _linear2alaw(sample) {
     // 1. 提取符号位
     let sign = (sample >> 8) & 0x80; // 提取最高位（符号位）
-    
+
     // 2. 处理负数，避免溢出
     if (sign) {
-        if (sample === -32768) {
-            sample = 32767; // 处理最小负数（避免溢出）
-        } else {
-            sample = -sample; // 取反，将负数转换为正数
-        }
+      if (sample === -32768) {
+        sample = 32767; // 处理最小负数（避免溢出）
+      } else {
+        sample = -sample; // 取反，将负数转换为正数
+      }
     }
-    
+
     // 3. 限制样本范围
     if (sample > 32767) sample = 32767; // 确保样本不超过最大值
-    
+
     // 4. 添加偏置（A-law编码的偏置为132）
     sample += 132;
     if (sample < 0) sample = 0; // 确保样本不为负
-    
+
     // 5. 计算段号 (seg)
     let seg = 7; // 初始化段号为7（最大段号）
     for (let i = 0x4000; i >= 0x40 && (sample & i) === 0; i >>= 1) {
-        seg--; // 根据样本的高位确定段号
+      seg--; // 根据样本的高位确定段号
     }
-    
+
     // 6. 计算尾数 (mant)
     let mant = (sample >> (seg + 3)) & 0x0f; // 提取尾数（低4位）
-    
+
     // 7. 组合段号和尾数
     let alaw = (seg << 4) | mant; // 将段号和尾数组合成8位值
-    
+
     // 8. 根据符号位进行异或操作并返回结果
     return (alaw ^ (sign ? 0xD5 : 0x55)) & 0xff; // 异或操作并确保结果为8位
-}
+  }
+
+  _alaw2linear(code) {
+    let c = code ^ 0x55;
+    const seg = (c & 0x70) >> 4;
+    const quant = c & 0x0f;
+    let sample = (quant << 4) | 0x08;
+    if (seg > 0) {
+      sample = (sample + 0x100) << (seg - 1);
+    }
+    return (c & 0x80) ? sample : -sample;
+  }
+
+  linear2alaw(sample) {
+    // 确保 sample 在 Int16 范围内并映射到 0-65535
+    const index = (sample + 32768) & 0xffff;
+    return G711Codec.encodeTable[index];
+  }
+
   encode(pcmData) {
     const encoded = new Uint8Array(pcmData.length);
     for (let i = 0; i < pcmData.length; i++) {
@@ -54,46 +87,16 @@ class G711Codec {
     return encoded;
   }
 
-  // alaw2linear(code) {
-  //   code = Number(code); // 确保 code 是 Number 类型
-  //   code ^= 0x55;
-  //   const seg = ((code & this.SEG_MASK) >> 4) | 0; // 提取段落值，并确保是整数
-  //   const quant = (code & this.QUANT_MASK) | 0; // 提取量化值，并确保是整数
-  //   let sample = (quant << 4) | 0x08;
-
-  //   if (seg > 0) {
-  //     sample = Number(sample + 0x100); // 转换为 Number 类型
-  //     sample = sample << (seg - 1);
-  //     sample = Math.max(-32768, Math.min(32767, sample)) | 0; // 限制范围，并确保是整数
-  //   }
-
-  //   if (code & 0x80) {
-  //     return sample;
-  //   }
-  //   return -sample;
-  // }
-
   alaw2linear(code) {
-    code ^= 0x55;
-    const seg = (code & this.SEG_MASK) >> 4;
-    const quant = code & this.QUANT_MASK;
-    let sample = (quant << 4) | 0x08;
-    
-    if (seg > 0) {
-      sample = (sample + 0x100) << (seg - 1);
-    }
-    
-    if (code & 0x80) {
-      return sample;
-    }
-    return -sample;
+    return G711Codec.decodeTable[code & 0xff];
   }
+
 }
 
-const g711Codec = new G711Codec(); 
+const g711Codec = new G711Codec();
 
 
-function g711Encode(mdc1200Data, tailFrequency = 800, tailDuration = 0.1, sampleRate = 8000) {
+export function g711Encode(mdc1200Data, tailFrequency = 800, tailDuration = 0.1, sampleRate = 8000) {
   if (!(mdc1200Data instanceof Uint8Array)) {
     throw new TypeError('Input data must be Uint8Array');
   }
@@ -131,7 +134,7 @@ function g711Encode(mdc1200Data, tailFrequency = 800, tailDuration = 0.1, sample
   return g711Data; // 返回 G.711 编码后的数据
 }
 
-function MDC2g711Encode(mdc1200Data) {
+export function MDC2g711Encode(mdc1200Data) {
 
   // 编码为 G.711 A-law 格式
   const g711Data = new Uint8Array(mdc1200Data.length);
@@ -143,7 +146,7 @@ function MDC2g711Encode(mdc1200Data) {
 }
 
 
-module.exports = {
+export default {
   G711Codec,
   g711Encode,
   MDC2g711Encode

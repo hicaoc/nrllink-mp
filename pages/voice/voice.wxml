@@ -1,92 +1,81 @@
 <view class="container">
-  <!-- 用户信息卡片 -->
-
-  <!-- 服务器状态 -->
-  <!-- <view class="server-status">
-   
-    <text class="status-text">{{server.name}}-{{server.host}}</text>
- 
-  </view> -->
-
-
-  <view class="user-card">
-
-
-<button class="avatar-wrapper"  open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-  <image  class="avatar" src="{{userInfo.avatar}}"></image>
-</button> 
-
-
-    <!-- <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image> -->
-    <view class="info">
-      <text class="name">{{userInfo.name}}</text>
-      <!-- <input type="nickname" class="weui-input" placeholder="请输入昵称"/> -->
-      <text class="call-sign">{{userInfo.callsign}}-100</text>
-      <text class="current-group" wx:if="{{currentGroup}}">{{currentGroup}}</text>
+  <!-- User Section -->
+  <view class="header-section">
+    <view class="user-card">
+      <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+        <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+      </button>
+      <view class="info">
+        <view class="info-top">
+          <text class="name">{{userInfo.name || 'USER'}}</text>
+          <view class="call-sign-tag">{{userInfo.callsign}}-100 {{userInfo.dmrid}} {{userInfo.mdcid}}</view>
+        </view>
+        <text class="current-group">{{currentGroup || 'STANDBY'}}</text>
+      </view>
     </view>
   </view>
 
-  <!-- 编码选择 -->
-  <!-- <view class="codec-select">
-    <text class="title">编码协议</text>
-    <radio-group class="radio-group" bindchange="changeCodec">
-      <label class="radio-item">
-        <radio value="g711" checked/>G711
-      </label>
-      <label class="radio-item">
-        <radio value="opus"/>Opus
-      </label>
-    </radio-group>
-  </view> -->
-
-  <!-- 当前通话信息 -->
-
-<view class="current-call" wx:if="{{CallSign}}">
-   <view class="call-item" >
-        <text class="call-sign">{{CallSign}}-{{SSID}}</text>        
-        <text class="call-duration"> {{duration}}s</text>
-        <text class="call-time">{{lastVoiceDisplayTime}}</text>
+  <!-- Monitor Section: Digital LCD Style -->
+  <view class="monitor-section">
+    <view class="active-call-display" wx:if="{{CallSign}}">
+      <text class="caller-info">{{CallSign}}-{{SSID}}-{{DMRID}}</text>
+      <view class="call-metrics">
+        <text>{{lastVoiceDisplayTime}}</text>
+        <text style="color: #07C160">{{duration}}s</text>
       </view>
-       
-</view>
+    </view>
+    <view class="no-call" wx:else>
+      STANDBY
+    </view>
+  </view>
 
-
-<view class="history-container" wx:if="{{callHistory.length > 0}}">
-
-<scroll-view class="call-history" scroll-y scroll-x="false">
-      <view class="call-item" wx:for="{{callHistory}}" wx:key="endTime">
-        <text class="call-sign">{{item.CallSign}}-{{item.SSID}}</text>
-        <text class="call-name">{{item.QTH}}</text>
-        <text class="call-duration">{{item.duration}}s</text>
-        <text class="call-time">{{item.endTime}}</text>
+  <!-- History Section -->
+  <view class="history-section">
+    <text class="section-label">Log History</text>
+    <scroll-view class="call-history" scroll-y enable-flex>
+      <view class="history-item" wx:for="{{callHistory}}" wx:key="endTime">
+        <view class="h-avatar">{{item.CallSign[0]}}</view>
+        <view class="h-info">
+          <view class="h-top">
+            <text class="h-sign">{{item.CallSign}}-{{item.SSID}} {{item.DMRID}}</text>
+            <text class="h-time">{{item.endTime}}</text>
+          </view>
+          <view class="h-bottom">
+            <text class="h-qth">{{item.QTH}}</text>
+            <text class="h-dur">{{item.duration}}s</text>
+          </view>
+        </view>
       </view>
     </scroll-view>
-
-</view>
-
-
-  <!-- 通话按钮 -->
-  <view class="talk-container">
-    <button 
-      class="talk-btn {{isTalking ? 'active' : ''}}" 
-      bindtap="toggleTalk"
-    >
-      {{isTalking ? '正在通话...' : '点击通话'}}
-    </button>
   </view>
 
-
-
-  <!-- 服务器状态 -->
-  <view class="server-status">
-    <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
-    <text class="status-text">{{server.name}}  </text>
-    <text class="thanks-text" style="display: block;" bindtap="showThanksList">{{server.host}}</text>
+  <!-- Control Section -->
+  <view class="controls-section">
+    <view class="talk-btn-wrapper">
+      <view class="outer-ring {{isTalking ? 'transmitting' : ''}}"></view>
+      <button 
+        class="talk-btn {{isTalking ? 'active' : ''}}" 
+        bindtap="toggleTalk"
+      >
+        <text class="btn-text">{{isTalking ? 'TX' : 'PTT'}}</text>
+      </button>
+    </view>
   </view>
 
-  <!-- 弹出列表 -->
-<view class="thanks-list" wx:if="{{showList}}">
-  <view class="list-item" wx:for="{{thanksItems}}" wx:key="index">{{item}}</view>
-</view>
+  <!-- Footer Status -->
+  <view class="footer-status">
+    <view class="server-info">
+      <view class="status-dot {{serverConnected ? 'connected' : 'disconnected'}}"></view>
+      <view class="server-label">{{server.name || 'Server'}}</view>
+    </view>
+    <view class="host-link" bindtap="showThanksList">{{server.host}}</view>
+  </view>
 
+  <!-- Thanks List Modal -->
+  <view class="thanks-list" wx:if="{{showList}}" bindtap="showThanksList">
+    <view class="thanks-header">Acknowledgments</view>
+    <view class="thanks-grid">
+      <view class="thanks-item" wx:for="{{thanksItems}}" wx:key="index">{{item}}</view>
+    </view>
+  </view>
 </view>

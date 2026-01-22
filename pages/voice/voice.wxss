@@ -1,338 +1,400 @@
 page {
-  background: linear-gradient(180deg, #f0f2f5 0%, #ffffff 100%);
+  background: #F6F8FA;
+  color: #1A1C1E;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .container {
-  padding: 24px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   box-sizing: border-box;
+  overflow: hidden;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F6F8FA 100%);
+}
+
+/* User Card Section */
+.header-section {
+  margin-bottom: 12px;
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  padding: 24px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  position: relative;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .avatar-wrapper {
-  width: 76px; /* 外层容器大小 */
-  height: 76px;
-  border-radius: 50%; /* 圆形 */
-  overflow: hidden; /* 确保内部元素不会溢出 */
-  padding: 0; /* 移除按钮的默认内边距 */
-  border: none; /* 移除按钮的默认边框 */
-  background: none; /* 移除按钮的默认背景 */
-  display: flex; /* 确保内容居中对齐 */
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  background: #F0F2F5;
+  display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  left: 24px; /* Fixed position from the left */
-  z-index: 1; /* Ensure the avatar-wrapper is above other elements */
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  line-height: normal;
+}
+
+.avatar-wrapper::after {
+  border: none;
 }
 
 .avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 100%;
+  height: 100%;
 }
-
-/* .avatar-wrappe{
-  width: 72px;
-  height: 72px;
-}
-
-.avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  margin-right: 20px;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-} */
 
 .info {
+  margin-left: 14px;
   display: flex;
   flex-direction: column;
-  margin-left: 116px; /* Margin to the right of the avatar-wrapper */
+  flex: 1;
+}
+
+.info-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .name {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A1C1E;
 }
 
-.call-sign {
-  font-size: 16px;
-  color: #666666;
-  margin-top: 8px;
-  font-weight: 500;
+.call-sign-tag {
+  font-size: 10px;
+  color: #07C160;
+  background: rgba(7, 193, 96, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  border: 1px solid rgba(7, 193, 96, 0.2);
 }
 
 .current-group {
-  font-size: 14px;
-  color: #999999;
-  margin-top: 4px;
-  font-weight: 400;
+  font-size: 11px;
+  color: #8B949E;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
-.codec-select {
-  margin-top: 32px;
-  padding: 24px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-}
-
-.title {
-  font-size: 18px;
-  color: #1a1a1a;
-  margin-bottom: 16px;
-  font-weight: 600;
-}
-
-.radio-group {
+/* Monitor Section: Digital LCD Style */
+.monitor-section {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  min-height: 60px;
   display: flex;
-  gap: 24px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.radio-item {
-  font-size: 16px;
-  color: #666666;
+.no-call {
+  color: #B0B0B0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
-.radio-item radio {
-  margin-right: 8px;
-}
-
-.current-call {
-  margin: 12px 0 4px 0; /* Increased top margin, kept bottom margin minimal */
-  padding: 6px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
+.active-call-display {
+  width: 100%;
   text-align: center;
 }
 
-.history-container {
-  margin: 8px 0; /* 控制上下外边距 */
-  padding: 8px; /* 控制内边距 */
-  background: #ffffff;
-  border-radius: 16px; /* 圆角 */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 阴影效果 */
-  max-height: 150px; /* 限制容器最大高度 */
-  height: 150px; /* 确保固定高度 */
-  overflow: hidden; /* 防止溢出 */
+.incoming-tag {
+  font-size: 9px;
+  color: #FFFFFF;
+  background: #07C160;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+.caller-info {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  color: #1A1C1E;
+  display: block;
+  letter-spacing: -0.5px;
+}
+
+.call-metrics {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+  color: #8E8E93;
+  font-weight: 500;
+}
+
+/* History Section */
+.history-section {
+  flex: 1;
+  min-height: 0;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.section-label {
+  font-size: 11px;
+  color: #8E8E93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-left: 4px;
+  font-weight: 600;
 }
 
 .call-history {
-  max-height: 100%; /* 继承父级的最大高度 */
-  overflow-y: auto; /* 启用垂直滚动 */
-  padding-right: 6px; /* 防止滚动条遮挡内容 */
-  box-sizing: border-box; /* 确保 padding 不影响宽度计算 */
+  height: 100%;
 }
 
-.call-item {
-  padding: 6px 6px; /* 增大左右内边距 */
-  border-bottom: 1px solid #eee; /* 分隔线 */
+.history-item {
   display: flex;
-  align-items: baseline; /* 垂直居中 */
-  justify-content: space-between; /* 内容均匀分布 */
-  gap: 6px; /* 控制字段间的间距 */
-  line-height: 1.2; /* 调整文本行高 */
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid #F6F8FA;
 }
 
-.call-item:last-child {
+.history-item:last-child {
   border-bottom: none;
 }
 
-.call-sign {
-  font-size: 14px;
-  color: #333;
-  white-space: nowrap;       /* 防止文本换行 */
-  font-weight: 500;
-}
-
-.call-name {
-  font-size: 12px;
-  color: #333;
-  line-height: 1.2; /* 确保一致的行高 */
-  white-space: nowrap;       /* 防止文本换行 */
-  overflow: hidden;          /* 隐藏超出容器的内容 */
-  text-overflow: ellipsis;   /* 用省略号表示被截断的文本 */
-}
-
-.call-duration {
-  font-size: 12px;
-  color: #666;
-  margin-left: auto;
-}
-
-.call-time {
-  font-size: 12px;
-  color: #999;
-}
-
-.talk-container {
-  flex: 1;
+.h-avatar {
+  width: 28px;
+  height: 28px;
+  background: #F0F2F5;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 4px 0;
-  min-height: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #07C160;
+  margin-right: 10px;
+  margin-top: 2px;
+}
+
+.h-info {
+  flex: 1;
+}
+
+.h-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.h-sign {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1C1E;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.h-time {
+  font-size: 9px;
+  color: #B0B0B0;
+}
+
+.h-bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1px;
+}
+
+.h-qth {
+  font-size: 10px;
+  color: #8B949E;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.h-dur {
+  font-size: 9px;
+  color: #07C160;
+  font-weight: 600;
+  background: rgba(7, 193, 96, 0.05);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Control Section */
+.controls-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 12px;
+}
+
+.talk-btn-wrapper {
+  width: 110px;
+  height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .talk-btn {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: #07c160;
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 5e00;
+  width: 100%;
+  height: 64px;
+  border-radius: 16px;
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  box-shadow: 0 4px 16px rgba(7,193,96,0.3);
-  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border: 3px solid #07C160;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1);
+  padding: 0;
+  margin: 0;
+}
+
+.btn-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: #07C160;
 }
 
 .talk-btn.active {
-  background: #f5222d;
-  box-shadow: 0 4px 16px rgba(245,34,45,0.3);
+  border-color: #FF4D4F;
+  transform: scale(0.9);
+  background: #FFF0F0;
 }
 
-.settings {
-  padding: 20px;
-  background: #ffffff;
+.talk-btn.active .btn-text {
+  color: #FF4D4F;
+}
+
+/* Pulse Ring Animation */
+.outer-ring {
+  position: absolute;
+  width: 100%;
+  height: 64px;
   border-radius: 16px;
+  border: 2px solid #FF4D4F;
+  opacity: 0;
+}
+
+.outer-ring.transmitting {
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* Footer Status */
+.footer-status {
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border-radius: 12px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
-.settings navigator {
+.server-info {
   display: flex;
   align-items: center;
-  color: #1a1a1a;
-  font-size: 16px;
-  font-weight: 500;
 }
 
-.settings image {
-  width: 20px;
-  height: 20px;
-  margin-left: 12px;
-}
-
-.server-status {
-  margin: 4px 0;
-  padding: 12px 16px;
-  background: #ffffff;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  position: relative;
-  z-index: 1;
-}
-
-.status-indicator {
-  width: 12px;
-  height: 12px;
+.status-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  margin-right: 12px;
-  transition: background-color 0.3s ease;
+  margin-right: 8px;
 }
 
-.status-indicator.connected {
-  background-color: #52c41a;
-  box-shadow: 0 0 8px rgba(82,196,26,0.4);
+.status-dot.connected {
+  background: #07C160;
 }
 
-.status-indicator.disconnected {
-  background-color: #ff4d4f;
-  box-shadow: 0 0 8px rgba(255,77,79,0.4);
+.status-dot.disconnected {
+  background: #FF4D4F;
 }
 
-.status-text {
-  font-size: 12px;
-  color: #1a1a1a;
-  font-weight: 500;
+.server-label {
+  font-size: 11px;
+  color: #1A1C1E;
+  font-weight: 600;
 }
 
-.thanks-text {
-  margin-left: auto; /* 靠右 */
-  font-size: 12px;   /* 增大字体大小 */
-  color: #07c160;    /* 使用主题绿色 */
-  font-weight: 500;  /* 加粗 */
-  padding: 8px 16px; /* 增加内边距 */
-  background: rgba(7,193,96,0.1); /* 浅绿色背景 */
-  border-radius: 20px; /* 圆角 */
-  cursor: pointer; /* 添加鼠标指针样式 */
-  transition: all 0.2s ease;
+.host-link {
+  font-size: 10px;
+  color: #8E8E93;
+  text-decoration: underline;
 }
 
-.thanks-text:active {
-  background: rgba(7,193,96,0.2); /* 点击时加深背景 */
-  transform: scale(0.95);
-}
-
+/* Modal Styling */
 .thanks-list {
   position: fixed;
-  bottom: 100px; /* 根据需要调整位置 */
-  right: 24px; /* 根据需要调整位置 */
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  padding: 12px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  max-height: 60vh;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
 }
 
-.list-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.list-item:last-child {
-  border-bottom: none;
-}
-.audio-output-select {
-  margin: 20px 0;
-  padding: 16px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-}
-
-.audio-output-select .title {
+.thanks-header {
   font-size: 16px;
-  color: #1a1a1a;
-  margin-bottom: 12px;
-  font-weight: 500;
+  font-weight: 700;
+  color: #1A1C1E;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
-.audio-output-select .radio-group {
+.thanks-grid {
   display: flex;
-  gap: 24px;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
 }
 
-.audio-output-select .radio-item {
-  font-size: 14px;
-  color: #666666;
-  display: flex;
-  align-items: center;
-}
-
-.audio-output-select .radio-item radio {
-  margin-right: 8px;
+.thanks-item {
+  font-size: 13px;
+  color: #5E6C84;
+  background: #F4F6F8;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
 }

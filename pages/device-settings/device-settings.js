@@ -225,10 +225,10 @@ Page({
 
   changeIP() {
     const { local_ipaddr, gateway, netmask, dns_ipaddr, dest_domainname } = this.data.temp.device_parm;
-    const { cpuid, callsign, ssid } = this.data.temp;
+    const { dmrid, callsign, ssid } = this.data.temp;
     changeDeviceParm(
-      'CPUID=' +
-        cpuid +
+      'DMRID=' +
+        dmrid +
         '&callsign=' +
         callsign +
         '&ssid=' +
@@ -250,10 +250,10 @@ Page({
 
   // 保存单个参数
   changeByte(name, value) {
-    const { cpuid, callsign, ssid } = this.data.temp;
+    const { dmrid, callsign, ssid } = this.data.temp;
     changeDeviceParm(
-      'CPUID=' +
-        cpuid +
+      'DMRID=' +
+        dmrid +
         '&callsign=' +
         callsign +
         '&ssid=' +

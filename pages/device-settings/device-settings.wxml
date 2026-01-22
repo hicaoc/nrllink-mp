@@ -45,14 +45,7 @@
             </picker>
             <button class="save-btn" bindtap="confirmIPChange">保存</button>
           </view>
-          <view class="form-item">
-            <text class="label">对端CPUID:</text>
-            <input class="input" value="{{temp.device_parm.peer_password}}" disabled />
-          </view>
-          <view class="form-item">
-            <text class="label">对端密码:</text>
-            <input class="input" value="{{temp.device_parm.peer_password}}" disabled />
-          </view>
+
         </view>
       </view>
 

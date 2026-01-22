@@ -22,15 +22,15 @@ Page({
     showList: false,
     thanksItems: [
       '感谢：',
-      'BG6FCS BH4TIH', 
-      'BA4RN  BA1GM',  
+      'BG6FCS BH4TIH',
+      'BA4RN  BA1GM',
       'BA4QEK BA4QAO',
       'BD4VKI BH4VAP',
       'BH4TDV BI4UMD',
       'BA4QGT BG8EJT',
       'BH1OSW BD4RFG',
       '还有很多，列表放不下了'
-      
+
 
     ], // 测试数据
 
@@ -63,12 +63,6 @@ Page({
     app.registerPage(this);
 
 
-    // MDC1200配置
-    // const mdcConfig = app.globalData.mdcConfig || {
-    //   op: 0x01,
-    //   arg: 0x01,
-    //   unitId: parseInt(this.data.cpuid)
-    // };
 
     const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100)
     app.globalData.currentDevice = currentDevice
@@ -80,7 +74,7 @@ Page({
     try {
       this.mdcEncoder = new mdc.MDC1200Encoder();
       //console.log("mdc:",this.mdcEncoder,mdcConfig)
-      this.mdcEncoder.setPreamble(10);  
+      this.mdcEncoder.setPreamble(10);
       // this.mdcEncoder.encodeSinglePacket(
       //   mdcConfig.op,
       //   mdcConfig.arg,
@@ -90,10 +84,10 @@ Page({
       //  this.mdcEncoder.setDoublePacket(0x01, 0x00,parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
       //this.mdcEncoder.setDoublePacket(0x01, 0x80,parseInt(currentDevice.id), 0x11, 0x22, 0x33, 0x44)
 
-      this.mdcEncoder.setPacket(0x01, 0x00,parseInt(currentDevice.id))
+      this.mdcEncoder.setPacket(0x01, 0x00, parseInt(currentDevice.id))
 
-      
-      const samples = this.mdcEncoder.getSamples();      
+
+      const samples = this.mdcEncoder.getSamples();
       app.globalData.mdcPacket = g711.MDC2g711Encode(samples);
     } catch (error) {
       console.error('MDC1200 encoding error:', error);
@@ -104,7 +98,7 @@ Page({
     const audioPacket = nrl21.createPacket({
       type: 1,
       callSign: app.globalData.userInfo.callsign,
-      cpuId: app.globalData.cpuId
+
     });
 
     const audioPacketHead = new Uint8Array(audioPacket.getBuffer());
@@ -119,12 +113,12 @@ Page({
     audio.initWebAudio()
     audio.resume()
 
-    
+
 
     const heartbeatPacket = nrl21.createPacket({
       type: 2,
       callSign: app.globalData.userInfo.callsign,
-      cpuId: app.globalData.cpuId
+
     });
 
     this.heartbeatPacket = heartbeatPacket.getBuffer();
@@ -144,8 +138,8 @@ Page({
       this.checkConnection();
     }, 2000);
 
-   
-    
+
+
 
 
 
@@ -224,12 +218,13 @@ Page({
           || (this.data.CallSign === packet.callSign && this.data.SSID !== packet.ssid && this.data.CallSign)
           || Date.now() - this.data.lastVoiceTime > 2000 && this.data.CallSign) {
 
-           const qth = qthmap[this.data.CallSign + '-' + this.data.SSID] 
+          const qth = qthmap[this.data.CallSign + '-' + this.data.SSID]
 
           const item = {
             CallSign: this.data.CallSign,
             SSID: this.data.SSID,
-            QTH: qth ? qth.qth +"\n"+ qth.name : '无数据',
+            DMRID: this.data.DMRID,
+            QTH: qth ? qth.qth + "\n" + qth.name : '无数据',
             startTime: this.formatLastVoiceTime(this.data.startTime),
             duration: this.data.duration,
             endTime: this.formatLastVoiceTime(this.data.lastVoiceTime),
@@ -253,6 +248,7 @@ Page({
             startTime: Date.now(),
             CallSign: packet.callSign || '未知',
             SSID: packet.ssid || '00',
+            DMRID: packet.dmrid || '',
           });
         }
 
@@ -295,7 +291,7 @@ Page({
         showCancel: false,
         confirmText: '确定',
         success: (res) => {
-     
+
         }
       });
     }).catch(err => {
@@ -476,7 +472,7 @@ Page({
       const item = {
         CallSign: app.globalData.currentDevice.callsign,
         SSID: app.globalData.currentDevice.ssid,
-        Name: '本微信小程序',
+        Name: '微信小程序',
         duration: (Date.now() - app.globalData.recoderStartTime) / 1000 + 1 | 0,
         endTime: this.formatLastVoiceTime(Date.now()),
       };

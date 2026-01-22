@@ -47,7 +47,7 @@ Page({
     // this.navigateToDeviceSettings = this.navigateToDeviceSettings.bind(this)
 
     let currentDevice = app.globalData.currentDevice
-    currentDevice.displayName = currentDevice.callsign + '-' + currentDevice.ssid + '-' + currentDevice.cpuid + '-' + currentDevice.id
+    currentDevice.displayName = currentDevice.callsign + '-' + currentDevice.ssid + '-' + currentDevice.dmrid + '-' + currentDevice.id
     this.setData({ selectedDevice: currentDevice })
 
     try {
@@ -87,7 +87,7 @@ Page({
       let devlist = await app.globalData.getMyDevices() || []
       const devices = Object.values(devlist.items).map(device => ({
         ...device,
-        displayName: `${device.callsign}-${device.ssid}(${device.cpuid}-${device.id})`
+        displayName: `${device.callsign}-${device.ssid}(${device.dmrid}-${device.id})`
       }));
       this.setData({ devices })
     } catch (error) {

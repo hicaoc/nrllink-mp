@@ -1,5 +1,5 @@
-class UDPClient {
-  constructor({host, port, onMessage}) {
+export class UDPClient {
+  constructor({ host, port, onMessage }) {
     this.host = host;
     this.port = port;
     this.onMessage = onMessage;
@@ -41,6 +41,6 @@ class UDPClient {
   }
 }
 
-module.exports = {
+export default {
   UDPClient
 };

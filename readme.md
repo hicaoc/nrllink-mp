@@ -88,7 +88,7 @@
 语音数据采用NRL21协议封装，主要字段：
 - Version: 协议版本（固定"NRL2"）
 - Length: 数据长度
-- CPUID: 设备唯一标识
+- DMRID: 设备DMR-ID
 - Type: 数据类型（1:心跳，2:G711，8:Opus）
 - CallSign: 用户呼号
 - DATA: 语音数据

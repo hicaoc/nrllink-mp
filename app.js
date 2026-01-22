@@ -17,7 +17,7 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    cpuid: null,
+    dmrid: null,
     passcode: null,
     currentGroup: null,
     currentDevice: null,
@@ -38,53 +38,16 @@ App({
       host: 'nrlptt.com',
       port: 60050
     },
-    // getDeviceList: async function () {
-    //   try {
-    //     const data = await _getDeviceList();
-    //     const devices = Object.values(data.items).map(device => ({
-    //       ...device,
-    //       displayName: `${device.callsign}-${device.ssid}(${device.cpuid})`
-    //     }));
-
-    //     this.availableDevices = devices;
-    //   } catch (error) {
-    //     wx.showToast({
-    //       title: error.message || '获取设备失败',
-    //       icon: 'none'
-    //     });
-    //   }
-    // },
+ 
     getGroupList: async function () {
       try {
-        // const data = await _getGroupList();
-        // const groups = Object.values(data.items).map(group => {
-        //   const onlineCount = group.devmap ? Object.values(group.devmap)
-        //     .filter(device => device.is_online).length : 0;
-
-        //   return {
-        //     ...group,
-        //     displayName: `${group.id}-${group.name}`,
-        //     deviceCount: group.devmap ? Object.keys(group.devmap).length : 0,
-        //     onlineCount,
-        //   };
-        // });
+ 
 
         const data = await _getGroupListMini();
          this.availableGroups = data;
 
         return data
-        // const groups = data.map(group => {
-        //   // const onlineCount = group.devmap ? Object.values(group.devmap)
-        //   //   .filter(device => device.is_online).length : 0;
-
-        //   return {
-        //     ...group,
-        //     displayName: `${group.id}-${group.name}`,
-        //     deviceCount: group.total_dev_number,
-        //     onlineCount: group.online_dev_number
-        //   };
-        // });
-
+  
       
 
       } catch (error) {
@@ -209,7 +172,7 @@ App({
 
       wx.removeStorageSync('token');
       wx.removeStorageSync('userInfo');
-      wx.removeStorageSync('cpuId');
+      wx.removeStorageSync('dmrid');
       wx.removeStorageSync('passcode');
       //wx.removeStorageSync('serverCredentials');
       // wx.restartMiniProgram({    

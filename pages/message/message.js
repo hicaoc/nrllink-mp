@@ -1,5 +1,5 @@
 const app = getApp();
-const nrl = require('../../utils/nrl21');
+const nrl = require('../../utils/nrl21').default;
 
 Page({
   data: {
@@ -113,7 +113,7 @@ Page({
     const MessgaePacket = nrl.createPacket({
       type: 5,
       callSign: app.globalData.userInfo.callsign,
-      cpuId: app.globalData.cpuId,
+      
     });
 
     const MessagePacketHead = new Uint8Array(MessgaePacket.getBuffer());
