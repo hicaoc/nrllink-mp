@@ -38,7 +38,9 @@ Page({
     isReceivingVoice: false,
     receivingBubbleWidth: 0,
     availableGroupsForPicker: [],
-    currentPlayingId: null
+    currentPlayingId: null,
+    showOnlineModal: false,
+    onlineDevicesList: []
   },
 
   async onLoad() {
@@ -268,5 +270,48 @@ Page({
     } finally {
       wx.hideLoading();
     }
+  },
+
+  async showOnlineDevices() {
+    try {
+      const currentDevice = app.globalData.currentDevice;
+      if (!currentDevice || !currentDevice.group_id) {
+        wx.showToast({ title: '未加入群组', icon: 'none' });
+        return;
+      }
+
+      const group = await app.globalData.getGroup(currentDevice.group_id);
+      if (!group || !group.devmap) {
+        this.setData({
+          showOnlineModal: true,
+          onlineDevicesList: []
+        });
+        return;
+      }
+
+      const onlineDevices = Object.values(group.devmap)
+        .filter(device => device.is_online)
+        .map(device => ({
+          id: `${device.callsign}-${device.ssid}`,
+          callsign: device.callsign,
+          ssid: device.ssid
+        }));
+
+      this.setData({
+        showOnlineModal: true,
+        onlineDevicesList: onlineDevices
+      });
+    } catch (error) {
+      console.error('Error loading online devices:', error);
+      wx.showToast({ title: '加载失败', icon: 'none' });
+    }
+  },
+
+  hideOnlineDevices() {
+    this.setData({ showOnlineModal: false });
+  },
+
+  stopPropagation() {
+    // Prevent modal from closing when clicking inside
   }
 });

@@ -1,6 +1,7 @@
 <view class="container">
-  <!-- Header Section (Stay the same) -->
+  <!-- Header Section -->
   <view class="header-section">
+    <!-- First Row: User Identity and Server Status -->
     <view class="header-content">
       <!-- Left: User Identity -->
       <view class="user-info-box">
@@ -18,7 +19,6 @@
           </view>
         </view>
       </view>
-
       <!-- Right: Connection Status -->
       <view class="system-status-box">
         <view class="server-label clickable" bindtap="handleServerClick">
@@ -28,27 +28,27 @@
             <text class="server-addr">{{serverConfig.host}}</text>
           </view>
         </view>
-        <picker bindchange="onGroupPickerChange" range="{{availableGroupsForPicker}}" range-key="displayGroupName">
-          <view class="group-label clickable">
-            <view class="group-info-row">
-              <text class="group-name">{{currentGroup || 'STANDBY'}}</text>
-              <text class="group-counts">({{onlineCount}}/{{deviceCount}})</text>
-              <text class="label-hint">▾</text>
-            </view>
-          </view>
-        </picker>
+      </view>
+    </view>
+    <!-- Second Row: Group Information -->
+    <view class="group-row">
+      <!-- Left: Group Name (Clickable to switch) -->
+      <picker bindchange="onGroupPickerChange" range="{{availableGroupsForPicker}}" range-key="displayGroupName" class="group-picker">
+        <view class="group-name-section clickable">
+          <text class="group-name-text">{{currentGroup || 'STANDBY'}}</text>
+          <text class="group-switch-hint">▾</text>
+        </view>
+      </picker>
+      <!-- Right: Online/Total Count (Clickable to show details) -->
+      <view class="group-count-section clickable" bindtap="showOnlineDevices">
+        <text class="count-online">{{onlineCount}}</text>
+        <text class="count-separator">/</text>
+        <text class="count-total">{{deviceCount}}</text>
       </view>
     </view>
   </view>
-
   <!-- Chat History Section -->
-  <scroll-view 
-    class="chat-section" 
-    scroll-y 
-    enable-flex 
-    scroll-into-view="{{scrollIntoView}}"
-    scroll-with-animation
-  >
+  <scroll-view class="chat-section" scroll-y enable-flex scroll-into-view="{{scrollIntoView}}" scroll-with-animation>
     <view class="chat-list">
       <block wx:for="{{chatLogs}}" wx:key="id">
         <view id="msg-{{item.id}}" class="message-item {{item.isSelf ? 'self' : 'other'}}">
@@ -56,36 +56,28 @@
           <view class="bubble-container">
             <view class="sender-info" wx:if="{{!item.isSelf}}">
               <view class="sender-main">
-                <text class="sender-name">{{item.callsign}}-{{item.ssid}}<text wx:if="{{item.dmrid}}" class="sender-dmrid"> ({{item.dmrid}})</text></text>
+                <text class="sender-name">
+                  {{item.callsign}}-{{item.ssid}}
+                  <text wx:if="{{item.dmrid}}" class="sender-dmrid">({{item.dmrid}})</text>
+                </text>
                 <text class="sender-time">{{item.timestamp}}</text>
               </view>
               <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
             </view>
-            
             <!-- Voice Bubble -->
-            <view 
-              wx:if="{{item.type === 'voice'}}" 
-              class="bubble voice-bubble {{currentPlayingId === item.id ? 'playing' : ''}}" 
-              bindtap="playVoice" 
-              data-filepath="{{item.filePath}}"
-              data-id="{{item.id}}"
-              style="width: {{20 + item.duration * 5}}%; max-width: 66%;"
-            >
+            <view wx:if="{{item.type === 'voice'}}" class="bubble voice-bubble {{currentPlayingId === item.id ? 'playing' : ''}}" bindtap="playVoice" data-filepath="{{item.filePath}}" data-id="{{item.id}}" style="width: {{20 + item.duration * 5}}%; max-width: 66%;">
               <view class="voice-icon {{currentPlayingId === item.id ? 'playing' : ''}}">
                 <view class="play-icon-inner"></view>
               </view>
               <text class="duration">{{item.duration}}s</text>
             </view>
-
             <!-- Text Bubble -->
             <view wx:else class="bubble text-bubble">
               <text>{{item.content}}</text>
             </view>
-            
           </view>
         </view>
       </block>
-
       <!-- Active Receiving Bubble -->
       <view class="message-item other active-receiving" wx:if="{{isReceivingVoice}}">
         <view class="avatar-sm">{{CallSign[0]}}</view>
@@ -94,10 +86,7 @@
             <text class="sender-name">{{CallSign}}-{{SSID}}</text>
             <text class="status-receiving">正在接收...</text>
           </view>
-          <view 
-            class="bubble voice-bubble receiving" 
-            style="width: {{receivingBubbleWidth}}%;"
-          >
+          <view class="bubble voice-bubble receiving" style="width: {{receivingBubbleWidth}}%;">
             <view class="voice-icon playing">
               <view class="play-icon-inner"></view>
             </view>
@@ -107,29 +96,40 @@
       </view>
     </view>
   </scroll-view>
-
+  <!-- Online Devices Modal -->
+  <view class="modal-overlay {{showOnlineModal ? 'show' : ''}}" bindtap="hideOnlineDevices">
+    <view class="modal-container" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">在线设备列表</text>
+        <view class="modal-close" bindtap="hideOnlineDevices">✕</view>
+      </view>
+      <view class="modal-body">
+        <view wx:if="{{onlineDevicesList.length === 0}}" class="empty-state">
+          <text>暂无在线设备</text>
+        </view>
+        <view wx:else class="device-list">
+          <view wx:for="{{onlineDevicesList}}" wx:key="id" class="device-item">
+            <view class="device-avatar">{{item.callsign[0]}}</view>
+            <view class="device-info">
+              <text class="device-callsign">{{item.callsign}}-{{item.ssid}}</text>
+              <text class="device-status">在线</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
   <!-- Bottom Input & PTT Section -->
   <view class="bottom-area">
     <view class="input-bar">
-      <input 
-        class="text-input"
-        value="{{inputText}}" 
-        bindinput="onInput" 
-        placeholder="输入消息..."
-        confirm-type="send"
-        bindconfirm="sendMessage"
-      />
+      <input class="text-input" value="{{inputText}}" bindinput="onInput" placeholder="输入消息..." confirm-type="send" bindconfirm="sendMessage" />
       <view class="send-btn {{inputText.length > 0 ? 'active' : ''}}" bindtap="sendMessage">
         <text class="iconfont icon-send">发送</text>
       </view>
     </view>
-    
     <view class="ptt-bar">
       <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
-      <button 
-        class="ptt-btn {{isTalking ? 'active' : ''}}" 
-        bindtap="toggleTalk"
-      >
+      <button class="ptt-btn {{isTalking ? 'active' : ''}}" bindtap="toggleTalk">
         <view class="ptt-icon"></view>
         <text>{{isTalking ? '正在发射 TX...' : '点击发言'}}</text>
       </button>
