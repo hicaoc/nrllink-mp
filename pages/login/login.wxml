@@ -3,10 +3,8 @@
     <view class="logo">
       <image src="/images/logo.png" mode="aspectFit"></image>
     </view>
-    
     <view class="form">
-
-<view class="input-group">
+      <view class="input-group">
         <radio-group bindchange="bindRadioChange">
           <!-- <label class="radio">
             <radio value="predefined" checked="{{selectedOption === 'predefined'}}" /> 预定义服务器
@@ -16,62 +14,52 @@
           </label> -->
         </radio-group>
       </view>
-
       <view wx:if="{{selectedOption === 'predefined'}}" class="input-group">
         <text class="label">服务器</text>
         <picker bindchange="bindServerChange" value="{{serverIndex}}" range="{{serverList}}" range-key="name">
-          <view class="picker">
-            当前选择：{{serverList[serverIndex].name}}
-          </view>
+          <view class="picker">当前选择：{{serverList[serverIndex].name}}</view>
         </picker>
       </view>
-
       <view wx:if="{{selectedOption === 'custom'}}" class="input-group">
         <text class="label">自定义服务器</text>
-        <input 
-          placeholder="请输入服务器地址" 
-          bindinput="inputCustomServer"
-          class="input"
-          value="{{customServer}}"
-        />
+        <input placeholder="请输入服务器地址" bindinput="inputCustomServer" class="input" value="{{customServer}}" />
       </view>
-
       <view class="input-group">
         <text class="label">用户名</text>
-        <input 
-          placeholder="请输入手机号" 
-          bindinput="inputUsername"
-          class="input"
-          value="{{username}}"
-        />
+        <input placeholder="请输入手机号" bindinput="inputUsername" class="input" value="{{username}}" />
       </view>
-      
       <view class="input-group">
         <text class="label">密码</text>
         <view class="password-input">
-          <input 
-            type="password"
-            placeholder="请输入密码"
-            bindinput="inputPassword"
-            class="input"
-            value="{{password}}"      
-          />
+          <input type="password" placeholder="请输入密码" bindinput="inputPassword" class="input" value="{{password}}" />
           <!-- <view class="eye-icon" bindtap="togglePassword">
             <image src="/images/{{showPassword ? 'eye-open' : 'eye-close'}}.png" mode="aspectFit"></image>
           </view> -->
         </view>
       </view>
-      
-      <button 
-        bindtap="login"
-        class="login-btn"
-        hover-class="btn-hover"
-      >
-        登录
-      </button>
+      <button bindtap="login" class="login-btn" hover-class="btn-hover">登录</button>
       <navigator url="/pages/register/register?name={{serverList[serverIndex].name}}&host={{serverList[serverIndex].host}}" class="register-link">
         没有账号？点击注册
       </navigator>
+      <view class="download-links">
+        <text class="download-link" bindtap="copyDownloadLink" data-url="https://73ham.com">
+          Android版下载
+        </text>
+        <text class="divider">|</text>
+        <text class="download-link" bindtap="copyDownloadLink" data-url="https://app.pgarlic.com/">
+          iPhone版下载
+        </text>
+      </view>
+      <view class="marquee-swiper-container">
+        <text class="marquee-label">感谢：</text>
+        <swiper class="marquee-swiper" autoplay circular interval="2000" duration="1000" display-multiple-items="4" easing-function="linear">
+          <block wx:for="{{thanksItems}}" wx:key="*this">
+            <swiper-item class="marquee-item" wx:if="{{item !== '感谢：'}}">
+              <view class="swiper-content">{{item}}</view>
+            </swiper-item>
+          </block>
+        </swiper>
+      </view>
     </view>
   </view>
 </view>

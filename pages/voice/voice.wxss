@@ -14,6 +14,7 @@
   padding: 25rpx 30rpx;
   border-bottom: 2rpx solid #f0f0f0;
   z-index: 100;
+  position: relative;
 }
 
 .header-content {
@@ -604,11 +605,15 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
+  pointer-events: none;
+  /* Prevent blocking clicks when hidden */
 }
 
 .modal-overlay.show {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
+  /* Enable clicks when shown */
 }
 
 .modal-container {

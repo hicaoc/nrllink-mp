@@ -1,4 +1,4 @@
- 
+
 import { generateAPRSPasscode } from '../../utils/aprs';
 const app = getApp();
 
@@ -17,7 +17,12 @@ Page({
     ],
     serverIndex: 1, // Default to NRLPTT主站
     customServer: '',
-    selectedOption: 'predefined' // Add selectedOption to track the selection
+    selectedOption: 'predefined', // Add selectedOption to track the selection
+    thanksItems: [
+      '感谢：', 'BG6FCS', 'BH4TIH', 'BA4RN', 'BA1GM', 'BA4QEK', 'BA4QAO',
+      'BD4VKI', 'BH4VAP', 'BH4TDV', 'BI4UMD', 'BA4QGT', 'BG8EJT', 'BH1OSW', 'BD4RFG', 'BG4QG', 'BD1BHO', 'BG2LBF',
+      '排名不分先后，还有很多，列表太长放不下了'
+    ]
   },
 
   bindServerChange(e) {
@@ -108,8 +113,8 @@ Page({
 
     const api = require('../../utils/api');
 
-    const selectedServer = this.data.selectedOption === 'predefined' 
-      ? this.data.serverList[this.data.serverIndex] 
+    const selectedServer = this.data.selectedOption === 'predefined'
+      ? this.data.serverList[this.data.serverIndex]
       : { host: this.data.customServer };
 
     app.globalData.serverConfig = {
@@ -119,11 +124,11 @@ Page({
     };
 
     api.login({ username, password })
-      .then(res => {     
+      .then(res => {
         if (res.token) {
           wx.setStorageSync('token', res.token);
           this.getUserInfo();
-        } else { 
+        } else {
           wx.showToast({
             title: '用户名或者密码错',
             icon: 'none'
@@ -155,10 +160,10 @@ Page({
         return;
       }
 
-    
+
       wx.setStorageSync('userInfo', userInfo);
       app.globalData.userInfo = userInfo;
- 
+
 
       const passcode = generateAPRSPasscode(userInfo.callsign);
       app.globalData.passcode = passcode;
@@ -196,6 +201,21 @@ Page({
   bindRadioChange(e) {
     this.setData({
       selectedOption: e.detail.value
+    });
+  },
+
+
+  copyDownloadLink(e) {
+    const url = e.currentTarget.dataset.url;
+    wx.setClipboardData({
+      data: url,
+      success: () => {
+        wx.showToast({
+          title: '链接已复制，请去浏览器打开',
+          icon: 'none',
+          duration: 2000
+        });
+      }
     });
   }
 });

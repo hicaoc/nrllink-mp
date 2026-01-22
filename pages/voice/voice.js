@@ -17,11 +17,6 @@ Page({
     codec: 'g711',
     serverConnected: false,
     showList: false,
-    thanksItems: [
-      '感谢：', 'BG6FCS BH4TIH', 'BA4RN  BA1GM', 'BA4QEK BA4QAO',
-      'BD4VKI BH4VAP', 'BH4TDV BI4UMD', 'BA4QGT BG8EJT', 'BH1OSW BD4RFG',
-      '还有很多，列表放不下了'
-    ],
     currentGroup: null,
     onlineCount: 0,
     deviceCount: 0,
@@ -115,6 +110,7 @@ Page({
     wx.setKeepScreenOn({ keepScreenOn: true });
     this.refreshData();
     this.checkConnection();
+    audio.resume(); // Ensure audio context is running
   },
 
   async refreshData() {
@@ -239,9 +235,7 @@ Page({
     });
   },
 
-  showThanksList() {
-    this.setData({ showList: !this.data.showList });
-  },
+
 
   async loadAvailableGroups() {
     try {
@@ -464,6 +458,7 @@ Page({
 
         // Re-init
         await this.initMdcAndUdp();
+        audio.resume(); // Ensure audio context is running after switch
         this.startHeartbeat();
         this.loadAvailableGroups(); // Reload groups for new server
         await this.refreshData();
