@@ -4,7 +4,6 @@
     "pages/register/register",
     "pages/config/config",
     "pages/aprs/aprs",
-    "pages/message/message",
     "pages/voice/voice",
     "pages/group-detail/group-detail",
     "pages/device-settings/device-settings"
@@ -25,12 +24,6 @@
         "text": "APRS",
         "iconPath": "images/aprs.png",
         "selectedIconPath": "images/aprs-active.png"
-      },
-      {
-        "pagePath": "pages/message/message",
-        "text": "消息",
-        "iconPath": "images/message.png",
-        "selectedIconPath": "images/message-active.png"
       },
       {
         "pagePath": "pages/config/config",

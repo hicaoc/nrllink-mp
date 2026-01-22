@@ -22,6 +22,7 @@ App({
     currentGroup: null,
     currentDevice: null,
     callHistory: [],
+    chatLogs: [], // Combined voice and text history
     heartbeatTimer: null,
 
     recoderStartTime: null,
@@ -38,17 +39,17 @@ App({
       host: 'nrlptt.com',
       port: 60050
     },
- 
+
     getGroupList: async function () {
       try {
- 
+
 
         const data = await _getGroupListMini();
-         this.availableGroups = data;
+        this.availableGroups = data;
 
         return data
-  
-      
+
+
 
       } catch (error) {
         console.error(error);
@@ -63,7 +64,7 @@ App({
 
       try {
         const data = await _getGroup({ group_id: group_id });
-       // console.log('getGroup', data)
+        // console.log('getGroup', data)
         return data
       } catch (error) {
         wx.showToast({
@@ -99,7 +100,7 @@ App({
       try {
 
         const data = await _getMyDevices();
-      
+
         return data
 
       } catch (error) {
@@ -116,7 +117,7 @@ App({
       try {
 
         const data = await _getQTH();
-      
+
         return data
 
       } catch (error) {
@@ -134,7 +135,7 @@ App({
     //   try {
 
     //     const data = await _getQTHmap();
-      
+
     //     return data
 
     //   } catch (error) {
@@ -156,9 +157,9 @@ App({
 
       try {
 
-        const data = await _logout({ssid: 100});
-      
-       console.log('logout', data)
+        const data = await _logout({ ssid: 100 });
+
+        console.log('logout', data)
 
       } catch (error) {
         wx.showToast({
@@ -167,7 +168,7 @@ App({
         });
       }
 
-  
+
       this.token = null;
 
       wx.removeStorageSync('token');
@@ -190,7 +191,7 @@ App({
       // });
 
 
-      
+
       wx.reLaunch({
         url: '/pages/login/login'
       });
@@ -212,7 +213,7 @@ App({
 
     //   return;
     // }
-  
+
 
 
   },
@@ -258,8 +259,6 @@ App({
       this.globalData.voicePage = page;
     } else if (route === 'pages/config/config') {
       this.globalData.configPage = page;
-    } else if (route === 'pages/message/message') {
-      this.globalData.messagePage = page;
     }
   },
 

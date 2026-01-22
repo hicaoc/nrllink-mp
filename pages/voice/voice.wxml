@@ -1,83 +1,138 @@
 <view class="container">
-  <!-- User Section -->
+  <!-- Header Section (Stay the same) -->
   <view class="header-section">
-    <view class="user-card">
-      <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-        <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
-      </button>
-      <view class="info">
-        <view class="info-top">
-          <text class="name">{{userInfo.name || 'USER'}}</text>
-          <view class="call-sign-tag">{{userInfo.callsign}}-100 </view>
-          <view class="call-sign-tag">  {{userInfo.dmrid}}  </view>
-          <view class="call-sign-tag"> {{userInfo.mdcid}}</view>
-        </view>
-        <text class="current-group">{{currentGroup || 'STANDBY'}}</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- Monitor Section: Digital LCD Style -->
-  <view class="monitor-section">
-    <view class="active-call-display" wx:if="{{CallSign}}">
-      <text class="caller-info">{{CallSign}}-{{SSID}} {{DMRID}}</text>
-      <view class="call-metrics">
-        <text>{{lastVoiceDisplayTime}}</text>
-        <text style="color: #07C160">{{duration}}s</text>
-      </view>
-    </view>
-    <view class="no-call" wx:else>
-      STANDBY
-    </view>
-  </view>
-
-  <!-- History Section -->
-  <view class="history-section">
-    <text class="section-label">Log History</text>
-    <scroll-view class="call-history" scroll-y enable-flex>
-      <view class="history-item" wx:for="{{callHistory}}" wx:key="endTime">
-        <view class="h-avatar">{{item.CallSign[0]}}</view>
-        <view class="h-info">
-          <view class="h-top">
-            <text class="h-sign">{{item.CallSign}}-{{item.SSID}} {{item.DMRID}}</text>
-            <text class="h-time">{{item.endTime}}</text>
+    <view class="header-content">
+      <!-- Left: User Identity -->
+      <view class="user-info-box">
+        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+          <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+        </button>
+        <view class="user-text">
+          <view class="user-row-one">
+            <text class="user-name">{{userInfo.name || 'USER'}}</text>
+            <text class="user-callsign">{{userInfo.callsign}}-100</text>
           </view>
-          <view class="h-bottom">
-            <text class="h-qth">{{item.QTH}}</text>
-            <text class="h-dur">{{item.duration}}s</text>
+          <view class="user-tags">
+            <view class="tag">DMR:{{userInfo.dmrid}}</view>
+            <view class="tag">MDC:{{userInfo.mdcid}}</view>
           </view>
         </view>
       </view>
-    </scroll-view>
+
+      <!-- Right: Connection Status -->
+      <view class="system-status-box">
+        <view class="server-label clickable" bindtap="handleServerClick">
+          <view class="status-indicator-dot {{serverConnected ? 'online' : 'offline'}}"></view>
+          <view class="server-info-text">
+            <text class="server-name">{{serverConfig.name}}</text>
+            <text class="server-addr">{{serverConfig.host}}</text>
+          </view>
+        </view>
+        <picker bindchange="onGroupPickerChange" range="{{availableGroupsForPicker}}" range-key="displayGroupName">
+          <view class="group-label clickable">
+            <view class="group-info-row">
+              <text class="group-name">{{currentGroup || 'STANDBY'}}</text>
+              <text class="group-counts">({{onlineCount}}/{{deviceCount}})</text>
+              <text class="label-hint">▾</text>
+            </view>
+          </view>
+        </picker>
+      </view>
+    </view>
   </view>
 
-  <!-- Control Section -->
-  <view class="controls-section">
-    <view class="talk-btn-wrapper">
-      <view class="outer-ring {{isTalking ? 'transmitting' : ''}}"></view>
+  <!-- Chat History Section -->
+  <scroll-view 
+    class="chat-section" 
+    scroll-y 
+    enable-flex 
+    scroll-into-view="{{scrollIntoView}}"
+    scroll-with-animation
+  >
+    <view class="chat-list">
+      <block wx:for="{{chatLogs}}" wx:key="id">
+        <view id="msg-{{item.id}}" class="message-item {{item.isSelf ? 'self' : 'other'}}">
+          <view class="avatar-sm" wx:if="{{!item.isSelf}}">{{item.callsign[0]}}</view>
+          <view class="bubble-container">
+            <view class="sender-info" wx:if="{{!item.isSelf}}">
+              <view class="sender-main">
+                <text class="sender-name">{{item.callsign}}-{{item.ssid}}<text wx:if="{{item.dmrid}}" class="sender-dmrid"> ({{item.dmrid}})</text></text>
+                <text class="sender-time">{{item.timestamp}}</text>
+              </view>
+              <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
+            </view>
+            
+            <!-- Voice Bubble -->
+            <view 
+              wx:if="{{item.type === 'voice'}}" 
+              class="bubble voice-bubble {{currentPlayingId === item.id ? 'playing' : ''}}" 
+              bindtap="playVoice" 
+              data-filepath="{{item.filePath}}"
+              data-id="{{item.id}}"
+              style="width: {{20 + item.duration * 5}}%; max-width: 66%;"
+            >
+              <view class="voice-icon {{currentPlayingId === item.id ? 'playing' : ''}}">
+                <view class="play-icon-inner"></view>
+              </view>
+              <text class="duration">{{item.duration}}s</text>
+            </view>
+
+            <!-- Text Bubble -->
+            <view wx:else class="bubble text-bubble">
+              <text>{{item.content}}</text>
+            </view>
+            
+          </view>
+        </view>
+      </block>
+
+      <!-- Active Receiving Bubble -->
+      <view class="message-item other active-receiving" wx:if="{{isReceivingVoice}}">
+        <view class="avatar-sm">{{CallSign[0]}}</view>
+        <view class="bubble-container">
+          <view class="sender-info">
+            <text class="sender-name">{{CallSign}}-{{SSID}}</text>
+            <text class="status-receiving">正在接收...</text>
+          </view>
+          <view 
+            class="bubble voice-bubble receiving" 
+            style="width: {{receivingBubbleWidth}}%;"
+          >
+            <view class="voice-icon playing">
+              <view class="play-icon-inner"></view>
+            </view>
+            <text class="duration">{{duration}}s</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Bottom Input & PTT Section -->
+  <view class="bottom-area">
+    <view class="input-bar">
+      <input 
+        class="text-input"
+        value="{{inputText}}" 
+        bindinput="onInput" 
+        placeholder="输入消息..."
+        confirm-type="send"
+        bindconfirm="sendMessage"
+      />
+      <view class="send-btn {{inputText.length > 0 ? 'active' : ''}}" bindtap="sendMessage">
+        <text class="iconfont icon-send">发送</text>
+      </view>
+    </view>
+    
+    <view class="ptt-bar">
+      <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>
       <button 
-        class="talk-btn {{isTalking ? 'active' : ''}}" 
+        class="ptt-btn {{isTalking ? 'active' : ''}}" 
         bindtap="toggleTalk"
       >
-        <text class="btn-text">{{isTalking ? 'TX' : 'PTT'}}</text>
+        <view class="ptt-icon"></view>
+        <text>{{isTalking ? '正在发射 TX...' : '点击发言'}}</text>
       </button>
-    </view>
-  </view>
-
-  <!-- Footer Status -->
-  <view class="footer-status">
-    <view class="server-info">
-      <view class="status-dot {{serverConnected ? 'connected' : 'disconnected'}}"></view>
-      <view class="server-label">{{server.name || 'Server'}}</view>
-    </view>
-    <view class="host-link" bindtap="showThanksList">{{server.host}}</view>
-  </view>
-
-  <!-- Thanks List Modal -->
-  <view class="thanks-list" wx:if="{{showList}}" bindtap="showThanksList">
-    <view class="thanks-header">Acknowledgments</view>
-    <view class="thanks-grid">
-      <view class="thanks-item" wx:for="{{thanksItems}}" wx:key="index">{{item}}</view>
     </view>
   </view>
 </view>
