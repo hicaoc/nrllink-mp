@@ -160,6 +160,10 @@ export class VoiceService {
         const rawContent = nrlHelpers.decodeUint8ArrayToText(packet.data || new Uint8Array());
         const { subType, body } = this.parseContent(rawContent);
 
+        if (subType === 'loc') {
+            return;
+        }
+
         const qthmap = await app.globalData.getQTH(true);
         const qth = qthmap[packet.callSign + '-' + packet.ssid];
 
