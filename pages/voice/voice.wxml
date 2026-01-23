@@ -63,15 +63,38 @@
               <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
             </view>
             <!-- Voice Bubble -->
-            <view wx:if="{{item.type === 'voice'}}" class="bubble voice-bubble {{currentPlayingId === item.id ? 'playing' : ''}}" bindtap="playVoice" data-filepath="{{item.filePath}}" data-id="{{item.id}}" style="width: {{20 + item.duration * 5}}%; max-width: 66%;">
-              <view class="voice-icon {{currentPlayingId === item.id ? 'playing' : ''}}">
+            <view wx:if="{{item.type === 'voice'}}" class="bubble voice-bubble {{currentPlayingId === item.id && isVoicePlaying ? 'playing' : ''}}" bindtap="playVoice" data-filepath="{{item.filePath}}" data-id="{{item.id}}" style="width: {{20 + item.duration * 5}}%; max-width: 66%;">
+              <view class="voice-icon {{currentPlayingId === item.id && isVoicePlaying ? 'playing' : ''}}">
                 <view class="play-icon-inner"></view>
               </view>
               <text class="duration">{{item.duration}}s</text>
             </view>
             <!-- Text Bubble -->
-            <view wx:else class="bubble text-bubble">
-              <text>{{item.content}}</text>
+            <!-- Text/Media Bubble -->
+            <view wx:else class="bubble text-bubble {{item.subType}}">
+              <!-- Image -->
+              <block wx:if="{{item.subType === 'img'}}">
+                <image src="{{item.content}}" mode="widthFix" class="chat-image" bindtap="previewImage" data-src="{{item.content}}" show-menu-by-longpress></image>
+              </block>
+              <!-- Location -->
+              <block wx:elif="{{item.subType === 'loc'}}">
+                <view class="location-content" bindtap="openLocation" data-loc="{{item.content}}">
+                  <text class="location-icon">📍</text>
+                  <text>{{item.content}}</text>
+                </view>
+              </block>
+              <!-- Video -->
+              <block wx:elif="{{item.subType === 'video'}}">
+                <text class="media-link">🎬 [视频消息] {{item.content}}</text>
+              </block>
+              <!-- Audio -->
+              <block wx:elif="{{item.subType === 'audio'}}">
+                <text class="media-link">🎵 [音频消息] {{item.content}}</text>
+              </block>
+              <!-- Default / Text -->
+              <block wx:else>
+                <text selectable>{{item.content}}</text>
+              </block>
             </view>
           </view>
         </view>

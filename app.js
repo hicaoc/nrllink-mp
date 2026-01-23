@@ -60,26 +60,28 @@ App({
       }
     },
 
-    getGroup: async function (group_id) {
+    getGroup: async function (group_id, silent = false) {
 
       try {
-        const data = await _getGroup({ group_id: group_id });
+        const data = await _getGroup({ group_id: group_id }, silent);
         // console.log('getGroup', data)
         return data
       } catch (error) {
-        wx.showToast({
-          title: error.message || '获取群组失败',
-          icon: 'none'
-        });
+        if (!silent) {
+          wx.showToast({
+            title: error.message || '获取群组失败',
+            icon: 'none'
+          });
+        }
       }
 
     },
 
-    getDevice: async function (callsign, ssid) {
+    getDevice: async function (callsign, ssid, silent = false) {
 
       try {
 
-        const data = await _getDevice({ callsign: callsign, ssid: ssid });
+        const data = await _getDevice({ callsign: callsign, ssid: ssid }, silent);
         // if (data.callsign === callsign && data.ssid === ssid) {
         //   this.globalData.currentDevice = data;
         // }
@@ -88,10 +90,12 @@ App({
         return data
 
       } catch (error) {
-        wx.showToast({
-          title: error.message || '获取设备失败',
-          icon: 'none'
-        });
+        if (!silent) {
+          wx.showToast({
+            title: error.message || '获取设备失败',
+            icon: 'none'
+          });
+        }
       }
 
     },
@@ -112,19 +116,21 @@ App({
 
     },
 
-    getQTH: async function () {
+    getQTH: async function (silent = false) {
 
       try {
 
-        const data = await _getQTH();
+        const data = await _getQTH(undefined, silent);
 
         return data
 
       } catch (error) {
-        wx.showToast({
-          title: error.message || '获取设备QTH失败',
-          icon: 'none'
-        });
+        if (!silent) {
+          wx.showToast({
+            title: error.message || '获取设备QTH失败',
+            icon: 'none'
+          });
+        }
       }
 
     },

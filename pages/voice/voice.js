@@ -34,6 +34,7 @@ Page({
     receivingBubbleWidth: 0,
     availableGroupsForPicker: [],
     currentPlayingId: null,
+    isVoicePlaying: false,
     showOnlineModal: false,
     onlineDevicesList: [],
 
@@ -111,12 +112,36 @@ Page({
     this.refreshData();
     this.checkConnection();
     audio.resume(); // Ensure audio context is running
+    this.startGroupRefreshTimer();
   },
 
-  async refreshData() {
-    const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100);
+  onHide() {
+    this.stopGroupRefreshTimer();
+  },
+
+  onUnload() {
+    this.stopGroupRefreshTimer();
+    if (this.connectionCheckTimer) clearInterval(this.connectionCheckTimer);
+  },
+
+  startGroupRefreshTimer() {
+    this.stopGroupRefreshTimer();
+    this.groupRefreshTimer = setInterval(() => {
+      this.refreshData(true);
+    }, 5000);
+  },
+
+  stopGroupRefreshTimer() {
+    if (this.groupRefreshTimer) {
+      clearInterval(this.groupRefreshTimer);
+      this.groupRefreshTimer = null;
+    }
+  },
+
+  async refreshData(silent = false) {
+    const currentDevice = await app.globalData.getDevice(app.globalData.userInfo.callsign, 100, silent);
     app.globalData.currentDevice = currentDevice;
-    const group = await app.globalData.getGroup(currentDevice?.group_id);
+    const group = await app.globalData.getGroup(currentDevice?.group_id, silent);
 
     if (group) {
       const devlist = Object.values(group.devmap || {});
@@ -198,27 +223,54 @@ Page({
     const { filepath, id } = e.currentTarget.dataset;
     if (!filepath) return;
 
+    // Toggle Play/Pause if clicking the same item
+    if (this.data.currentPlayingId === id && this.currentAudioCtx) {
+      if (this.data.isVoicePlaying) {
+        this.currentAudioCtx.pause();
+      } else {
+        this.currentAudioCtx.play();
+      }
+      return;
+    }
+
     // Stop previous audio if any
     if (this.currentAudioCtx) {
       this.currentAudioCtx.stop();
       this.currentAudioCtx.destroy();
+      this.currentAudioCtx = null;
     }
-
-    this.setData({ currentPlayingId: id });
 
     const audioCtx = wx.createInnerAudioContext();
     this.currentAudioCtx = audioCtx;
     audioCtx.src = filepath;
     audioCtx.play();
 
+    this.setData({
+      currentPlayingId: id
+    });
+
+    audioCtx.onPlay(() => {
+      this.setData({ isVoicePlaying: true });
+    });
+
+    audioCtx.onPause(() => {
+      this.setData({ isVoicePlaying: false });
+    });
+
     audioCtx.onEnded(() => {
-      this.setData({ currentPlayingId: null });
+      this.setData({
+        currentPlayingId: null,
+        isVoicePlaying: false
+      });
       audioCtx.destroy();
       this.currentAudioCtx = null;
     });
 
     audioCtx.onError(() => {
-      this.setData({ currentPlayingId: null });
+      this.setData({
+        currentPlayingId: null,
+        isVoicePlaying: false
+      });
       audioCtx.destroy();
       this.currentAudioCtx = null;
     });

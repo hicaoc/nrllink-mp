@@ -129,7 +129,7 @@ export class VoiceService {
         const wavData = audioUtils.addWavHeader(new Uint8Array(fullBuffer.buffer), 8000);
         try {
             const filePath = await audioUtils.saveToFile(wavData, 'wav');
-            const qthmap = await app.globalData.getQTH();
+            const qthmap = await app.globalData.getQTH(true);
             const qth = qthmap[CallSign + '-' + SSID];
 
             const newLog = {
@@ -157,22 +157,40 @@ export class VoiceService {
      * Handle incoming text packets.
      */
     async handleIncomingTextMessage(packet) {
-        const content = nrlHelpers.decodeUint8ArrayToText(packet.data || new Uint8Array());
-        const qthmap = await app.globalData.getQTH();
+        const rawContent = nrlHelpers.decodeUint8ArrayToText(packet.data || new Uint8Array());
+        const { subType, body } = this.parseContent(rawContent);
+
+        const qthmap = await app.globalData.getQTH(true);
         const qth = qthmap[packet.callSign + '-' + packet.ssid];
 
         const newLog = {
             id: Date.now(),
             type: 'text',
+            subType: subType,
             isSelf: false,
             sender: `${packet.callSign}-${packet.ssid}`,
             callsign: packet.callSign,
             ssid: packet.ssid,
             qth: qth ? qth.qth + " " + qth.name : '无位置数据',
-            content: content,
+            content: body,
             timestamp: nrlHelpers.formatLastVoiceTime(Date.now())
         };
         this.addChatLog(newLog);
+    }
+
+    parseContent(content) {
+        const regex = /^\[(text|loc|json|xml|html|bin|img|video|audio)\](.*)$/s;
+        const match = content.match(regex);
+        if (match) {
+            return {
+                subType: match[1],
+                body: match[2]
+            };
+        }
+        return {
+            subType: 'text',
+            body: content
+        };
     }
 
     /**

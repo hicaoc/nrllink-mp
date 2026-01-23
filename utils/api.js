@@ -7,16 +7,16 @@ const getDefaultHeaders = () => ({
 
 // 请求拦截器
 const requestInterceptor = (config) => {
-  wx.showLoading({
-    title: '加载中...',
-    mask: true
-  });
+  // wx.showLoading({
+  //   title: '加载中...',
+  //   mask: true
+  // });
   return config;
 };
 
 // 响应拦截器
 const responseInterceptor = (response) => {
-  wx.hideLoading();
+  // wx.hideLoading();
   if (response.statusCode !== 200) {
     throw new Error('网络请求失败');
   }
@@ -68,8 +68,15 @@ const request = async (options, retries = 3, timeout = 10000) => {
     },
 
     data: options.data || {},
-    timeout
+    timeout: timeout // Ensure timeout is passed to local config
   });
+
+  if (!options.silent) {
+    wx.showLoading({
+      title: '加载中...',
+      mask: true
+    });
+  }
 
 
   // 检查网络状态
@@ -96,13 +103,14 @@ const request = async (options, retries = 3, timeout = 10000) => {
           success: (res) => {
             try {
               const data = responseInterceptor(res);
+              if (!options.silent) wx.hideLoading();
               resolve(data);
             } catch (error) {
               reject(error);
             }
           },
           fail: (error) => {
-            wx.hideLoading();
+            if (!options.silent) wx.hideLoading();
             reject(error);
           }
         });
@@ -131,11 +139,12 @@ export const api = {
   },
 
   // 获取群组mini列表
-  getGroup(data) {
+  getGroup(data, silent = false) {
     return request({
       url: '/group/get',
       method: 'POST',
-      data
+      data,
+      silent
     });
   },
 
@@ -158,11 +167,12 @@ export const api = {
   },
 
   // 获取设备列表
-  getDevice(data) {
+  getDevice(data, silent = false) {
     return request({
       url: '/device/get', // 修改为新的接口地址
       method: 'POST',
-      data
+      data,
+      silent
     });
   },
 
@@ -173,11 +183,12 @@ export const api = {
     });
   },
 
-  getQTH(data) {
+  getQTH(data, silent = false) {
     return request({
       url: '/device/qths', // 修改为新的接口地址
       method: 'POST',
-      data
+      data,
+      silent
     });
   },
 
