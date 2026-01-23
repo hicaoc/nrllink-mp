@@ -56,10 +56,8 @@
           <view class="bubble-container">
             <view class="sender-info" wx:if="{{!item.isSelf}}">
               <view class="sender-main">
-                <text class="sender-name">
-                  {{item.callsign}}-{{item.ssid}}
-                  <text wx:if="{{item.dmrid}}" class="sender-dmrid">({{item.dmrid}})</text>
-                </text>
+                <text class="sender-name">{{item.callsign}}-{{item.ssid}}</text>
+                <text wx:if="{{item.dmrid}}" class="sender-dmrid">({{item.dmrid}})</text>
                 <text class="sender-time">{{item.timestamp}}</text>
               </view>
               <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
@@ -120,7 +118,7 @@
     </view>
   </view>
   <!-- Server Switch Modal -->
-  <view class="modal-overlay {{showServerModal ? 'show' : ''}}" bindtap="hideServerModal">
+  <view class="modal-overlay {{showServerModal ? 'show' : ''}}" bindtap="hideServerModal" wx:if="{{showServerModal}}">
     <view class="modal-container server-modal" catchtap="stopPropagation">
       <view class="modal-header">
         <text class="modal-title">切换服务器</text>
