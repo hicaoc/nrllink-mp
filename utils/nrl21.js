@@ -8,7 +8,7 @@ export class NRL21Packet {
   constructor({
     version = 'NRL2',
     length = 0,
-    dmrid = "",
+    dmrid = 0,
     password = 0,
     type = 0,
     status = 1,
@@ -88,7 +88,7 @@ export function decodePacket(data) {
   const view = new DataView(byteArray.buffer, byteArray.byteOffset, byteArray.byteLength);
 
   const callSignStr = readString(view, 24, 6);
-  const dmrid = readString(view, 6, 9);
+  const dmrid = readUint24(view, 6);
 
   return {
     type: byteArray[20],
@@ -127,6 +127,13 @@ export function readString(view, offset, length) {
     }
   }
   return str;
+}
+
+export function readUint24(view, offset) {
+  const b0 = view.getUint8(offset);     // 高字节
+  const b1 = view.getUint8(offset + 1);
+  const b2 = view.getUint8(offset + 2); // 低字节
+  return (b0 << 16) + (b1 << 8) + b2;
 }
 
 
