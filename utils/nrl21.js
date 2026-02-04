@@ -15,7 +15,7 @@ export class NRL21Packet {
     count = 0,
     callSign = 'CALL01',
     ssid = 100,
-    devMode = 100,
+    devModel = 100,
 
   }) {
     this.version = version;
@@ -27,7 +27,7 @@ export class NRL21Packet {
     this.count = count;
     this.callSign = callSign;
     this.ssid = ssid;
-    this.devMode = devMode;
+    this.devModel = devModel;
 
     // 预生成固定大小的 ArrayBuffer
     this.buffer = new ArrayBuffer(NRL21Packet.PACKET_SIZE);
@@ -44,7 +44,7 @@ export class NRL21Packet {
     this.view.setUint16(22, this.count, false); // 写入固定 count
     this.writeString(24, this.callSign, 6); // 写入固定 callSign
     this.view.setUint8(30, this.ssid); // 写入固定 ssid
-    this.view.setUint8(31, this.devMode); // 写入固定 devMode
+    this.view.setUint8(31, this.devModel); // 写入固定 devModel
 
     this.cachedBuffer = this.encode();
 

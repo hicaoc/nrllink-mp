@@ -67,9 +67,9 @@ export class RecorderService {
                     newBuffer.set(new Uint8Array(data), buffer.length);
                     buffer = newBuffer;
 
-                    while (buffer.length >= 500) {
-                        const packetData = buffer.slice(0, 500);
-                        buffer = buffer.slice(500);
+                    while (buffer.length >= 160) {
+                        const packetData = buffer.slice(0, 160);
+                        buffer = buffer.slice(160);
                         this.page.audioPacket.set(packetData, 48);
                         if (app.globalData.udpClient) {
                             await new Promise(resolve => {
@@ -125,7 +125,7 @@ export class RecorderService {
             // Send MDC
             const mdcPacket = app.globalData.mdcPacket;
             if (mdcPacket) {
-                const packetSize = 500;
+                const packetSize = 160;
                 const totalPackets = Math.ceil(mdcPacket.length / packetSize);
                 for (let i = 0; i < totalPackets; i++) {
                     const start = i * packetSize;

@@ -110,8 +110,8 @@ Page({
   onShow() {
     wx.setKeepScreenOn({ keepScreenOn: true });
     this.refreshData();
-    this.checkConnection();
     this.startHeartbeat();
+    this.checkConnection();
     audio.resume(); // Ensure audio context is running
     this.startGroupRefreshTimer();
   },
