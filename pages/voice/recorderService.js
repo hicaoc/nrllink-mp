@@ -72,10 +72,11 @@ export class RecorderService {
                         buffer = buffer.slice(160);
                         this.page.audioPacket.set(packetData, 48);
                         if (app.globalData.udpClient) {
-                            await new Promise(resolve => {
-                                app.globalData.udpClient.send(this.page.audioPacket);
-                                setTimeout(resolve, 55);
-                            });
+                            app.globalData.udpClient.send(this.page.audioPacket);
+                            // await new Promise(resolve => {
+                            //     app.globalData.udpClient.send(this.page.audioPacket);
+                            //     setTimeout(resolve, 55);
+                            // });
                         }
                     }
                 } catch (err) {
@@ -134,7 +135,7 @@ export class RecorderService {
                     if (app.globalData.udpClient) {
                         await new Promise(resolve => {
                             app.globalData.udpClient.send(this.page.audioPacket);
-                            setTimeout(resolve, 62);
+                            setTimeout(resolve, 20);
                         });
                     }
                 }
