@@ -91,7 +91,7 @@ Page({
       type: 1,
       callSign: app.globalData.userInfo.callsign,
     });
-    this.audioPacket = new Uint8Array(548);
+    this.audioPacket = new Uint8Array(208);
     this.audioPacket.set(new Uint8Array(audioPacket.getBuffer()), 0);
 
     const heartbeatPacket = nrl21.createPacket({
