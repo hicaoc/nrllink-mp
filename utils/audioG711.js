@@ -26,41 +26,38 @@ export class G711Codec {
     }
   }
 
-  _linear2alaw(sample) {
-    // 1. 提取符号位
-    let sign = (sample >> 8) & 0x80; // 提取最高位（符号位）
-
-    // 2. 处理负数，避免溢出
-    if (sign) {
-      if (sample === -32768) {
-        sample = 32767; // 处理最小负数（避免溢出）
-      } else {
-        sample = -sample; // 取反，将负数转换为正数
-      }
-    }
-
-    // 3. 限制样本范围
-    if (sample > 32767) sample = 32767; // 确保样本不超过最大值
-
-    // 4. 添加偏置（A-law编码的偏置为132）
-    sample += 132;
-    if (sample < 0) sample = 0; // 确保样本不为负
-
-    // 5. 计算段号 (seg)
-    let seg = 7; // 初始化段号为7（最大段号）
-    for (let i = 0x4000; i >= 0x40 && (sample & i) === 0; i >>= 1) {
-      seg--; // 根据样本的高位确定段号
-    }
-
-    // 6. 计算尾数 (mant)
-    let mant = (sample >> (seg + 3)) & 0x0f; // 提取尾数（低4位）
-
-    // 7. 组合段号和尾数
-    let alaw = (seg << 4) | mant; // 将段号和尾数组合成8位值
-
-    // 8. 根据符号位进行异或操作并返回结果
-    return (alaw ^ (sign ? 0xD5 : 0x55)) & 0xff; // 异或操作并确保结果为8位
+ _linear2alaw(sample) {
+  // 1. 提取符号位和处理符号
+  let sign = 0;
+  if (sample < 0) {
+    sign = 0x80;
+    sample = ~sample;  // ✅ 使用按位取反，而非取负
   }
+  
+  // 2. 右移4位（使用13位中的12位MSB）
+  sample = sample >> 4;
+  
+ 
+  // 4. 计算指数和尾数
+  let ix = sample;
+  if (ix > 15) {
+    let iexp = 1;
+    while (ix > 31) {  // 16 + 15 = 31
+      ix >>= 1;
+      iexp++;
+    }
+    ix -= 16;  // 移除前导 '1'
+    ix += iexp << 4;
+  }
+  
+  // 5. 添加符号位
+  if (sign === 0) {  // 正数
+    ix |= 0x80;
+  }
+  
+  // 6. ✅ 统一异或 0x55（不区分正负）
+  return ix ^ 0x55;
+}
 
   _alaw2linear(code) {
     let c = code ^ 0x55;
