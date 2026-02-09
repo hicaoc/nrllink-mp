@@ -18,6 +18,7 @@ Page({
     serverIndex: 1, // Default to NRLPTT主站
     customServer: '',
     selectedOption: 'predefined', // Add selectedOption to track the selection
+    showServerModal: false, // 控制服务器选择弹窗显示
     thanksItems: [
       '感谢：', 'BG6FCS', 'BH4TIH', 'BA4RN', 'BA1GM', 'BA4QEK', 'BA4QAO',
       'BD4VKI', 'BH4VAP', 'BH4TDV', 'BI4UMD', 'BA4QGT', 'BG8EJT', 'BH1OSW', 'BD4RFG', 'BG4QG', 'BD1BHO', 'BG2LBF',
@@ -202,6 +203,51 @@ Page({
     this.setData({
       selectedOption: e.detail.value
     });
+  },
+
+  // 显示服务器选择弹窗
+  showServerModal() {
+    this.setData({
+      showServerModal: true
+    });
+  },
+
+  // 隐藏服务器选择弹窗
+  hideServerModal() {
+    this.setData({
+      showServerModal: false
+    });
+  },
+
+  // 选择服务器
+  selectServer(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({
+      serverIndex: index,
+      selectedOption: 'predefined',
+      showServerModal: false
+    });
+
+    // 加载该服务器保存的账号密码
+    const serverCredentials = wx.getStorageSync('serverCredentials') || {};
+    const currentServerCreds = serverCredentials[index];
+
+    if (currentServerCreds) {
+      this.setData({
+        username: currentServerCreds.username,
+        password: currentServerCreds.password
+      });
+    } else {
+      this.setData({
+        username: '',
+        password: ''
+      });
+    }
+  },
+
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 空方法，用于阻止点击弹窗内容时触发关闭
   },
 
 

@@ -16,9 +16,10 @@
       </view>
       <view wx:if="{{selectedOption === 'predefined'}}" class="input-group">
         <text class="label">服务器</text>
-        <picker bindchange="bindServerChange" value="{{serverIndex}}" range="{{serverList}}" range-key="name">
-          <view class="picker">当前选择：{{serverList[serverIndex].name}}</view>
-        </picker>
+        <view class="picker" bindtap="showServerModal">
+          <text>当前选择：{{serverList[serverIndex].name}}</text>
+          <text class="arrow">▼</text>
+        </view>
       </view>
       <view wx:if="{{selectedOption === 'custom'}}" class="input-group">
         <text class="label">自定义服务器</text>
@@ -60,6 +61,32 @@
           </block>
         </swiper>
       </view>
+    </view>
+  </view>
+
+  <!-- 服务器选择弹窗 -->
+  <view class="modal" wx:if="{{showServerModal}}" bindtap="hideServerModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">选择服务器</text>
+        <text class="modal-close" bindtap="hideServerModal">✕</text>
+      </view>
+      <scroll-view class="server-list" scroll-y>
+        <view
+          class="server-item {{serverIndex === index ? 'selected' : ''}}"
+          wx:for="{{serverList}}"
+          wx:key="host"
+          wx:for-index="index"
+          bindtap="selectServer"
+          data-index="{{index}}"
+        >
+          <view class="server-item-header">
+            <text class="server-name">{{item.name}}</text>
+            <text class="server-check" wx:if="{{serverIndex === index}}">✓</text>
+          </view>
+          <text class="server-detail">地址：{{item.host}}</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>

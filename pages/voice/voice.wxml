@@ -33,12 +33,10 @@
     <!-- Second Row: Group Information -->
     <view class="group-row">
       <!-- Left: Group Name (Clickable to switch) -->
-      <picker bindchange="onGroupPickerChange" range="{{availableGroupsForPicker}}" range-key="displayGroupName" class="group-picker">
-        <view class="group-name-section clickable">
-          <text class="group-name-text">{{currentGroup || 'STANDBY'}}</text>
-          <text class="group-switch-hint">▾</text>
-        </view>
-      </picker>
+      <view class="group-name-section clickable" bindtap="showGroupModal">
+        <text class="group-name-text">{{currentGroup || 'STANDBY'}}</text>
+        <text class="group-switch-hint">▾</text>
+      </view>
       <!-- Right: Online/Total Count (Clickable to show details) -->
       <view class="group-count-section clickable" bindtap="showOnlineDevices">
         <text class="count-online">{{onlineCount}}</text>
@@ -140,6 +138,30 @@
       </view>
     </view>
   </view>
+  <!-- Group Switch Modal -->
+  <view class="modal-overlay {{showGroupModal ? 'show' : ''}}" bindtap="hideGroupModal" wx:if="{{showGroupModal}}">
+    <view class="modal-container" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">选择群组</text>
+        <view class="modal-close" bindtap="hideGroupModal">✕</view>
+      </view>
+      <scroll-view class="group-scroll-list" scroll-y>
+        <view
+          class="group-card {{item.id === currentGroupId ? 'selected' : ''}}"
+          wx:for="{{availableGroupsForPicker}}"
+          wx:key="id"
+          bindtap="onGroupCardSelect"
+          data-index="{{index}}"
+        >
+          <view class="group-card-header">
+            <text class="group-card-name">{{item.displayGroupName}}</text>
+            <text class="group-card-check" wx:if="{{item.id === currentGroupId}}">✓</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
   <!-- Server Switch Modal -->
   <view class="modal-overlay {{showServerModal ? 'show' : ''}}" bindtap="hideServerModal" wx:if="{{showServerModal}}">
     <view class="modal-container server-modal" catchtap="stopPropagation">
@@ -148,12 +170,25 @@
         <view class="modal-close" bindtap="hideServerModal">✕</view>
       </view>
       <view class="modal-body">
-        <!-- Server Picker -->
+        <!-- Server List -->
         <view class="form-item">
           <text class="form-label">选择服务器</text>
-          <picker bindchange="onServerPickerChange" value="{{tempServerIndex}}" range="{{serverList}}" range-key="name">
-            <view class="picker-view">{{serverList[tempServerIndex].name || '请选择服务器'}}</view>
-          </picker>
+          <scroll-view class="server-scroll-list" scroll-y>
+            <view
+              class="server-card {{tempServerIndex === index ? 'selected' : ''}}"
+              wx:for="{{serverList}}"
+              wx:key="host"
+              wx:for-index="index"
+              bindtap="onServerCardSelect"
+              data-index="{{index}}"
+            >
+              <view class="server-card-header">
+                <text class="server-card-name">{{item.name}}</text>
+                <text class="server-card-check" wx:if="{{tempServerIndex === index}}">✓</text>
+              </view>
+              <text class="server-card-detail">{{item.host}}</text>
+            </view>
+          </scroll-view>
         </view>
         <!-- Username Input -->
         <view class="form-item">

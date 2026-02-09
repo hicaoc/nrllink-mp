@@ -43,7 +43,11 @@ Page({
     serverList: [],
     tempServerIndex: 0,
     tempUsername: '',
-    tempPassword: ''
+    tempPassword: '',
+
+    // Group Switch Data
+    showGroupModal: false,
+    currentGroupId: null
   },
 
   async onLoad() {
@@ -303,13 +307,26 @@ Page({
     }
   },
 
-  async onGroupPickerChange(e) {
-    const selectedIndex = e.detail.value;
+  showGroupModal() {
+    const { currentDevice } = app.globalData;
+    this.setData({
+      showGroupModal: true,
+      currentGroupId: currentDevice?.group_id || null
+    });
+  },
+
+  hideGroupModal() {
+    this.setData({ showGroupModal: false });
+  },
+
+  async onGroupCardSelect(e) {
+    const selectedIndex = e.currentTarget.dataset.index;
     const selectedGroup = this.data.availableGroupsForPicker[selectedIndex];
     const { currentDevice } = app.globalData;
 
     if (!selectedGroup || !currentDevice) return;
 
+    this.setData({ showGroupModal: false });
     wx.showLoading({ title: '正在切换群组...' });
     try {
       await updateDevice({
@@ -407,8 +424,8 @@ Page({
     this.setData({ showServerModal: false });
   },
 
-  onServerPickerChange(e) {
-    const index = e.detail.value;
+  onServerCardSelect(e) {
+    const index = e.currentTarget.dataset.index;
     this.setData({ tempServerIndex: index });
     this.loadCredentialsForIndex(index);
   },
