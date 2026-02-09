@@ -381,46 +381,80 @@
   }
 }
 
-.voice-icon {
-  width: 32rpx;
-  height: 32rpx;
-  margin-right: 15rpx;
+/* Voice Waveform Container */
+.voice-waveform {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4rpx;
+  height: 48rpx;
+  margin-right: 15rpx;
+  padding: 0 6rpx;
 }
 
-.voice-icon.playing .play-icon-inner {
-  animation: playIconBounce 0.6s ease-in-out infinite;
+/* Wave Bars - Optimized for GPU acceleration */
+.wave-bar {
+  width: 6rpx;
+  height: 24rpx; /* Fixed base height */
+  border-radius: 3rpx;
+  transform-origin: center;
+  will-change: transform; /* Hint browser to optimize */
 }
 
-@keyframes playIconBounce {
+/* Default static height for non-playing state */
+.other .wave-bar {
+  background: #06a94d;
+}
 
-  0%,
-  100% {
-    transform: translateX(0);
+.self .wave-bar {
+  background: #fff;
+}
+
+/* Static scale when not playing - using scaleY for GPU acceleration */
+.voice-waveform:not(.playing) .bar-1 { transform: scaleY(0.5); }
+.voice-waveform:not(.playing) .bar-2 { transform: scaleY(0.83); }
+.voice-waveform:not(.playing) .bar-3 { transform: scaleY(1.17); }
+.voice-waveform:not(.playing) .bar-4 { transform: scaleY(0.83); }
+.voice-waveform:not(.playing) .bar-5 { transform: scaleY(0.5); }
+
+/* Animated waveform when playing - using transform for better performance */
+.voice-waveform.playing .wave-bar {
+  animation: waveAnimation 0.8s ease-in-out infinite;
+}
+
+.voice-waveform.playing .bar-1 {
+  animation-delay: 0s;
+}
+
+.voice-waveform.playing .bar-2 {
+  animation-delay: 0.1s;
+}
+
+.voice-waveform.playing .bar-3 {
+  animation-delay: 0.2s;
+}
+
+.voice-waveform.playing .bar-4 {
+  animation-delay: 0.3s;
+}
+
+.voice-waveform.playing .bar-5 {
+  animation-delay: 0.4s;
+}
+
+@keyframes waveAnimation {
+  0%, 100% {
+    transform: scaleY(0.42); /* ~10rpx */
   }
-
+  25% {
+    transform: scaleY(1.46); /* ~35rpx */
+  }
   50% {
-    transform: translateX(4rpx);
+    transform: scaleY(0.63); /* ~15rpx */
   }
-}
-
-.play-icon-inner {
-  width: 0;
-  height: 0;
-  border-top: 10rpx solid transparent;
-  border-bottom: 10rpx solid transparent;
-  border-left: 16rpx solid currentColor;
-  margin-left: 4rpx;
-}
-
-.self .play-icon-inner {
-  border-left-color: #fff;
-}
-
-.other .play-icon-inner {
-  border-left-color: #06a94d;
+  75% {
+    transform: scaleY(1.67); /* ~40rpx */
+  }
 }
 
 .duration {

@@ -151,28 +151,32 @@ function resume() {
 
 
 
-// 接收 G.711 数据并解码
+// 接收 G.711 数据并解码（保留用于兼容性）
 async function play(data, type) {
     if (type === 1) {
         const pcmData = new Int16Array(data.length);
         for (let i = 0; i < data.length; i++) {
             pcmData[i] = g711Codec.alaw2linear(data[i]);
         }
-
-        const float32Data = new Float32Array(pcmData.length);
-        for (let i = 0; i < pcmData.length; i++) {
-            float32Data[i] = Math.max(-1, Math.min(1, pcmData[i] / 32768.0));
-        }
-
-        // 采样率转换
-        const resampledData = resamplePCM(float32Data, SAMPLE_RATE, webAudioContext.sampleRate);
-
-        // 合并 PCM 数据
-        const newPcmBuffer = new Float32Array(pcmBuffer.length + resampledData.length);
-        newPcmBuffer.set(pcmBuffer, 0);
-        newPcmBuffer.set(resampledData, pcmBuffer.length);
-        pcmBuffer = newPcmBuffer;
+        playPCM(pcmData);
     }
+}
+
+// 直接播放PCM数据（避免重复解码）
+function playPCM(pcmData) {
+    const float32Data = new Float32Array(pcmData.length);
+    for (let i = 0; i < pcmData.length; i++) {
+        float32Data[i] = Math.max(-1, Math.min(1, pcmData[i] / 32768.0));
+    }
+
+    // 采样率转换
+    const resampledData = resamplePCM(float32Data, SAMPLE_RATE, webAudioContext.sampleRate);
+
+    // 合并 PCM 数据
+    const newPcmBuffer = new Float32Array(pcmBuffer.length + resampledData.length);
+    newPcmBuffer.set(pcmBuffer, 0);
+    newPcmBuffer.set(resampledData, pcmBuffer.length);
+    pcmBuffer = newPcmBuffer;
 }
 
 function resamplePCM(input, inputSampleRate, outputSampleRate) {
@@ -195,7 +199,7 @@ function resamplePCM(input, inputSampleRate, outputSampleRate) {
 module.exports = {
     initWebAudio,
     play,
+    playPCM,
     suspend,
     resume,
-
 };

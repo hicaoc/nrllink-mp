@@ -12,6 +12,18 @@ export class VoiceService {
         this.voiceEndTimer = null;
         this.incomingVoiceBuffer = [];
         this.g711Codec = new g711.G711Codec();
+        this.accumulatedDuration = 0; // Accurate duration in milliseconds
+        this.durationUpdateTimer = null; // Timer for throttled duration updates
+
+        // Track current receiving state to avoid relying on async page.data
+        this.currentReceiving = {
+            isReceiving: false,
+            callSign: null,
+            ssid: null,
+            dmrid: null,
+            startTime: null,
+            lastReceiveTime: null
+        };
     }
 
     /**
@@ -22,8 +34,13 @@ export class VoiceService {
 
         switch (packet.type) {
             case 1: // Voice
-                audio.play(packet.data, packet.type);
-                this.processIncomingVoice(packet);
+                // Decode once and reuse for both playback and recording
+                const linearData = new Int16Array(packet.data.length);
+                for (let i = 0; i < packet.data.length; i++) {
+                    linearData[i] = this.g711Codec.alaw2linear(packet.data[i]);
+                }
+                audio.playPCM(linearData);
+                this.processIncomingVoice(packet, linearData);
                 break;
 
             case 2: // Heartbeat
@@ -41,46 +58,73 @@ export class VoiceService {
 
     /**
      * Process chunks of incoming voice data.
+     * @param {Object} packet - The decoded packet
+     * @param {Int16Array} linearData - Pre-decoded PCM data to avoid duplicate decoding
      */
-    processIncomingVoice(packet) {
+    processIncomingVoice(packet, linearData) {
         const now = Date.now();
-        const { chatLogs, isReceivingVoice, CallSign, SSID, lastVoiceTime, startTime } = this.page.data;
 
-        // Detect end of previous transmission
-        if (isReceivingVoice && (
-            CallSign !== packet.callSign ||
-            SSID !== packet.ssid ||
-            now - lastVoiceTime > 2000
-        )) {
-            this.finishIncomingVoice();
+        // Detect end of previous transmission using local state (not page.data)
+        if (this.currentReceiving.isReceiving) {
+            const isDifferentSender =
+                this.currentReceiving.callSign !== packet.callSign ||
+                this.currentReceiving.ssid !== packet.ssid;
+
+            if (isDifferentSender) {
+                // Different sender, finish previous and start new
+                this.finishIncomingVoice();
+            }
         }
 
-        if (!this.page.data.isReceivingVoice) {
+        // Start new reception if not already receiving
+        if (!this.currentReceiving.isReceiving) {
+            this.currentReceiving = {
+                isReceiving: true,
+                callSign: packet.callSign || '未知',
+                ssid: packet.ssid || '00',
+                dmrid: packet.dmrid || '',
+                startTime: now,
+                lastReceiveTime: now
+            };
+
             this.page.setData({
                 isReceivingVoice: true,
                 receivingBubbleWidth: 10,
                 startTime: now,
-                CallSign: packet.callSign || '未知',
-                SSID: packet.ssid || '00',
-                DMRID: packet.dmrid || '',
+                CallSign: this.currentReceiving.callSign,
+                SSID: this.currentReceiving.ssid,
+                DMRID: this.currentReceiving.dmrid,
                 lastVoiceTime: now,
                 duration: 0
             });
             this.incomingVoiceBuffer = [];
+            this.accumulatedDuration = 0; // Reset accumulated duration
             this.startReceivingAnimation();
+            this.startDurationUpdateTimer(); // Start throttled duration updates
         }
 
-        // Convert alaw to PCM and buffer
-        const linearData = new Int16Array(packet.data.length);
-        for (let i = 0; i < packet.data.length; i++) {
-            linearData[i] = this.g711Codec.alaw2linear(packet.data[i]);
-        }
+        // Update last receive time
+        this.currentReceiving.lastReceiveTime = now;
+
+        // Use pre-decoded linearData (already decoded in handleMessage to avoid duplication)
         this.incomingVoiceBuffer.push(linearData);
 
-        this.page.setData({
-            lastVoiceTime: now,
-            duration: Math.floor((now - this.page.data.startTime) / 1000)
-        });
+        // Calculate accurate duration based on packet size
+        // 160 bytes = 20ms, 500 bytes = 62.5ms
+        const packetSize = packet.data.length;
+        let packetDurationMs = 0;
+        if (packetSize === 160) {
+            packetDurationMs = 20;
+        } else if (packetSize === 500) {
+            packetDurationMs = 62.5;
+        } else {
+            // Fallback: estimate based on 8kHz sample rate (1 byte = 0.125ms)
+            packetDurationMs = packetSize * 0.125;
+        }
+        this.accumulatedDuration += packetDurationMs;
+
+        // Only update lastVoiceTime, duration is updated by timer
+        this.page.setData({ lastVoiceTime: now });
 
         // Reset silence timer
         if (this.voiceEndTimer) clearTimeout(this.voiceEndTimer);
@@ -107,12 +151,53 @@ export class VoiceService {
     }
 
     /**
+     * Start throttled duration updates (every 1 second instead of every packet).
+     */
+    startDurationUpdateTimer() {
+        if (this.durationUpdateTimer) return;
+        this.durationUpdateTimer = setInterval(() => {
+            if (this.page.data.isReceivingVoice) {
+                this.page.setData({
+                    duration: Math.ceil(this.accumulatedDuration / 1000) // Round up to whole seconds
+                });
+            }
+        }, 1000); // Update every 1 second to save resources (since we only show whole seconds)
+    }
+
+    /**
+     * Stop duration update timer.
+     */
+    stopDurationUpdateTimer() {
+        if (this.durationUpdateTimer) {
+            clearInterval(this.durationUpdateTimer);
+            this.durationUpdateTimer = null;
+        }
+    }
+
+    /**
      * Finalizes voice reception, saves the WAV file, and adds to log.
      */
     async finishIncomingVoice() {
-        if (!this.page.data.isReceivingVoice) return;
+        if (!this.currentReceiving.isReceiving) return;
 
-        const { CallSign, SSID, DMRID, duration } = this.page.data;
+        // Stop duration update timer and do final update
+        this.stopDurationUpdateTimer();
+        const finalDuration = Math.ceil(this.accumulatedDuration / 1000); // Round up to whole seconds
+
+        const CallSign = this.currentReceiving.callSign;
+        const SSID = this.currentReceiving.ssid;
+        const DMRID = this.currentReceiving.dmrid;
+
+        // Reset receiving state
+        this.currentReceiving = {
+            isReceiving: false,
+            callSign: null,
+            ssid: null,
+            dmrid: null,
+            startTime: null,
+            lastReceiveTime: null
+        };
+
         this.page.setData({ isReceivingVoice: false });
         if (this.voiceEndTimer) clearTimeout(this.voiceEndTimer);
 
@@ -141,7 +226,7 @@ export class VoiceService {
                 ssid: SSID,
                 dmrid: DMRID,
                 qth: qth ? qth.qth + " " + qth.name : '无位置数据',
-                duration: duration,
+                duration: finalDuration,
                 filePath: filePath,
                 timestamp: nrlHelpers.formatLastVoiceTime(Date.now())
             };
