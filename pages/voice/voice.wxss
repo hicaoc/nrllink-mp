@@ -418,28 +418,24 @@
 .voice-waveform:not(.playing) .bar-5 { transform: scaleY(0.5); }
 
 /* Animated waveform when playing - using transform for better performance */
-.voice-waveform.playing .wave-bar {
-  animation: waveAnimation 0.8s ease-in-out infinite;
-}
-
 .voice-waveform.playing .bar-1 {
-  animation-delay: 0s;
+  animation: waveAnimation 0.8s ease-in-out infinite 0s;
 }
 
 .voice-waveform.playing .bar-2 {
-  animation-delay: 0.1s;
+  animation: waveAnimation 0.8s ease-in-out infinite 0.1s;
 }
 
 .voice-waveform.playing .bar-3 {
-  animation-delay: 0.2s;
+  animation: waveAnimation 0.8s ease-in-out infinite 0.2s;
 }
 
 .voice-waveform.playing .bar-4 {
-  animation-delay: 0.3s;
+  animation: waveAnimation 0.8s ease-in-out infinite 0.3s;
 }
 
 .voice-waveform.playing .bar-5 {
-  animation-delay: 0.4s;
+  animation: waveAnimation 0.8s ease-in-out infinite 0.4s;
 }
 
 @keyframes waveAnimation {

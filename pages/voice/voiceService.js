@@ -64,24 +64,36 @@ export class VoiceService {
     processIncomingVoice(packet, linearData) {
         const now = Date.now();
 
+        // Normalize packet values with same defaults used when storing
+        const packetCallSign = packet.callSign || '未知';
+        const packetSSID = packet.ssid || '00';
+
         // Detect end of previous transmission using local state (not page.data)
         if (this.currentReceiving.isReceiving) {
+            // Check if this is a different sender or too long interval
             const isDifferentSender =
-                this.currentReceiving.callSign !== packet.callSign ||
-                this.currentReceiving.ssid !== packet.ssid;
+                this.currentReceiving.callSign !== packetCallSign ||
+                this.currentReceiving.ssid !== packetSSID;
+
+            const timeSinceLastPacket = now - this.currentReceiving.lastReceiveTime;
+            const isTooLongInterval = timeSinceLastPacket > 1000; // 1 second gap = new transmission (normal interval is 20-62.5ms)
 
             if (isDifferentSender) {
-                // Different sender, finish previous and start new
+                console.warn(`[Voice] ⚠️ Different sender! Current: ${this.currentReceiving.callSign}-${this.currentReceiving.ssid}, New: ${packetCallSign}-${packetSSID}`);
+                this.finishIncomingVoice();
+            } else if (isTooLongInterval) {
+                console.warn(`[Voice] ⚠️ Long interval (${timeSinceLastPacket}ms), treating as new transmission`);
                 this.finishIncomingVoice();
             }
         }
 
         // Start new reception if not already receiving
         if (!this.currentReceiving.isReceiving) {
+            console.log(`[Voice] 🎤 START receiving from ${packetCallSign}-${packetSSID}`);
             this.currentReceiving = {
                 isReceiving: true,
-                callSign: packet.callSign || '未知',
-                ssid: packet.ssid || '00',
+                callSign: packetCallSign,
+                ssid: packetSSID,
                 dmrid: packet.dmrid || '',
                 startTime: now,
                 lastReceiveTime: now
@@ -179,6 +191,10 @@ export class VoiceService {
      */
     async finishIncomingVoice() {
         if (!this.currentReceiving.isReceiving) return;
+
+        const bufLen = this.incomingVoiceBuffer.length;
+        const dur = Math.ceil(this.accumulatedDuration / 1000);
+        console.log(`[Voice] 💾 FINISH ${this.currentReceiving.callSign}-${this.currentReceiving.ssid}: ${bufLen} packets, ${dur}s`);
 
         // Stop duration update timer and do final update
         this.stopDurationUpdateTimer();
