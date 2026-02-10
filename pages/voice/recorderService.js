@@ -46,39 +46,43 @@ export class RecorderService {
 
         this.page.setData({ isTalking: true });
         try {
-            this.recorder = await recoder.startRecording(this.page.data.codec);
+            this.recorder = await recoder.startRecording(this.page.data.codec, () => {
+                // 录音被系统自动停止（如达到时长上限），同步 PTT 状态
+                if (this.page.data.isTalking) {
+                    this.stopRecording();
+                }
+            });
         } catch (err) {
             wx.showToast({ title: '录音启动失败', icon: 'none' });
             this.page.setData({ isTalking: false });
             return;
         }
 
+        let sendBuffer = new Uint8Array(0);
+
+        // 独立发包定时器，固定 20ms 节律，与录音帧边界解耦
+        this.sendTimer = setInterval(() => {
+            if (sendBuffer.length >= 160 && app.globalData.udpClient) {
+                const packetData = sendBuffer.slice(0, 160);
+                sendBuffer = sendBuffer.slice(160);
+                this.page.audioPacket.set(packetData, 48);
+                app.globalData.udpClient.send(this.page.audioPacket);
+            }
+        }, 20);
+
+        // 只负责把录音帧追加到 sendBuffer，不控制发包时序
         const processAudio = async () => {
-            let buffer = new Uint8Array(0);
             while (this.page.data.isTalking) {
                 try {
                     const data = await this.recorder.getNextAudioFrame();
-                    if (!data) continue;
+                    if (!data) break; // 录音已停止，退出循环
 
                     this.outgoingVoiceBuffer.push(new Int16Array(data));
 
-                    const newBuffer = new Uint8Array(buffer.length + data.length);
-                    newBuffer.set(buffer);
-                    newBuffer.set(new Uint8Array(data), buffer.length);
-                    buffer = newBuffer;
-
-                    while (buffer.length >= 160) {
-                        const packetData = buffer.slice(0, 160);
-                        buffer = buffer.slice(160);
-                        this.page.audioPacket.set(packetData, 48);
-                        if (app.globalData.udpClient) {
-                           
-                            await new Promise(resolve => {
-                                app.globalData.udpClient.send(this.page.audioPacket);
-                                setTimeout(resolve, 20);
-                            });
-                        }
-                    }
+                    const newBuffer = new Uint8Array(sendBuffer.length + data.length);
+                    newBuffer.set(sendBuffer);
+                    newBuffer.set(new Uint8Array(data), sendBuffer.length);
+                    sendBuffer = newBuffer;
                 } catch (err) {
                     console.error('Recording process error:', err);
                     break;
@@ -93,6 +97,10 @@ export class RecorderService {
      */
     async stopRecording() {
         this.page.setData({ isTalking: false });
+        if (this.sendTimer) {
+            clearInterval(this.sendTimer);
+            this.sendTimer = null;
+        }
         try {
             if (this.audioProcessor) await this.audioProcessor;
             if (this.recorder) recoder.stopRecording(this.recorder);

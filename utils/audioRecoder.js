@@ -12,8 +12,9 @@ import * as g711 from './audioG711';
 const g711Codec = new g711.G711Codec(); 
 
 class AudioRecorder {
-  constructor(codec) {
+  constructor(codec, onStop) {
     this.codec = codec;
+    this.onStop = onStop;
     this.frameQueue = [];
     this.resolveNextFrame = null;
     this.g711Codec = g711Codec; // 使用全局实例
@@ -23,9 +24,18 @@ class AudioRecorder {
   initRecorder() {
     recorderManager.onStart(() => {
       console.log('recorder start');
-    });    
- 
-    recorderManager.onFrameRecorded((res) => {      
+    });
+
+    recorderManager.onStop(() => {
+      // 解除 getNextAudioFrame() 的等待，返回 null 让调用方退出循环
+      if (this.resolveNextFrame) {
+        this.resolveNextFrame(null);
+        this.resolveNextFrame = null;
+      }
+      if (this.onStop) this.onStop();
+    });
+
+    recorderManager.onFrameRecorded((res) => {
       if (res.frameBuffer) {
        // console.log('getNextAudioFrame', res.frameBuffer);
         this.frameQueue.push(res.frameBuffer);
@@ -68,21 +78,20 @@ class AudioRecorder {
       encodeBitRate: 16000,
       numberOfChannels: 1,
       frameSize: 1,
+      duration: 600000, // 最大10分钟，默认60秒
     });
   }
 
   stop() {
     recorderManager.stop();
     this.frameQueue = [];
-    if (this.resolveNextFrame) {
-      this.resolveNextFrame(null);
-    }
+    // onStop 事件会负责 resolve，这里不重复调用
   }
 }
 
-function startRecording(codec) {
+function startRecording(codec, onStop) {
   return new Promise((resolve) => {
-    const recorder = new AudioRecorder(codec);
+    const recorder = new AudioRecorder(codec, onStop);
     recorder.start();
     resolve(recorder);
   });
