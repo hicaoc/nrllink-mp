@@ -111,21 +111,30 @@ Page({
     });
   },
 
-  onShow() {
+  async onShow() {
     wx.setKeepScreenOn({ keepScreenOn: true });
-    this.refreshData();
+
+    // Re-initialize UDP connection (may have been closed by system during background)
+    if (app.globalData.udpClient) {
+      app.globalData.udpClient.close();
+      app.globalData.udpClient = null;
+    }
+    await this.initMdcAndUdp();
+
+    audio.resume();
     this.startHeartbeat();
-    this.checkConnection();
-    audio.resume(); // Ensure audio context is running
+    this.refreshData();
     this.startGroupRefreshTimer();
   },
 
   onHide() {
     this.stopGroupRefreshTimer();
+    this.stopHeartbeat();
   },
 
   onUnload() {
     this.stopGroupRefreshTimer();
+    this.stopHeartbeat();
     if (this.connectionCheckTimer) clearInterval(this.connectionCheckTimer);
   },
 
@@ -166,12 +175,19 @@ Page({
   },
 
   startHeartbeat() {
-    if (app.globalData.heartbeatTimer) return;
+    this.stopHeartbeat();
     app.globalData.heartbeatTimer = setInterval(() => {
       if (app.globalData.udpClient) {
         app.globalData.udpClient.send(this.heartbeatBuffer);
       }
     }, 2000);
+  },
+
+  stopHeartbeat() {
+    if (app.globalData.heartbeatTimer) {
+      clearInterval(app.globalData.heartbeatTimer);
+      app.globalData.heartbeatTimer = null;
+    }
   },
 
   checkConnection() {

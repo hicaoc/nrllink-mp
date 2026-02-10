@@ -50,26 +50,14 @@
   margin-left: 20rpx;
 }
 
-.user-row-one {
-  display: flex;
-  align-items: baseline;
-  margin-bottom: 6rpx;
-}
-
-.user-name {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-right: 12rpx;
-}
-
 .user-callsign {
-  font-size: 20rpx;
+  display: block;
+  font-size: 32rpx;
   color: #06a94d;
-  font-weight: 600;
-  background: #e8f5e9;
-  padding: 2rpx 10rpx;
-  border-radius: 6rpx;
+  font-weight: bold;
+  margin-bottom: 6rpx;
+  letter-spacing: 1rpx;
+  white-space: nowrap;
 }
 
 .user-tags {
@@ -215,7 +203,7 @@
 }
 
 .server-name {
-  font-size: 18rpx;
+  font-size: 26rpx;
   color: #333;
   font-weight: 600;
 }

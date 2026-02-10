@@ -9,10 +9,7 @@
           <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
         </button>
         <view class="user-text">
-          <view class="user-row-one">
-            <text class="user-name">{{userInfo.name || 'USER'}}</text>
-            <text class="user-callsign">{{userInfo.callsign}}-100</text>
-          </view>
+          <text class="user-callsign">{{userInfo.callsign}}-100</text>
           <view class="user-tags">
             <view class="tag">DMR:{{userInfo.dmrid}}</view>
             <view class="tag">MDC:{{userInfo.mdcid}}</view>
