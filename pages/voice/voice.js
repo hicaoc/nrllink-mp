@@ -129,7 +129,6 @@ Page({
 
   onHide() {
     this.stopGroupRefreshTimer();
-    this.stopHeartbeat();
   },
 
   onUnload() {
