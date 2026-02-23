@@ -1,0 +1,74 @@
+.page {
+  height: 100vh;
+  background: #f6f7fb;
+}
+
+.container {
+  box-sizing: border-box;
+  padding: 28rpx 28rpx 40rpx;
+}
+
+.title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.update-date {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.section {
+  margin-top: 26rpx;
+  padding: 22rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12rpx;
+}
+
+.paragraph {
+  font-size: 27rpx;
+  color: #374151;
+  line-height: 1.75;
+}
+
+.item {
+  margin-top: 8rpx;
+  font-size: 27rpx;
+  color: #374151;
+  line-height: 1.75;
+}
+
+.highlight {
+  margin-top: 24rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 16rpx;
+  background: #eefaf2;
+  border: 1px solid #d7f2e1;
+}
+
+.contact {
+  border: 1px solid #eceef3;
+}
+
+.footer {
+  margin-top: 26rpx;
+  padding: 22rpx;
+  border-radius: 16rpx;
+  background: #f3f4f6;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #6b7280;
+  line-height: 1.8;
+}

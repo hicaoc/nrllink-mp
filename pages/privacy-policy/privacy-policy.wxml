@@ -1,0 +1,100 @@
+<scroll-view class="page" scroll-y>
+  <view class="container">
+    <view class="title">NRL互联 隐私政策</view>
+    <view class="update-date">更新日期：2026年2月22日</view>
+
+    <view class="paragraph">
+      欢迎使用 NRL互联（以下简称“本应用”）。我们非常重视您的隐私保护。本隐私政策旨在向您说明我们如何收集、使用、存储和保护您的个人信息。
+    </view>
+
+    <view class="section">
+      <view class="section-title">一、信息收集</view>
+      <view class="paragraph">为了提供对讲服务，本应用可能收集以下信息：</view>
+      <view class="item">1. 账号信息：您的手机号(用户名)、呼号（Callsign）、DMR ID、MDC ID 等用于身份识别的信息。</view>
+      <view class="item">2. 语音数据：您通过 PTT功能发送的语音内容（仅在通话期间实时传输）。</view>
+      <view class="item">3. 位置信息：在您授权的情况下，获取您的地理位置以便与群组成员共享位置。</view>
+      <view class="item">4. 设备信息：设备型号、操作系统版本，用于提供技术支持和优化服务。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">二、信息使用</view>
+      <view class="paragraph">我们收集的信息仅用于以下目的：</view>
+      <view class="item">1. 提供 PTT对讲通信服务。</view>
+      <view class="item">2. 在群组中显示您的呼号和在线状态。</view>
+      <view class="item">3. 实现位置共享功能（需您授权）。</view>
+      <view class="item">4. 改进应用性能和用户体验。</view>
+      <view class="item">5. 提供技术支持服务。</view>
+    </view>
+
+    <view class="highlight">
+      <view class="paragraph">
+        重要说明：您的语音数据不会被存储在服务器上，仅在通话期间实时传输给同群组的其他用户。业余无线电要求语音通联遵循业余无线电通联规范，通联过程中及使报告自己的设备类型，呼号，位置QTH，信号质量等内容，不得通联和业余无线电无关的内容。第三方会对通联内容进行记录审核。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">三、信息存储</view>
+      <view class="item">1. 本地存储：通话记录、文本消息等数据存储在您的设备内存，小程序重启后自动清除。</view>
+      <view class="item">2. 服务器存储：仅存储账号信息、群组信息等必要数据，用于提供服务。</view>
+      <view class="item">3. 密码安全：您的密码使用Keychain安全存储，并采用加密传输。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">四、信息共享</view>
+      <view class="paragraph">我们不会将您的个人信息出售、出租或以其他方式提供给第三方，除非：</view>
+      <view class="item">1. 获得您的明确同意。</view>
+      <view class="item">2. 根据法律法规的要求。</view>
+      <view class="item">3. 为保护本应用及其用户的权益。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">五、权限说明</view>
+      <view class="paragraph">本应用需要以下权限：</view>
+      <view class="item">1. 麦克风：用于 NRL语音通信（必需）。</view>
+      <view class="item">2. 位置：用于位置共享功能（可选，可在系统设置中关闭）。</view>
+      <view class="item">3. 本地网络：用于与 NRL服务器建立连接。</view>
+      <view class="item">4. 语音识别：用于实时字幕功能（可选）。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">六、数据安全</view>
+      <view class="paragraph">我们采取以下措施保护您的数据安全：</view>
+      <view class="item">1. 所有网络通信均使用 HTTPS 加密传输。</view>
+      <view class="item">2. 密码等敏感信息使用 Keychain 安全存储。</view>
+      <view class="item">3. 服务器采用安全防护措施。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">七、您的权利</view>
+      <view class="paragraph">您有权：</view>
+      <view class="item">1. 查看和修改您的账号信息。</view>      
+      <view class="item">2. 随时关闭位置共享功能。</view>
+      <view class="item">3. 注销您的账号。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">八、未成年人保护</view>
+      <view class="paragraph">
+        本应用主要面向业余无线电爱好者。如果您是未成年人，请在监护人的指导下使用本应用。
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">九、政策更新</view>
+      <view class="paragraph">
+        我们可能会不时更新本隐私政策。更新后的政策将在本页面发布，重大变更时会通过应用内通知告知您。
+      </view>
+    </view>
+
+    <view class="section contact">
+      <view class="section-title">联系我们</view>
+      <view class="paragraph">如果您对本隐私政策有任何疑问，请联系你所登录服务器的管理员：</view>
+      <view class="item">网站：https://m.nrlptt.com </view>
+    </view>
+
+    <view class="footer">
+      <view class="footer-text">NRL互联 © 2024-2026  (BH4RPN)</view> 
+      <view class="footer-text">皖ICP备2022007119号</view>
+    </view>
+  </view>
+</scroll-view>

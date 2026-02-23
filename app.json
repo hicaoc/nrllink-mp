@@ -6,7 +6,10 @@
     "pages/aprs/aprs",
     "pages/voice/voice",
     "pages/group-detail/group-detail",
-    "pages/device-settings/device-settings"
+    "pages/device-settings/device-settings",
+    "pages/privacy-policy/privacy-policy",
+    "pages/user-agreement/user-agreement",
+    "pages/webview/webview"
   ],
   "window": {
     "navigationBarTitleText": "NRL互联1.7.19"
