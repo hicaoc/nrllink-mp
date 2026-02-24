@@ -8,7 +8,7 @@ Page({
     password: '',
     loading: false,
     serverList: [
-      { name: 'NRLPTT主站', host: 'www.nrlptt.com', port: 60050 },
+      { name: 'NRLPTT主站', host: 'm.nrlptt.com', port: 60050 },
       { name: '江苏省无线电运动协会', host: 'js.nrlptt.com', port: 60050 },
       { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
       { name: '董哥集群', host: 'bh1osw.nrlptt.com', port: 60050 },
@@ -189,7 +189,7 @@ Page({
   },
 
   getPlatformList() {
-    const url = 'https://nrlptt.com/platform/list';
+    const url = 'https://m.nrlptt.com/platform/list';
 
     wx.request({
       url: url,
