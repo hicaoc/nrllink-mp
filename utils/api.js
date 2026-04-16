@@ -1,5 +1,5 @@
 // 基础配置
-//const BASE_URL = 'https://nrlptt.com';
+ 
 const getDefaultHeaders = () => ({
   'Content-Type': 'application/json',
   'x-token': wx.getStorageSync('token') || ''

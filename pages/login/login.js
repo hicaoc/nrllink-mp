@@ -8,7 +8,7 @@ Page({
     password: '',
     loading: false,
     serverList: [
-      { name: 'NRLPTT主站', host: 'www.nrlptt.com', port: 60050 },
+      { name: 'NRLPTT主站', host: 'm.nrlptt.com', port: 60050 },
       { name: '江苏省无线电运动协会', host: 'js.nrlptt.com', port: 60050 },
       { name: '北京阳光无线俱乐部', host: 'ba1gm.nrlptt.com', port: 60050 },
       { name: '董哥集群', host: 'bh1osw.nrlptt.com', port: 60050 },
@@ -19,6 +19,7 @@ Page({
     customServer: '',
     selectedOption: 'predefined', // Add selectedOption to track the selection
     showServerModal: false, // 控制服务器选择弹窗显示
+    agreedPolicies: false,
     thanksItems: [
       '感谢：', 'BG6FCS', 'BH4TIH', 'BA4RN', 'BA1GM', 'BA4QEK', 'BA4QAO',
       'BD4VKI', 'BH4VAP', 'BH4TDV', 'BI4UMD', 'BA4QGT', 'BG8EJT', 'BH1OSW', 'BD4RFG', 'BG4QG', 'BD1BHO', 'BG2LBF',
@@ -87,7 +88,15 @@ Page({
   login() {
     if (this.data.loading) return;
 
-    const { username, password } = this.data;
+    const { username, password, agreedPolicies } = this.data;
+
+    if (!agreedPolicies) {
+      wx.showToast({
+        title: '请先阅读并同意用户服务协议和隐私政策',
+        icon: 'none'
+      });
+      return;
+    }
 
     if (!username || !password) {
       wx.showToast({
@@ -180,7 +189,7 @@ Page({
   },
 
   getPlatformList() {
-    const url = 'https://nrlptt.com/platform/list';
+    const url = 'https://m.nrlptt.com/platform/list';
 
     wx.request({
       url: url,
@@ -250,6 +259,24 @@ Page({
     // 空方法，用于阻止点击弹窗内容时触发关闭
   },
 
+
+  onAgreementChange(e) {
+    this.setData({
+      agreedPolicies: e.detail.value.includes('agree')
+    });
+  },
+
+  openUserAgreement() {
+    wx.navigateTo({
+      url: '/pages/user-agreement/user-agreement'
+    });
+  },
+
+  openPrivacyPolicy() {
+    wx.navigateTo({
+      url: '/pages/privacy-policy/privacy-policy'
+    });
+  },
 
   copyDownloadLink(e) {
     const url = e.currentTarget.dataset.url;

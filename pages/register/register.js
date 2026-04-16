@@ -26,12 +26,44 @@ Page({
   chooseLicense() {
     wx.chooseImage({
       count: 1,
-      success: (res) => {
-        this.setData({
-          license: res.tempFilePaths[0]
-        })
+      success: async (res) => {
+        const tempFilePath = res.tempFilePaths[0];
+        wx.showLoading({ title: '正在压缩照片中...' });
+        try {
+          const compressedPath = await this.compressImageToLimit(tempFilePath);
+          this.setData({ license: compressedPath });
+        } catch (e) {
+          wx.showToast({ title: e.message || '图片处理失败', icon: 'none' });
+        } finally {
+          wx.hideLoading();
+        }
       }
-    })
+    });
+  },
+
+  async compressImageToLimit(filePath) {
+    const MAX_SIZE = 512 * 1024;
+
+    const getSize = (path) => new Promise((resolve) => {
+      wx.getFileInfo({
+        filePath: path,
+        success: (res) => resolve(res.size),
+        fail: () => resolve(Infinity)
+      });
+    });
+
+    const compress = (src, quality) => new Promise((resolve, reject) => {
+      wx.compressImage({ src, quality, success: (res) => resolve(res.tempFilePath), fail: reject });
+    });
+
+    if (await getSize(filePath) <= MAX_SIZE) return filePath;
+
+    for (const quality of [80, 60, 40]) {
+      const compressed = await compress(filePath, quality);
+      if (await getSize(compressed) <= MAX_SIZE) return compressed;
+    }
+
+    throw new Error('图片过大，请换一张');
   },
 
 

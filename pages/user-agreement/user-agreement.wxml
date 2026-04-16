@@ -1,0 +1,70 @@
+<scroll-view class="page" scroll-y>
+  <view class="container">
+    <view class="title">微信小程序用户服务协议</view>
+
+    <view class="paragraph">
+      尊敬的用户：
+    </view>
+    <view class="paragraph">
+      欢迎使用本微信小程序（以下简称“小程序”）。为了保障您的权益，明确您与小程序提供者之间的法律关系与责任，特制定本《微信小程序用户服务协议》（以下简称“本协议”）。请您在使用小程序前仔细阅读并理解本协议的全部内容。一旦您开始使用小程序，即表示您已充分阅读、理解并接受本协议的所有条款和条件，同意成为本协议的一方当事人，受本协议约束。如果您不同意本协议中的任何条款，请立即停止使用小程序。
+    </view>
+
+    <view class="section">
+      <view class="section-title">一、定义与范围</view>
+      <view class="item">1. 小程序：指由小程序提供者开发、运行于微信平台上的应用程序，为用户提供特定的服务功能。</view>
+      <view class="item">2. 小程序提供者：指负责开发、维护并提供小程序服务的主体，包括但不限于自然人、法人或其他组织。</view>
+      <view class="item">3. 用户：指通过微信平台访问并使用小程序的个人或实体。</view>
+      <view class="item">4. 服务：指小程序提供的所有功能和服务，包括但不限于信息查询、在线交易、互动娱乐等。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">二、账号注册与使用</view>
+      <view class="item">1. 用户需拥有有效手机号和工信部注册的业余无线电呼号才能登录和使用小程序。</view>
+      <view class="item">2. 用户在注册时应提供真实、准确的信息，并在信息发生变化时及时更新。</view>
+      <view class="item">3. 用户应妥善保管自己的账号和密码，不得将账号转让、出租或以其他方式让他人使用。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">三、服务内容与规则</view>
+      <view class="item">1. 小程序将根据用户需求提供相应的服务，具体服务内容和标准以小程序内展示为准。</view>
+      <view class="item">2. 用户在使用服务过程中应遵守国家法律法规、社会公德及本协议的相关规定。</view>
+      <view class="item">3. 禁止利用小程序进行任何违法、违规活动，包括但不限于发布虚假信息、侵犯他人合法权益等。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">四、知识产权</view>
+      <view class="item">1. 小程序及其包含的所有内容（如文字、图片、音频、视频等）的知识产权归小程序提供者或其合法权利人所有。</view>
+      <view class="item">2. 用户在使用小程序过程中产生的数据和信息，其所有权归属根据相关法律法规及本协议约定确定。</view>
+      <view class="item">3. 未经小程序提供者书面许可，用户不得以任何形式复制、传播、出售或用于其他商业目的。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">五、隐私保护</view>
+      <view class="item">1. 小程序将严格遵守相关法律法规的规定，保护用户的个人信息安全。</view>
+      <view class="item">2. 小程序在收集、使用用户个人信息时，将遵循合法、正当、必要的原则，并事先征得用户同意。</view>
+      <view class="item">3. 用户有权查询、更正或删除自己的个人信息，具体操作方法见小程序内的相关设置。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">六、免责声明</view>
+      <view class="item">1. 小程序提供者不对因网络故障、系统升级等原因导致的服务中断或延迟承担责任。</view>
+      <view class="item">2. 对于用户在使用小程序过程中可能遇到的第三方链接或服务，小程序提供者不承担任何连带责任。</view>
+      <view class="item">3. 如因不可抗力因素导致本协议无法履行，双方互不承担责任。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">七、争议解决</view>
+      <view class="item">1. 本协议的订立、执行和解释以及与本协议有关的争议，均应适用中华人民共和国法律。</view>
+      <view class="item">2. 因本协议引起的或与本协议有关的任何争议，双方应首先通过友好协商解决；协商不成时，任何一方均可向有管辖权的人民法院提起诉讼。</view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">八、其他</view>
+      <view class="item">1. 小程序提供者有权根据实际情况对本协议进行修改，修改后的协议将在小程序内公布，不再单独通知用户。用户继续使用小程序即视为接受修改后的协议。</view>
+      <view class="item">2. 如用户对本协议有任何疑问或建议，可通过小程序内的客服渠道联系我们。</view>
+      <view class="item">3. 本协议自用户首次使用小程序之日起生效，至用户注销账号或小程序终止服务之日止。</view>
+    </view>
+
+    <view class="footer">感谢您对小程序的支持与信任！</view>
+  </view>
+</scroll-view>

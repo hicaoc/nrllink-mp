@@ -38,6 +38,18 @@
           </view> -->
         </view>
       </view>
+      <view class="agreement-row">
+        <checkbox-group bindchange="onAgreementChange">
+          <label class="agreement-label">
+            <checkbox value="agree" checked="{{agreedPolicies}}" color="#07c160" />
+            <text class="agreement-text">我已阅读并同意</text>
+          </label>
+        </checkbox-group>
+        <text class="agreement-link" bindtap="openUserAgreement">《用户服务协议》</text>
+        <text class="agreement-text">和</text>
+        <text class="agreement-link" bindtap="openPrivacyPolicy">《隐私政策》</text>
+      </view>
+
       <button bindtap="login" class="login-btn" hover-class="btn-hover">登录</button>
       <navigator url="/pages/register/register?name={{serverList[serverIndex].name}}&host={{serverList[serverIndex].host}}" class="register-link">
         没有账号？点击注册

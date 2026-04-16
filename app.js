@@ -36,7 +36,7 @@ App({
     messagePage: null,
     serverConfig: {
       name: 'NRLPTT主站',
-      host: 'nrlptt.com',
+      host: 'm.nrlptt.com',
       port: 60050
     },
 

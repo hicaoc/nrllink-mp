@@ -129,7 +129,6 @@ Page({
 
   onHide() {
     this.stopGroupRefreshTimer();
-    this.stopHeartbeat();
   },
 
   onUnload() {
@@ -406,7 +405,7 @@ Page({
   // --- Server Switch Logic ---
 
   loadServerList() {
-    const url = 'https://nrlptt.com/platform/list';
+    const url = 'https://m.nrlptt.com/platform/list';
     wx.request({
       url: url,
       method: 'GET',
