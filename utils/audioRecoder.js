@@ -37,8 +37,8 @@ class AudioRecorder {
     });
   }
 
-  async getNextAudioFrame() { 
-    
+  async getNextAudioFrame() {
+
     let frame;
     if (this.frameQueue.length > 0) {
       frame = this.frameQueue.shift();
@@ -48,17 +48,12 @@ class AudioRecorder {
       });
     }
 
-    if (this.codec === 'g711') {  
-      const encoded = this.g711Codec.encode(new Int16Array(frame));
-      //console.log('getNextAudioFrame', frame ,'encoded:', encoded);
-
-      // if (encoded.length >= 512) {
-      //   return encoded.slice(0, 512);
-      // }
-
-      return encoded;
+    const raw = new Int16Array(frame);
+    if (this.codec === 'g711') {
+      const encoded = this.g711Codec.encode(raw);
+      return { encoded, raw };
     }
-    return frame;
+    return { encoded: new Uint8Array(frame), raw };
   }
 
   start() {

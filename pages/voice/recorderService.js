@@ -57,14 +57,15 @@ export class RecorderService {
             let buffer = new Uint8Array(0);
             while (this.page.data.isTalking) {
                 try {
-                    const data = await this.recorder.getNextAudioFrame();
-                    if (!data) continue;
+                    const frame = await this.recorder.getNextAudioFrame();
+                    if (!frame) continue;
 
-                    this.outgoingVoiceBuffer.push(new Int16Array(data));
+                    const { encoded, raw } = frame;
+                    this.outgoingVoiceBuffer.push(raw); // store raw PCM16 for WAV saving
 
-                    const newBuffer = new Uint8Array(buffer.length + data.length);
+                    const newBuffer = new Uint8Array(buffer.length + encoded.length);
                     newBuffer.set(buffer);
-                    newBuffer.set(new Uint8Array(data), buffer.length);
+                    newBuffer.set(encoded, buffer.length);
                     buffer = newBuffer;
 
                     while (buffer.length >= 160) {

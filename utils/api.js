@@ -382,10 +382,7 @@ export const api = {
 
           // 尝试解析响应数据
           try {
-            resolve({
-              license: JSON.parse(licenseRes.data || '{}'),
-
-            });
+            resolve(JSON.parse(licenseRes.data || '{}'));
           } catch (e) {
             reject(new Error('解析响应数据失败'));
           }
