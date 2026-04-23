@@ -3,8 +3,10 @@ import * as nrl21 from '../../utils/nrl21';
 import * as audioUtils from '../../utils/audioUtils';
 import * as g711 from '../../utils/audioG711';
 import * as nrlHelpers from '../../utils/nrlHelpers';
+const devModels = require('./devmodels');
 
 const app = getApp();
+const devModelMap = new Map(devModels.map(model => [Number(model.id), model.name]));
 
 export class VoiceService {
     constructor(page) {
@@ -21,6 +23,8 @@ export class VoiceService {
             callSign: null,
             ssid: null,
             dmrid: null,
+            devModel: null,
+            devModelName: '',
             startTime: null,
             lastReceiveTime: null
         };
@@ -67,6 +71,8 @@ export class VoiceService {
         // Normalize packet values with same defaults used when storing
         const packetCallSign = packet.callSign || '未知';
         const packetSSID = packet.ssid || '00';
+        const packetDevModel = Number(packet.devModel || 0);
+        const packetDevModelName = this.getDevModelName(packetDevModel);
 
         // Detect end of previous transmission using local state (not page.data)
         if (this.currentReceiving.isReceiving) {
@@ -95,6 +101,8 @@ export class VoiceService {
                 callSign: packetCallSign,
                 ssid: packetSSID,
                 dmrid: packet.dmrid || '',
+                devModel: packetDevModel,
+                devModelName: packetDevModelName,
                 startTime: now,
                 lastReceiveTime: now
             };
@@ -106,6 +114,8 @@ export class VoiceService {
                 CallSign: this.currentReceiving.callSign,
                 SSID: this.currentReceiving.ssid,
                 DMRID: this.currentReceiving.dmrid,
+                DevModelName: this.currentReceiving.devModelName,
+                ReceivingTime: nrlHelpers.formatLastVoiceTime(now),
                 lastVoiceTime: now,
                 duration: 0
             });
@@ -203,6 +213,8 @@ export class VoiceService {
         const CallSign = this.currentReceiving.callSign;
         const SSID = this.currentReceiving.ssid;
         const DMRID = this.currentReceiving.dmrid;
+        const DevModel = this.currentReceiving.devModel;
+        const DevModelName = this.currentReceiving.devModelName;
 
         // Reset receiving state
         this.currentReceiving = {
@@ -210,6 +222,8 @@ export class VoiceService {
             callSign: null,
             ssid: null,
             dmrid: null,
+            devModel: null,
+            devModelName: '',
             startTime: null,
             lastReceiveTime: null
         };
@@ -241,6 +255,8 @@ export class VoiceService {
                 callsign: CallSign,
                 ssid: SSID,
                 dmrid: DMRID,
+                devModel: DevModel,
+                devModelName: DevModelName,
                 qth: qth ? qth.qth + " " + qth.name : '无位置数据',
                 duration: finalDuration,
                 filePath: filePath,
@@ -296,6 +312,10 @@ export class VoiceService {
             subType: 'text',
             body: content
         };
+    }
+
+    getDevModelName(devModelId) {
+        return devModelMap.get(Number(devModelId)) || `未知(${devModelId})`;
     }
 
     /**

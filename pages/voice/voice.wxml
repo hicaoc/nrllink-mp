@@ -54,6 +54,7 @@
                 <text class="sender-name">{{item.callsign}}-{{item.ssid}}</text>
                 <text wx:if="{{item.dmrid}}" class="sender-dmrid">({{item.dmrid}})</text>
                 <text class="sender-time">{{item.timestamp}}</text>
+                <text wx:if="{{item.devModelName}}" class="sender-dev-model">{{item.devModelName}}</text>
               </view>
               <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
             </view>
@@ -103,7 +104,12 @@
         <view class="avatar-sm">{{CallSign[0]}}</view>
         <view class="bubble-container">
           <view class="sender-info">
-            <text class="sender-name">{{CallSign}}-{{SSID}}</text>
+            <view class="sender-main">
+              <text class="sender-name">{{CallSign}}-{{SSID}}</text>
+              <text wx:if="{{DMRID}}" class="sender-dmrid">({{DMRID}})</text>
+              <text class="sender-time">{{ReceivingTime}}</text>
+              <text wx:if="{{DevModelName}}" class="sender-dev-model">{{DevModelName}}</text>
+            </view>
             <text class="status-receiving">正在接收...</text>
           </view>
           <view class="bubble voice-bubble receiving" style="width: {{receivingBubbleWidth}}%;">
@@ -160,7 +166,12 @@
         >
           <view class="group-card-header">
             <text class="group-card-name">{{item.displayGroupName}}</text>
-            <text class="group-card-check" wx:if="{{item.id === currentGroupId}}">✓</text>
+            <view class="group-card-stats">
+              <text class="group-card-online">{{item.online_dev_number || 0}}</text>
+              <text class="group-card-separator">/</text>
+              <text class="group-card-total">{{item.total_dev_number || 0}}</text>
+            </view>
+            <text class="group-card-check {{item.id === currentGroupId ? '' : 'placeholder'}}">✓</text>
           </view>
         </view>
       </scroll-view>
@@ -189,7 +200,12 @@
             >
               <view class="server-card-header">
                 <text class="server-card-name">{{item.name}}</text>
-                <text class="server-card-check" wx:if="{{tempServerIndex === index}}">✓</text>
+                <view class="server-card-stats">
+                  <text class="server-card-online">{{item.online || 0}}</text>
+                  <text class="server-card-separator">/</text>
+                  <text class="server-card-total">{{item.total || 0}}</text>
+                </view>
+                <text class="server-card-check {{tempServerIndex === index ? '' : 'placeholder'}}">✓</text>
               </view>
               <text class="server-card-detail">{{item.host}}</text>
             </view>

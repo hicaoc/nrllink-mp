@@ -90,6 +90,7 @@
   padding: 8rpx 16rpx;
   border-radius: 16rpx;
   border: 1px solid #edf0f2;
+  max-width: 250rpx;
 }
 
 .server-label.clickable {
@@ -200,16 +201,25 @@
 .server-info-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .server-name {
-  font-size: 26rpx;
+  display: block;
+  max-width: 210rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 18rpx;
   color: #333;
   font-weight: 600;
 }
 
 .server-addr {
-  font-size: 16rpx;
+  display: block;
+  max-width: 210rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13rpx;
   color: #7f8c8d;
   font-family: monospace;
 }
@@ -267,7 +277,7 @@
 }
 
 .bubble-container {
-  max-width: 72%;
+  max-width: 84%;
   display: flex;
   flex-direction: column;
 }
@@ -280,12 +290,14 @@
   margin-bottom: 8rpx;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
 }
 
 .sender-main {
   display: flex;
   align-items: baseline;
   margin-bottom: 4rpx;
+  max-width: 100%;
 }
 
 .sender-name {
@@ -307,15 +319,31 @@
   color: #bdc3c7;
 }
 
+.sender-dev-model {
+  font-size: 18rpx;
+  color: #95a5a6;
+  background: rgba(149, 165, 166, 0.12);
+  padding: 2rpx 8rpx;
+  border-radius: 10rpx;
+  margin-left: 8rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .sender-qth {
+  display: block;
   font-size: 20rpx;
   color: #7f8c8d;
   background: rgba(255, 255, 255, 0.7);
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
   align-self: flex-start;
-  max-width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
   border: 1px solid rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .bubble {
@@ -858,17 +886,50 @@
   font-weight: 600;
   color: #333;
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 16rpx;
 }
 
+.server-card-stats {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  min-width: 108rpx;
+  margin-right: 14rpx;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.server-card-online {
+  font-size: 24rpx;
+  color: #2ecc71;
+}
+
+.server-card-separator {
+  font-size: 21rpx;
+  color: #95a5a6;
+  margin: 0 4rpx;
+}
+
+.server-card-total {
+  font-size: 24rpx;
+  color: #7f8c8d;
+}
+
 .server-card-check {
   font-size: 26rpx;
   color: #06a94d;
   font-weight: bold;
+  width: 28rpx;
   flex-shrink: 0;
+  text-align: right;
+}
+
+.server-card-check.placeholder {
+  visibility: hidden;
 }
 
 .server-card-detail {
@@ -913,14 +974,48 @@
   font-weight: 600;
   color: #333;
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 20rpx;
 }
 
+.group-card-stats {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  min-width: 96rpx;
+  margin-right: 18rpx;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.group-card-online {
+  font-size: 27rpx;
+  color: #2ecc71;
+}
+
+.group-card-separator {
+  font-size: 24rpx;
+  color: #95a5a6;
+  margin: 0 4rpx;
+}
+
+.group-card-total {
+  font-size: 27rpx;
+  color: #7f8c8d;
+}
+
 .group-card-check {
   font-size: 32rpx;
   color: #06a94d;
   font-weight: bold;
+  width: 32rpx;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.group-card-check.placeholder {
+  visibility: hidden;
 }

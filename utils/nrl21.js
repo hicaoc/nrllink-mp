@@ -94,6 +94,7 @@ export function decodePacket(data) {
     type: byteArray[20],
     callSign: callSignStr,
     ssid: byteArray[30],
+    devModel: byteArray[31],
     dmrid: dmrid,
     data: byteArray.slice(48),
   };

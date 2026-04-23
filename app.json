@@ -12,7 +12,7 @@
     "pages/webview/webview"
   ],
   "window": {
-    "navigationBarTitleText": "NRL互联1.7.22"
+    "navigationBarTitleText": "NRL互联1.7.23"
   },
   "tabBar": {
     "list": [
