@@ -9,6 +9,8 @@ import { RecorderService } from './recorderService';
 
 const { updateAvatar, updateDevice } = require('../../utils/api');
 const app = getApp();
+const HEARTBEAT_INTERVAL_MS = 2000;
+const HEARTBEAT_STALE_MS = HEARTBEAT_INTERVAL_MS * 2 + 1000;
 
 Page({
   data: {
@@ -64,14 +66,11 @@ Page({
 
     app.registerPage(this);
 
-    // Setup MDC and Audio Packets
-    await this.initMdcAndUdp();
-
-    audio.initWebAudio();
-    audio.resume();
+    // Setup MDC, UDP, heartbeat and audio once for the page instance.
+    await this.ensureVoiceConnection();
+    this.ensureAudioRunning();
 
     // Start background tasks
-    this.startHeartbeat();
     this.connectionCheckTimer = setInterval(() => this.checkConnection(), 2000);
     this.loadAvailableGroups();
     this.loadServerList();
@@ -111,20 +110,88 @@ Page({
     });
   },
 
+  async ensureVoiceConnection({ recreateUdp = false } = {}) {
+    if (this.voiceConnectionPromise) {
+      await this.voiceConnectionPromise;
+      return;
+    }
+
+    this.voiceConnectionPromise = (async () => {
+      if (recreateUdp && app.globalData.udpClient) {
+        this.closeUdpClient();
+      }
+
+      if (!app.globalData.udpClient || !this.heartbeatBuffer || !this.audioPacket) {
+        await this.initMdcAndUdp();
+      }
+
+      this.ensureHeartbeat();
+    })();
+
+    try {
+      await this.voiceConnectionPromise;
+    } finally {
+      this.voiceConnectionPromise = null;
+    }
+  },
+
   async onShow() {
     wx.setKeepScreenOn({ keepScreenOn: true });
 
-    // Re-initialize UDP connection (may have been closed by system during background)
-    if (app.globalData.udpClient) {
-      app.globalData.udpClient.close();
-      app.globalData.udpClient = null;
-    }
-    await this.initMdcAndUdp();
-
-    audio.resume();
-    this.startHeartbeat();
+    await this.recoverVoiceRuntime({ clearAudio: false });
     this.refreshData();
     this.startGroupRefreshTimer();
+  },
+
+  async handleAppShow() {
+    await this.recoverVoiceRuntime({ clearAudio: true });
+  },
+
+  handleAppHide() {
+    this.clearAudioBuffer();
+  },
+
+  async recoverVoiceRuntime({ clearAudio = false } = {}) {
+    if (clearAudio) {
+      this.clearAudioBuffer();
+    }
+
+    const recoveryStartedAt = Date.now();
+    const shouldRecreateUdp = this.isHeartbeatStale();
+
+    await this.ensureVoiceConnection({ recreateUdp: shouldRecreateUdp });
+    this.ensureAudioRunning();
+    this.scheduleForegroundHeartbeatCheck(recoveryStartedAt);
+  },
+
+  scheduleForegroundHeartbeatCheck(recoveryStartedAt) {
+    if (this.foregroundHeartbeatCheckTimer) {
+      clearTimeout(this.foregroundHeartbeatCheckTimer);
+    }
+
+    this.foregroundHeartbeatCheckTimer = setTimeout(async () => {
+      this.foregroundHeartbeatCheckTimer = null;
+
+      const hasForegroundHeartbeatReply =
+        this.data.lastMessageTime && this.data.lastMessageTime >= recoveryStartedAt;
+
+      if (!hasForegroundHeartbeatReply) {
+        this.closeUdpClient();
+        this.stopHeartbeat();
+        await this.ensureVoiceConnection();
+      }
+    }, 3000);
+  },
+
+  closeUdpClient() {
+    if (!app.globalData.udpClient) return;
+
+    try {
+      app.globalData.udpClient.close();
+    } catch (err) {
+      console.warn('UDP close failed:', err);
+    }
+    app.globalData.udpClient = null;
   },
 
   onHide() {
@@ -133,6 +200,10 @@ Page({
 
   onUnload() {
     this.stopGroupRefreshTimer();
+    if (this.foregroundHeartbeatCheckTimer) {
+      clearTimeout(this.foregroundHeartbeatCheckTimer);
+      this.foregroundHeartbeatCheckTimer = null;
+    }
     this.stopHeartbeat();
     if (this.connectionCheckTimer) clearInterval(this.connectionCheckTimer);
   },
@@ -174,12 +245,54 @@ Page({
   },
 
   startHeartbeat() {
+    if (!this.heartbeatBuffer) return;
+
     this.stopHeartbeat();
+    this.sendHeartbeat();
     app.globalData.heartbeatTimer = setInterval(() => {
-      if (app.globalData.udpClient) {
-        app.globalData.udpClient.send(this.heartbeatBuffer);
+      this.sendHeartbeat();
+    }, HEARTBEAT_INTERVAL_MS);
+  },
+
+  sendHeartbeat() {
+    if (app.globalData.udpClient && this.heartbeatBuffer) {
+      const sent = app.globalData.udpClient.send(this.heartbeatBuffer);
+      if (sent === true) {
+        app.globalData.lastHeartbeatSentAt = Date.now();
       }
-    }, 2000);
+    }
+  },
+
+  ensureHeartbeat() {
+    if (!this.isHeartbeatRunning()) {
+      this.startHeartbeat();
+    }
+  },
+
+  isHeartbeatRunning() {
+    if (!app.globalData.heartbeatTimer) return false;
+    if (!app.globalData.lastHeartbeatSentAt) return false;
+
+    return !this.isHeartbeatStale();
+  },
+
+  isHeartbeatStale() {
+    if (!app.globalData.lastHeartbeatSentAt) return true;
+
+    return Date.now() - app.globalData.lastHeartbeatSentAt > HEARTBEAT_STALE_MS;
+  },
+
+  ensureAudioRunning() {
+    audio.initWebAudio();
+    if (!audio.isRunning()) {
+      audio.resume();
+    }
+  },
+
+  clearAudioBuffer() {
+    if (audio.clearBuffer) {
+      audio.clearBuffer();
+    }
   },
 
   stopHeartbeat() {
@@ -187,6 +300,7 @@ Page({
       clearInterval(app.globalData.heartbeatTimer);
       app.globalData.heartbeatTimer = null;
     }
+    app.globalData.lastHeartbeatSentAt = 0;
   },
 
   checkConnection() {
@@ -530,20 +644,14 @@ Page({
         });
 
         // 5. Re-initialize Connection
-        if (app.globalData.udpClient) {
-          app.globalData.udpClient.close();
-          app.globalData.udpClient = null;
-        }
+        this.closeUdpClient();
 
         // Clear timers
-        if (app.globalData.heartbeatTimer) {
-          clearInterval(app.globalData.heartbeatTimer);
-          app.globalData.heartbeatTimer = null;
-        }
+        this.stopHeartbeat();
 
         // Re-init
         await this.initMdcAndUdp();
-        audio.resume(); // Ensure audio context is running after switch
+        this.ensureAudioRunning();
         this.startHeartbeat();
         this.loadAvailableGroups(); // Reload groups for new server
         await this.refreshData();

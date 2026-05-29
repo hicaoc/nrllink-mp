@@ -24,6 +24,8 @@ App({
     callHistory: [],
     chatLogs: [], // Combined voice and text history
     heartbeatTimer: null,
+    lastHeartbeatSentAt: 0,
+    isAppInBackground: false,
 
     recoderStartTime: null,
     availableGroups: null,
@@ -225,13 +227,25 @@ App({
   },
 
   onShow() {
+    const wasInBackground = this.globalData.isAppInBackground;
+    this.globalData.isAppInBackground = false;
+
+    if (wasInBackground && this.globalData.voicePage && this.globalData.voicePage.handleAppShow) {
+      this.globalData.voicePage.handleAppShow().catch((err) => {
+        console.error('Voice foreground restore failed:', err);
+      });
+    }
     // if (this.globalData.udpClient) {
     //   this.globalData.udpClient.reconnect();
     // }
   },
 
   onHide() {
+    this.globalData.isAppInBackground = true;
 
+    if (this.globalData.voicePage && this.globalData.voicePage.handleAppHide) {
+      this.globalData.voicePage.handleAppHide();
+    }
   },
 
   formatTime(timeStr) {

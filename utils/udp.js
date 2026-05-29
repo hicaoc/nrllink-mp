@@ -30,8 +30,10 @@ export class UDPClient {
         port: this.port,
         message: data
       });
+      return true;
     } catch (e) {
       console.error('UDP发送失败:', e);
+      return false;
     }
   }
 

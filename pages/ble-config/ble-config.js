@@ -73,6 +73,8 @@ Page({
     devices: [],            // { deviceId, name, RSSI }
     connectedName: '',
     busy: false,
+    scanningWifi: false,    // 正在让设备扫描周边 WiFi
+    wifiList: [],           // 设备扫描到的 WiFi：{ ssid, rssi }
     log: [],                // 设备回复日志
     form: {
       wifi_ssid: '',
@@ -92,6 +94,7 @@ Page({
   _serviceId: '',
   _rxBuffer: '',            // notify 行缓冲
   _waiters: [],             // 等待 OK/ERR 的回调队列
+  _scanResults: null,       // WiFi 扫描累积（非 null 时表示扫描进行中）
 
   onLoad() {
     this._onCharChange = this._onCharChange.bind(this);
@@ -186,8 +189,9 @@ Page({
 
       // 部分机型刚开启 notify 时会漏掉紧随其后的第一包，稍作等待再读取。
       await new Promise((r) => setTimeout(r, 400));
-      // 自动读取当前配置。
-      this.loadConfig();
+      // 先读当前配置，再读取设备已缓存的 WiFi 列表（串行，避免回复交叠）。
+      await this.loadConfig();
+      await this.loadWifiList();
     } catch (err) {
       console.error('connect failed', err);
       this.setData({ phase: 'idle', busy: false, statusText: '连接失败：' + (err && err.errMsg || err) });
@@ -247,6 +251,14 @@ Page({
     if (eq > 0 && !/^(OK|ERR)/.test(line)) {
       const key = line.slice(0, eq).trim().toUpperCase();
       const val = line.slice(eq + 1);
+      // WiFi 扫描结果：WIFI=<ssid>,<rssi>（SSID 可能含逗号，rssi 取最后一个逗号之后）
+      if (key === 'WIFI' && this._scanResults) {
+        const c = val.lastIndexOf(',');
+        const ssid = c >= 0 ? val.slice(0, c) : val;
+        const rssi = c >= 0 ? parseInt(val.slice(c + 1), 10) : 0;
+        if (ssid) this._scanResults.push({ ssid, rssi: isNaN(rssi) ? 0 : rssi });
+        return;
+      }
       const f = {};
       if (key === 'WIFI_SSID') f['form.wifi_ssid'] = val;
       else if (key === 'SERVER_HOST') f['form.server_host'] = val;
@@ -340,6 +352,53 @@ Page({
     this.setData({ ['form.' + field]: e.detail.value });
   },
 
+  // 向设备请求 WiFi 列表：cmd='LIST' 读设备已缓存的扫描结果（秒回），
+  // cmd='SCAN' 触发设备重新扫描（约 1.5-2s）。两者都回传 WIFI=ssid,rssi。
+  async _requestWifi(cmd, timeout) {
+    if (!this._rxCharId) return -1;
+    this._scanResults = [];
+    try {
+      await this._sendCommand(cmd, { timeout });
+      const total = this._mergeWifi(this._scanResults);
+      return total;
+    } finally {
+      this._scanResults = null;
+    }
+  },
+
+  // 连接后自动读取设备已有的 WiFi 列表（进入 AP 配网时已扫描过一份）。
+  async loadWifiList() {
+    if (!this._rxCharId) return;
+    try {
+      await this._requestWifi('LIST', 4000);
+    } catch (e) {
+      // 旧固件不支持 LIST 会返回 ERR/超时，忽略即可，用户可手动扫描。
+    }
+  },
+
+  // 重新扫描：让设备重新扫描周边 WiFi。
+  async scanWifi() {
+    if (this.data.busy || this.data.scanningWifi) return;
+    if (!this._rxCharId) { wx.showToast({ title: '请先连接设备', icon: 'none' }); return; }
+    this.setData({ scanningWifi: true, statusText: '设备扫描 WiFi 中…' });
+    try {
+      const total = await this._requestWifi('SCAN', 10000);
+      this.setData({ statusText: total > 0 ? ('共 ' + total + ' 个网络') : '未扫描到 WiFi' });
+      if (total === 0) wx.showToast({ title: '设备未扫描到 WiFi', icon: 'none' });
+    } catch (e) {
+      this.setData({ statusText: '扫描失败：' + e.message });
+      wx.showToast({ title: '扫描失败', icon: 'none' });
+    } finally {
+      this.setData({ scanningWifi: false });
+    }
+  },
+
+  // 从扫描列表中选择一个 SSID 填入表单。
+  selectWifi(e) {
+    const ssid = e.currentTarget.dataset.ssid;
+    if (ssid) this.setData({ 'form.wifi_ssid': ssid });
+  },
+
   _validate() {
     const f = this.data.form;
     if (!f.wifi_ssid) return 'WiFi 名称不能为空';
@@ -421,5 +480,21 @@ Page({
     return new Promise((resolve, reject) => {
       wx[method](Object.assign({}, options, { success: resolve, fail: reject }));
     });
+  },
+
+  // 合并若干 { ssid, rssi } 进 wifiList：按 ssid 去重（保留信号更强者），
+  // 按 rssi 降序，重算显示用 label。
+  _mergeWifi(items) {
+    const map = {};
+    (this.data.wifiList || []).forEach((w) => { map[w.ssid] = w.rssi; });
+    (items || []).forEach((w) => {
+      if (!w.ssid) return;
+      if (map[w.ssid] === undefined || w.rssi > map[w.ssid]) map[w.ssid] = w.rssi;
+    });
+    const list = Object.keys(map)
+      .map((ssid) => ({ ssid, rssi: map[ssid], label: map[ssid] + ' dBm' }))
+      .sort((a, b) => b.rssi - a.rssi);
+    this.setData({ wifiList: list });
+    return list.length;
   },
 });

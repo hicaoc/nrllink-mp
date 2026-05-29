@@ -16,6 +16,7 @@ const BUFFER_SIZE = 4096;
 // #endif
 
 let pcmBuffer = new Float32Array(0);
+let isWebAudioInitialized = false;
 
 // WebAudio 资源
 const webAudioContext = wx.createWebAudioContext();
@@ -44,6 +45,7 @@ const g711Codec = new g711.G711Codec();
 
 // 调试 Web Audio 初始化
 function initWebAudio() {
+    if (isWebAudioInitialized) return;
 
     try {
 
@@ -125,6 +127,7 @@ function initWebAudio() {
             }
         };
 
+        isWebAudioInitialized = true;
         console.log("Web Audio initialized successfully.");
     } catch (err) {
         console.error("Failed to initialize Web Audio:", err);
@@ -140,13 +143,27 @@ function suspend() {
     pcmBuffer = new Float32Array(0);
 }
 
+function clearBuffer() {
+    pcmBuffer = new Float32Array(0);
+}
+
 function resume() {
+    if (isRunning()) return;
+
     webAudioContext.resume().then(() => {
         console.log("AudioContext resume .");
     }).catch((err) => {
         console.error("Failed to resume AudioContext:", err);
     });
     pcmBuffer = new Float32Array(0);
+}
+
+function getState() {
+    return webAudioContext.state;
+}
+
+function isRunning() {
+    return webAudioContext.state === 'running';
 }
 
 
@@ -202,4 +219,7 @@ module.exports = {
     playPCM,
     suspend,
     resume,
+    clearBuffer,
+    getState,
+    isRunning,
 };

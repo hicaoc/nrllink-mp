@@ -40,8 +40,20 @@
 
       <view class="field">
         <text class="label">WiFi 名称</text>
-        <input class="input" placeholder="WiFi SSID" value="{{form.wifi_ssid}}"
-               data-field="wifi_ssid" bindinput="onInput" />
+        <view class="ssid-row">
+          <input class="input ssid-input" placeholder="WiFi SSID" value="{{form.wifi_ssid}}"
+                 data-field="wifi_ssid" bindinput="onInput" />
+          <button class="scan-btn" size="mini" loading="{{scanningWifi}}"
+                  disabled="{{scanningWifi || busy}}" bindtap="scanWifi">重新扫描</button>
+        </view>
+      </view>
+
+      <view class="wifi-list" wx:if="{{wifiList.length}}">
+        <view class="wifi-item" wx:for="{{wifiList}}" wx:key="ssid"
+              data-ssid="{{item.ssid}}" bindtap="selectWifi">
+          <text class="wifi-ssid {{item.ssid === form.wifi_ssid ? 'wifi-ssid-sel' : ''}}">{{item.ssid}}</text>
+          <text class="wifi-rssi">{{item.rssi}} dBm</text>
+        </view>
       </view>
 
       <view class="field">
