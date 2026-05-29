@@ -1,0 +1,85 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* 状态 */
+.status-card { padding: 14px 16px; }
+.status-row { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot-on { background: #19be6b; }
+.dot-off { background: #bbb; }
+.dot-wait { background: #ff9900; }
+.status-text { font-size: 15px; color: #333; }
+.tip { margin-top: 8px; font-size: 12px; color: #999; line-height: 1.5; }
+
+/* 设备列表 */
+.device-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.device-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px; background: #f8f9fa; border-radius: 8px;
+}
+.device-info { display: flex; flex-direction: column; gap: 2px; }
+.device-name { font-size: 15px; color: #333; font-weight: 500; }
+.device-id { font-size: 11px; color: #999; }
+.device-rssi { font-size: 12px; color: #666; flex: none; }
+
+/* 表单 */
+.field { margin-bottom: 14px; }
+.label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+.input {
+  width: 100%; box-sizing: border-box;
+  height: 42px; line-height: 42px;
+  padding: 0 12px;
+  background: #f5f6f8; border-radius: 8px;
+  font-size: 15px; color: #333;
+}
+
+/* 按钮 */
+.btn-row { display: flex; gap: 12px; margin-top: 6px; }
+.btn-row .ghost-btn, .btn-row .primary-btn { flex: 1; }
+.primary-btn {
+  background: #007bff; color: #fff; border-radius: 8px;
+  font-size: 15px; border: none; line-height: 44px;
+}
+.primary-btn[disabled] { background: #9cc6f5; color: #fff; }
+.ghost-btn {
+  background: #fff; color: #007bff; border: 1px solid #007bff;
+  border-radius: 8px; font-size: 15px; line-height: 42px;
+}
+.warn-btn {
+  margin-top: 12px;
+  background: #ff9900; color: #fff; border-radius: 8px;
+  font-size: 15px; border: none; line-height: 44px;
+}
+.warn-btn[disabled] { background: #ffcc80; }
+.link-btn {
+  margin-top: 8px; background: transparent; color: #999;
+  font-size: 14px; border: none; line-height: 36px;
+}
+
+/* 日志 */
+.log-box {
+  max-height: 200px;
+  background: #0f1419; border-radius: 8px; padding: 10px;
+}
+.log-line {
+  font-family: monospace; font-size: 12px; color: #6ee787;
+  line-height: 1.6; word-break: break-all;
+}

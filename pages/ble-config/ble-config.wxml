@@ -1,0 +1,101 @@
+<view class="page-container">
+
+  <!-- 状态 -->
+  <view class="card status-card">
+    <view class="status-row">
+      <view class="dot {{phase === 'connected' ? 'dot-on' : (phase === 'idle' ? 'dot-off' : 'dot-wait')}}"></view>
+      <text class="status-text">{{statusText}}</text>
+    </view>
+    <view class="tip" wx:if="{{phase !== 'connected'}}">
+      请先让 ESP32 设备上电；设备未连上 WiFi 时会广播蓝牙（名称含 {{'NRL-ESP32-CFG'}}）。重新配置网络可以长按boot键5秒进入配网模式。。
+    </view>
+  </view>
+
+  <!-- 未连接：扫描 + 设备列表 -->
+  <block wx:if="{{phase !== 'connected'}}">
+    <view class="card">
+      <button class="primary-btn" loading="{{scanning}}" disabled="{{scanning}}" bindtap="startScan">
+        {{scanning ? '搜索中…' : '搜索设备'}}
+      </button>
+
+      <view class="device-list" wx:if="{{devices.length}}">
+        <view class="device-item"
+              wx:for="{{devices}}" wx:key="deviceId"
+              data-id="{{item.deviceId}}" data-name="{{item.name}}"
+              bindtap="connectDevice">
+          <view class="device-info">
+            <text class="device-name">{{item.name}}</text>
+            <text class="device-id">{{item.deviceId}}</text>
+          </view>
+          <view class="device-rssi">{{item.RSSI}} dBm</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 已连接：配置表单 -->
+  <block wx:if="{{phase === 'connected'}}">
+    <view class="card">
+      <view class="card-title">网络配置</view>
+
+      <view class="field">
+        <text class="label">WiFi 名称</text>
+        <input class="input" placeholder="WiFi SSID" value="{{form.wifi_ssid}}"
+               data-field="wifi_ssid" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">WiFi 密码</text>
+        <input class="input" placeholder="留空表示不修改" password value="{{form.wifi_pass}}"
+               data-field="wifi_pass" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">服务器地址</text>
+        <input class="input" placeholder="域名或 IP" value="{{form.server_host}}"
+               data-field="server_host" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">服务器端口</text>
+        <input class="input" type="number" placeholder="1-65535" value="{{form.server_port}}"
+               data-field="server_port" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">信道</text>
+        <input class="input" type="number" placeholder="0-7" value="{{form.channel}}"
+               data-field="channel" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">呼号</text>
+        <input class="input" placeholder="Callsign" value="{{form.callsign}}"
+               data-field="callsign" bindinput="onInput" />
+      </view>
+
+      <view class="field">
+        <text class="label">呼号 SSID</text>
+        <input class="input" type="number" placeholder="0-255" value="{{form.call_ssid}}"
+               data-field="call_ssid" bindinput="onInput" />
+      </view>
+
+      <view class="btn-row">
+        <button class="ghost-btn" disabled="{{busy}}" bindtap="loadConfig">重新读取</button>
+        <button class="primary-btn" loading="{{busy}}" disabled="{{busy}}" bindtap="saveConfig">保存</button>
+      </view>
+      <button class="warn-btn" disabled="{{busy}}" bindtap="saveAndReboot">保存并重启</button>
+      <button class="link-btn" bindtap="disconnect">断开连接</button>
+    </view>
+  </block>
+
+  <!-- 设备回复日志 -->
+  <view class="card" wx:if="{{log.length}}">
+    <view class="card-title">设备日志</view>
+    <scroll-view class="log-box" scroll-y scroll-into-view="log-end">
+      <view class="log-line" wx:for="{{log}}" wx:key="index">{{item}}</view>
+      <view id="log-end"></view>
+    </scroll-view>
+  </view>
+
+</view>

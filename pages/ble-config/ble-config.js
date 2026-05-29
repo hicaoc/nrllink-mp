@@ -1,0 +1,425 @@
+// BLE 配网页面：通过蓝牙连接 NRL-ESP32-CFG 设备，读取/写入 WiFi 与服务器配置。
+//
+// 设备端协议（Nordic UART Service 风格，见固件 src/lib/ble_config.cpp）：
+//   Service : 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
+//   RX(写)  : 6E400002-...  手机写命令，命令以 \n 结尾
+//   TX(通知): 6E400003-...  设备以 notify 逐行回复（如 WIFI_SSID=xxx / OK SET / ERR SET）
+// 命令：GET / SET KEY=VALUE / SAVE / APPLY / REBOOT / RESET_NET
+
+const TARGET_NAME = 'NRL-ESP32-CFG';
+const SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E';
+const RX_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'; // write
+const TX_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'; // notify
+
+// ---- 编解码工具 ----------------------------------------------------------
+function strToBytes(str) {
+  // UTF-8 编码（SSID/密码可能含中文）。
+  const bytes = [];
+  for (let i = 0; i < str.length; i++) {
+    let c = str.charCodeAt(i);
+    if (c < 0x80) {
+      bytes.push(c);
+    } else if (c < 0x800) {
+      bytes.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f));
+    } else if (c >= 0xd800 && c <= 0xdbff) {
+      // 代理对
+      const c2 = str.charCodeAt(++i);
+      c = 0x10000 + ((c & 0x3ff) << 10) + (c2 & 0x3ff);
+      bytes.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f),
+                 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+    } else {
+      bytes.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+    }
+  }
+  return bytes;
+}
+
+function bytesToStr(bytes) {
+  // UTF-8 解码。
+  let out = '';
+  for (let i = 0; i < bytes.length;) {
+    const b = bytes[i];
+    if (b < 0x80) { out += String.fromCharCode(b); i += 1; }
+    else if (b >= 0xf0) {
+      const cp = ((b & 0x07) << 18) | ((bytes[i + 1] & 0x3f) << 12) |
+                 ((bytes[i + 2] & 0x3f) << 6) | (bytes[i + 3] & 0x3f);
+      const u = cp - 0x10000;
+      out += String.fromCharCode(0xd800 + (u >> 10), 0xdc00 + (u & 0x3ff));
+      i += 4;
+    } else if (b >= 0xe0) {
+      out += String.fromCharCode(((b & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f));
+      i += 3;
+    } else {
+      out += String.fromCharCode(((b & 0x1f) << 6) | (bytes[i + 1] & 0x3f));
+      i += 2;
+    }
+  }
+  return out;
+}
+
+function ab2str(buffer) {
+  return bytesToStr(Array.from(new Uint8Array(buffer)));
+}
+
+function normUuid(u) {
+  return (u || '').toUpperCase();
+}
+
+Page({
+  data: {
+    phase: 'idle',          // idle | scanning | connecting | connected
+    statusText: '未连接',
+    scanning: false,
+    devices: [],            // { deviceId, name, RSSI }
+    connectedName: '',
+    busy: false,
+    log: [],                // 设备回复日志
+    form: {
+      wifi_ssid: '',
+      wifi_pass: '',
+      server_host: '',
+      server_port: '',
+      channel: '',
+      callsign: '',
+      call_ssid: '',
+    },
+  },
+
+  // 运行时（不放 data，避免频繁 setData）
+  _deviceId: '',
+  _rxCharId: '',
+  _txCharId: '',
+  _serviceId: '',
+  _rxBuffer: '',            // notify 行缓冲
+  _waiters: [],             // 等待 OK/ERR 的回调队列
+
+  onLoad() {
+    this._onCharChange = this._onCharChange.bind(this);
+    this._onConnState = this._onConnState.bind(this);
+  },
+
+  onUnload() {
+    this._teardown();
+  },
+
+  // ---- 扫描 --------------------------------------------------------------
+  async startScan() {
+    if (this.data.scanning) return;
+    this.setData({ devices: [], scanning: true, phase: 'scanning', statusText: '正在打开蓝牙…' });
+    try {
+      await this._wx('openBluetoothAdapter');
+    } catch (e) {
+      this.setData({ scanning: false, phase: 'idle', statusText: '蓝牙不可用，请检查手机蓝牙是否开启' });
+      wx.showToast({ title: '请开启手机蓝牙', icon: 'none' });
+      return;
+    }
+
+    wx.onBluetoothDeviceFound((res) => {
+      const updates = {};
+      (res.devices || []).forEach((d) => {
+        const name = d.name || d.localName || '';
+        if (name.indexOf(TARGET_NAME) === -1) return;
+        const list = this.data.devices.slice();
+        if (!list.find((x) => x.deviceId === d.deviceId)) {
+          list.push({ deviceId: d.deviceId, name, RSSI: d.RSSI });
+          updates.devices = list;
+        }
+      });
+      if (updates.devices) this.setData(updates);
+    });
+
+    try {
+      await this._wx('startBluetoothDevicesDiscovery', {
+        allowDuplicatesKey: false,
+        powerLevel: 'high',
+      });
+      this.setData({ statusText: '正在搜索 ' + TARGET_NAME + '…' });
+    } catch (e) {
+      this.setData({ scanning: false, phase: 'idle', statusText: '启动搜索失败' });
+      return;
+    }
+
+    // 12 秒后自动停止搜索。
+    this._scanTimer = setTimeout(() => this.stopScan(), 12000);
+  },
+
+  async stopScan() {
+    if (this._scanTimer) { clearTimeout(this._scanTimer); this._scanTimer = null; }
+    try { await this._wx('stopBluetoothDevicesDiscovery'); } catch (e) {}
+    const text = this.data.devices.length ? '搜索完成，请选择设备' : '未找到设备，请确认设备已上电且未连上 WiFi';
+    this.setData({ scanning: false, statusText: this.data.phase === 'connected' ? this.data.statusText : text });
+  },
+
+  // ---- 连接 --------------------------------------------------------------
+  async connectDevice(e) {
+    const deviceId = e.currentTarget.dataset.id;
+    const name = e.currentTarget.dataset.name || TARGET_NAME;
+    await this.stopScan();
+    this.setData({ phase: 'connecting', statusText: '正在连接…', busy: true });
+
+    try {
+      await this._wx('createBLEConnection', { deviceId, timeout: 10000 });
+      this._deviceId = deviceId;
+
+      wx.onBLEConnectionStateChange(this._onConnState);
+
+      // 尽量协商更大的 MTU（Android 有效；iOS 自动协商，失败可忽略）。
+      try { await this._wx('setBLEMTU', { deviceId, mtu: 185 }); } catch (e2) {}
+
+      await this._discover(deviceId);
+
+      // 订阅 notify。
+      wx.onBLECharacteristicValueChange(this._onCharChange);
+      await this._wx('notifyBLECharacteristicValueChange', {
+        deviceId,
+        serviceId: this._serviceId,
+        characteristicId: this._txCharId,
+        state: true,
+      });
+
+      this.setData({
+        phase: 'connected',
+        connectedName: name,
+        statusText: '已连接：' + name,
+        busy: false,
+      });
+
+      // 部分机型刚开启 notify 时会漏掉紧随其后的第一包，稍作等待再读取。
+      await new Promise((r) => setTimeout(r, 400));
+      // 自动读取当前配置。
+      this.loadConfig();
+    } catch (err) {
+      console.error('connect failed', err);
+      this.setData({ phase: 'idle', busy: false, statusText: '连接失败：' + (err && err.errMsg || err) });
+      this._teardown();
+    }
+  },
+
+  async _discover(deviceId) {
+    const svc = await this._wx('getBLEDeviceServices', { deviceId });
+    const service = (svc.services || []).find((s) => normUuid(s.uuid) === SERVICE_UUID);
+    if (!service) throw new Error('未找到配网服务');
+    this._serviceId = service.uuid;
+
+    const chr = await this._wx('getBLEDeviceCharacteristics', {
+      deviceId, serviceId: service.uuid,
+    });
+    (chr.characteristics || []).forEach((c) => {
+      const u = normUuid(c.uuid);
+      if (u === RX_UUID) this._rxCharId = c.uuid;
+      else if (u === TX_UUID) this._txCharId = c.uuid;
+    });
+    if (!this._rxCharId || !this._txCharId) throw new Error('未找到配网特征值');
+  },
+
+  _onConnState(res) {
+    if (res.deviceId === this._deviceId && !res.connected) {
+      this.setData({ phase: 'idle', connectedName: '', statusText: '连接已断开' });
+      this._rejectAllWaiters('连接断开');
+    }
+  },
+
+  // ---- notify 接收 -------------------------------------------------------
+  // 固件每次 sendLine() 通过一次 notify 发送一整行，且不带换行符。因此每个
+  // 回调即一行。仍保留对换行的兼容拆分，以防未来固件改为带换行的合并发送。
+  _onCharChange(res) {
+    if (normUuid(res.characteristicId) !== TX_UUID) return;
+    const chunk = ab2str(res.value);
+    if (/[\r\n]/.test(chunk)) {
+      chunk.split(/[\r\n]+/).forEach((line) => {
+        const t = line.trim();
+        if (t) this._handleLine(t);
+      });
+    } else {
+      const t = chunk.trim();
+      if (t) this._handleLine(t);
+    }
+  },
+
+  _handleLine(line) {
+    // 写入日志。
+    const log = this.data.log.slice(-40);
+    log.push(line);
+    this.setData({ log });
+
+    // 解析 KEY=VALUE 填表单。
+    const eq = line.indexOf('=');
+    if (eq > 0 && !/^(OK|ERR)/.test(line)) {
+      const key = line.slice(0, eq).trim().toUpperCase();
+      const val = line.slice(eq + 1);
+      const f = {};
+      if (key === 'WIFI_SSID') f['form.wifi_ssid'] = val;
+      else if (key === 'SERVER_HOST') f['form.server_host'] = val;
+      else if (key === 'SERVER_PORT') f['form.server_port'] = val;
+      else if (key === 'CHANNEL') f['form.channel'] = val;
+      else if (key === 'CALLSIGN') f['form.callsign'] = val;
+      else if (key === 'CALL_SSID') f['form.call_ssid'] = val;
+      if (Object.keys(f).length) this.setData(f);
+    }
+
+    // 完成信号：OK xxx / ERR xxx 触发等待中的命令回调。
+    if (/^(OK|ERR)\b/.test(line)) {
+      const w = this._waiters.shift();
+      if (w) {
+        clearTimeout(w.timer);
+        if (line.indexOf('OK') === 0) w.resolve(line);
+        else w.reject(new Error(line));
+      }
+    }
+  },
+
+  // ---- 写命令（分片 ≤20 字节 + \n），等待 OK/ERR ------------------------
+  // 关键：必须在写之前注册等待者，否则设备回复极快时，notify 可能在“写完成”
+  // 与“注册等待者”之间到达，导致回复被丢弃、等待者永远超时。
+  _sendCommand(cmd, { expectReply = true, timeout = 5000 } = {}) {
+    return new Promise((resolve, reject) => {
+      if (!this._rxCharId) { reject(new Error('未连接')); return; }
+
+      let waiter = null;
+      if (expectReply) {
+        const timer = setTimeout(() => {
+          const i = this._waiters.indexOf(waiter);
+          if (i !== -1) this._waiters.splice(i, 1);
+          reject(new Error('设备无响应（超时）'));
+        }, timeout);
+        waiter = { resolve, reject, timer };
+        this._waiters.push(waiter); // 先注册，再写
+      }
+
+      const bytes = strToBytes(cmd).concat([0x0a]); // 追加换行
+      const writeChunks = async () => {
+        for (let off = 0; off < bytes.length; off += 20) {
+          const chunk = bytes.slice(off, off + 20);
+          await this._wx('writeBLECharacteristicValue', {
+            deviceId: this._deviceId,
+            serviceId: this._serviceId,
+            characteristicId: this._rxCharId,
+            value: new Uint8Array(chunk).buffer,
+          });
+        }
+      };
+
+      writeChunks().then(() => {
+        if (!expectReply) resolve('');
+      }).catch((e) => {
+        if (waiter) {
+          const i = this._waiters.indexOf(waiter);
+          if (i !== -1) this._waiters.splice(i, 1);
+          clearTimeout(waiter.timer);
+        }
+        reject(e);
+      });
+    });
+  },
+
+  _rejectAllWaiters(reason) {
+    while (this._waiters.length) {
+      const w = this._waiters.shift();
+      clearTimeout(w.timer);
+      w.reject(new Error(reason));
+    }
+  },
+
+  // ---- 业务动作 ----------------------------------------------------------
+  async loadConfig() {
+    if (this.data.busy) return;
+    this.setData({ busy: true, statusText: '读取配置中…' });
+    try {
+      await this._sendCommand('GET', { timeout: 5000 });
+      this.setData({ statusText: '已读取当前配置' });
+    } catch (e) {
+      this.setData({ statusText: '读取失败：' + e.message });
+      wx.showToast({ title: '读取失败', icon: 'none' });
+    } finally {
+      this.setData({ busy: false });
+    }
+  },
+
+  onInput(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ ['form.' + field]: e.detail.value });
+  },
+
+  _validate() {
+    const f = this.data.form;
+    if (!f.wifi_ssid) return 'WiFi 名称不能为空';
+    if (f.server_port && (!/^\d+$/.test(f.server_port) || +f.server_port < 1 || +f.server_port > 65535))
+      return '服务器端口需为 1-65535';
+    if (f.channel && (!/^\d+$/.test(f.channel) || +f.channel > 7)) return '信道需为 0-7';
+    if (f.call_ssid && (!/^\d+$/.test(f.call_ssid) || +f.call_ssid > 255)) return '呼号 SSID 需为 0-255';
+    return '';
+  },
+
+  // 逐项下发 SET（固件每条 SET 都会保存并按需重连），可选重启。
+  async _saveConfig(reboot) {
+    const err = this._validate();
+    if (err) { wx.showToast({ title: err, icon: 'none' }); return; }
+    if (this.data.busy) return;
+    this.setData({ busy: true, statusText: '保存中…' });
+
+    const f = this.data.form;
+    const cmds = [
+      ['WIFI_SSID', f.wifi_ssid],
+      ['SERVER_HOST', f.server_host],
+      ['SERVER_PORT', f.server_port],
+      ['CHANNEL', f.channel],
+      ['CALLSIGN', f.callsign],
+      ['CALL_SSID', f.call_ssid],
+    ];
+    // 密码仅在用户填写时下发（留空表示不修改）。
+    if (f.wifi_pass) cmds.unshift(['WIFI_PASS', f.wifi_pass]);
+
+    try {
+      for (const [k, v] of cmds) {
+        if (v === '' || v === undefined || v === null) continue;
+        await this._sendCommand('SET ' + k + '=' + v, { timeout: 6000 });
+      }
+      if (reboot) {
+        await this._sendCommand('REBOOT', { expectReply: true, timeout: 3000 }).catch(() => {});
+        this.setData({ statusText: '已保存，设备正在重启' });
+        wx.showToast({ title: '已保存并重启', icon: 'success' });
+      } else {
+        this.setData({ statusText: '配置已保存' });
+        wx.showToast({ title: '保存成功', icon: 'success' });
+      }
+    } catch (e) {
+      this.setData({ statusText: '保存失败：' + e.message });
+      wx.showModal({ title: '保存失败', content: e.message, showCancel: false });
+    } finally {
+      this.setData({ busy: false });
+    }
+  },
+
+  saveConfig() { this._saveConfig(false); },
+  saveAndReboot() { this._saveConfig(true); },
+
+  async disconnect() {
+    await this._teardown();
+    this.setData({ phase: 'idle', connectedName: '', statusText: '已断开', log: [] });
+  },
+
+  // ---- 清理 --------------------------------------------------------------
+  async _teardown() {
+    if (this._scanTimer) { clearTimeout(this._scanTimer); this._scanTimer = null; }
+    this._rejectAllWaiters('断开');
+    try { wx.offBLECharacteristicValueChange(this._onCharChange); } catch (e) {}
+    try { wx.offBLEConnectionStateChange(this._onConnState); } catch (e) {}
+    if (this._deviceId) {
+      try { await this._wx('closeBLEConnection', { deviceId: this._deviceId }); } catch (e) {}
+    }
+    try { await this._wx('stopBluetoothDevicesDiscovery'); } catch (e) {}
+    try { await this._wx('closeBluetoothAdapter'); } catch (e) {}
+    this._deviceId = '';
+    this._rxCharId = '';
+    this._txCharId = '';
+    this._serviceId = '';
+    this._rxBuffer = '';
+  },
+
+  // Promise 包装 wx.xxx。
+  _wx(method, options = {}) {
+    return new Promise((resolve, reject) => {
+      wx[method](Object.assign({}, options, { success: resolve, fail: reject }));
+    });
+  },
+});

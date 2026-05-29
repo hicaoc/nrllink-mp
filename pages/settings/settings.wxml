@@ -1,0 +1,32 @@
+<view class="page-container">
+  <view class="nav-list">
+
+    <view class="nav-item" bindtap="navigateToBleConfig">
+      <view class="nav-icon icon-ble">📶</view>
+      <view class="nav-text">
+        <text class="nav-title">NRL 设备配网</text>
+        <text class="nav-desc">通过蓝牙为 ESP32 配置 WiFi 与服务器</text>
+      </view>
+      <view class="nav-arrow">›</view>
+    </view>
+
+    <view class="nav-item" bindtap="navigateToGroupManage">
+      <view class="nav-icon icon-group">👥</view>
+      <view class="nav-text">
+        <text class="nav-title">群组设备管理</text>
+        <text class="nav-desc">查看群组与设备在线状态</text>
+      </view>
+      <view class="nav-arrow">›</view>
+    </view>
+
+    <view class="nav-item nav-danger" wx:if="{{showLogout}}" bindtap="handleLogout">
+      <view class="nav-icon icon-exit">⏻</view>
+      <view class="nav-text">
+        <text class="nav-title">退出登录</text>
+        <text class="nav-desc">退出当前账号</text>
+      </view>
+      <view class="nav-arrow">›</view>
+    </view>
+
+  </view>
+</view>

@@ -4,7 +4,7 @@
     "coverView": true,
     "es6": true,
     "postcss": true,
-    "minified": false,
+    "minified": true,
     "enhance": true,
     "showShadowRootInWxmlPanel": true,
     "packNpmRelationList": [],
@@ -18,7 +18,7 @@
     "compileWorklet": false,
     "swc": true,
     "minifyWXML": true,
-    "minifyWXSS": false,
+    "minifyWXSS": true,
     "disableSWC": false
   },
   "condition": {},

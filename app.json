@@ -2,7 +2,9 @@
   "pages": [
     "pages/login/login",
     "pages/register/register",
+    "pages/settings/settings",
     "pages/config/config",
+    "pages/ble-config/ble-config",
     "pages/aprs/aprs",
     "pages/voice/voice",
     "pages/group-detail/group-detail",
@@ -29,8 +31,8 @@
         "selectedIconPath": "images/aprs-active.png"
       },
       {
-        "pagePath": "pages/config/config",
-        "text": "配置",
+        "pagePath": "pages/settings/settings",
+        "text": "设置",
         "iconPath": "images/config.png",
         "selectedIconPath": "images/config-active.png"
       }
