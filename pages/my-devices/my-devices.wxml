@@ -1,0 +1,65 @@
+<view class="page-container">
+
+  <view class="device-box" wx:for="{{devices}}" wx:key="callsignssid"
+        data-index="{{index}}" bindtap="openDevice">
+    <view class="box-head">
+      <view class="dot {{item.is_online ? 'dot-on' : 'dot-off'}}"></view>
+      <text class="box-title">{{item.callsignssid}}</text>
+      <text class="box-name" wx:if="{{item.name && item.name !== item.callsignssid}}">{{item.name}}</text>
+      <text class="model-tag">{{item.modelName}}</text>
+    </view>
+    <view class="box-body">
+      <view class="info-item">
+        <text class="info-label">状态</text>
+        <text class="info-value {{item.is_online ? 'online-text' : ''}}">{{item.is_online ? '在线' : '离线'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">内网 IP</text>
+        <text class="info-value">{{item.lanIp}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">WiFi</text>
+        <text class="info-value">{{item.wifiSsid}}</text>
+      </view>
+      <view class="info-item info-item-full">
+        <text class="info-label">群组</text>
+        <text class="info-value group-value">{{item.groupName}}</text>
+        <button class="join-btn" size="mini" data-index="{{index}}" catchtap="openGroupPicker">切换</button>
+      </view>
+      <view class="info-item" wx:if="{{item.version}}">
+        <text class="info-label">固件</text>
+        <text class="info-value">{{item.version}}</text>
+      </view>
+      <view class="info-item" wx:if="{{item.qth}}">
+        <text class="info-label">位置</text>
+        <text class="info-value">{{item.qth}}</text>
+      </view>
+    </view>
+    <view class="box-foot">
+      <text class="foot-hint">{{item.footHint}}</text>
+      <text class="nav-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 群组选择弹层 -->
+  <view class="mask" wx:if="{{showGroupPicker}}" bindtap="closeGroupPicker">
+    <view class="group-panel" catchtap="noop">
+      <view class="panel-title">切换群组</view>
+      <scroll-view scroll-y class="panel-list">
+        <view class="panel-item {{item.id === currentGroupId ? 'panel-item-current' : ''}}" wx:for="{{groups}}" wx:key="id"
+              data-id="{{item.id}}" bindtap="joinGroup">
+          {{item.id}} - {{item.name}}
+          <text class="current-tag" wx:if="{{item.id === currentGroupId}}">当前</text>
+        </view>
+        <view class="panel-empty" wx:if="{{!groups.length}}">暂无群组</view>
+      </scroll-view>
+      <button class="panel-cancel" bindtap="closeGroupPicker">取消</button>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{loaded && !devices.length}}">
+    <text class="empty-text">当前账号下没有设备</text>
+    <text class="empty-tip">设备首次上线后会自动注册到您的呼号下</text>
+  </view>
+
+</view>

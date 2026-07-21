@@ -1,0 +1,316 @@
+<view class="page-container">
+
+  <!-- 设备信息 -->
+  <view class="card status-card">
+    <view class="status-row">
+      <view class="dot {{device.online ? 'dot-on' : 'dot-wait'}}"></view>
+      <text class="status-text">{{device.name || 'NRL 设备'}}（{{device.ip}}）</text>
+    </view>
+    <view class="tip" wx:if="{{loadError}}">{{loadError}}</view>
+  </view>
+
+  <!-- NRL 基本参数 -->
+  <view class="card">
+    <view class="card-head" data-section="nrl" bindtap="toggleSection">
+      <text class="card-title">NRL 基本参数</text>
+      <text class="collapse-arrow">{{section === 'nrl' ? '▾' : '▸'}}</text>
+    </view>
+    <block wx:if="{{section === 'nrl'}}">
+      <view class="field">
+        <text class="label">服务器地址</text>
+        <input class="input" placeholder="域名或 IP" value="{{nrl.server_host}}"
+               data-section="nrl" data-field="server_host" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">服务器端口</text>
+        <input class="input" type="number" placeholder="1-65535" value="{{nrl.server_port}}"
+               data-section="nrl" data-field="server_port" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">信道（0-7）</text>
+        <input class="input" type="number" placeholder="0-7" value="{{nrl.channel}}"
+               data-section="nrl" data-field="channel" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">呼号</text>
+        <input class="input" placeholder="Callsign" value="{{nrl.callsign}}"
+               data-section="nrl" data-field="callsign" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">呼号 SSID（0-255）</text>
+        <input class="input" type="number" placeholder="0-255" value="{{nrl.callsign_ssid}}"
+               data-section="nrl" data-field="callsign_ssid" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">PTT 超时（秒，5-3600）</text>
+        <input class="input" type="number" value="{{nrl.ptt_timeout}}"
+               data-section="nrl" data-field="ptt_timeout" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">语音包大小（字节，160-500）</text>
+        <input class="input" type="number" value="{{nrl.voice_payload_bytes}}"
+               data-section="nrl" data-field="voice_payload_bytes" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">尾音抑制（毫秒，0-5000，0=关闭）</text>
+        <input class="input" type="number" value="{{nrl.tail_suppress_ms}}"
+               data-section="nrl" data-field="tail_suppress_ms" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">语音编码（发射）</text>
+        <picker class="picker" mode="selector" range="{{codecOptions}}"
+                value="{{nrl.voice_codec}}" bindchange="onCodecChange">
+          <view class="picker-value">{{codecOptions[nrl.voice_codec] || '请选择'}}</view>
+        </picker>
+      </view>
+      <button class="primary-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="saveNrl">保存</button>
+    </block>
+  </view>
+
+  <!-- WiFi 网络 -->
+  <view class="card">
+    <view class="card-head" data-section="wifi" bindtap="toggleSection">
+      <text class="card-title">WiFi 网络</text>
+      <text class="collapse-arrow">{{section === 'wifi' ? '▾' : '▸'}}</text>
+    </view>
+    <block wx:if="{{section === 'wifi'}}">
+      <view class="field">
+        <text class="label">WiFi 名称</text>
+        <view class="ssid-row">
+          <input class="input ssid-input" placeholder="WiFi SSID" value="{{wifi.wifi_ssid}}"
+                 data-section="wifi" data-field="wifi_ssid" bindinput="onInput" />
+          <button class="scan-btn" size="mini" loading="{{scanningWifi}}"
+                  disabled="{{scanningWifi || saving}}" bindtap="scanWifi">扫描</button>
+        </view>
+      </view>
+      <view class="wifi-list" wx:if="{{wifiScanList.length}}">
+        <view class="wifi-item" wx:for="{{wifiScanList}}" wx:key="ssid"
+              data-ssid="{{item.ssid}}" bindtap="selectWifi">
+          <text class="wifi-ssid {{item.ssid === wifi.wifi_ssid ? 'wifi-ssid-sel' : ''}}">{{item.ssid}}</text>
+        </view>
+      </view>
+      <view class="field">
+        <text class="label">WiFi 密码（开放网络留空）</text>
+        <input class="input" password placeholder="WiFi 密码" value="{{wifi.wifi_password}}"
+               data-section="wifi" data-field="wifi_password" bindinput="onInput" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">使用 DHCP 自动获取 IP</text>
+        <switch checked="{{wifi.wifi_dhcp_enabled}}"
+                data-section="wifi" data-field="wifi_dhcp_enabled" bindchange="onSwitch" />
+      </view>
+      <block wx:if="{{!wifi.wifi_dhcp_enabled}}">
+        <view class="field">
+          <text class="label">静态 IP</text>
+          <input class="input" placeholder="如 192.168.1.100" value="{{wifi.wifi_ip}}"
+                 data-section="wifi" data-field="wifi_ip" bindinput="onInput" />
+        </view>
+        <view class="field">
+          <text class="label">子网掩码</text>
+          <input class="input" placeholder="如 255.255.255.0" value="{{wifi.wifi_mask}}"
+                 data-section="wifi" data-field="wifi_mask" bindinput="onInput" />
+        </view>
+        <view class="field">
+          <text class="label">网关</text>
+          <input class="input" placeholder="如 192.168.1.1" value="{{wifi.wifi_gateway}}"
+                 data-section="wifi" data-field="wifi_gateway" bindinput="onInput" />
+        </view>
+        <view class="field">
+          <text class="label">DNS</text>
+          <input class="input" placeholder="可留空" value="{{wifi.wifi_dns}}"
+                 data-section="wifi" data-field="wifi_dns" bindinput="onInput" />
+        </view>
+      </block>
+      <view class="tip warn-tip">修改 WiFi 后设备会立即重连，配置错误将导致设备脱网。</view>
+      <button class="warn-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="saveWifi">保存 WiFi 配置</button>
+    </block>
+  </view>
+
+  <!-- APRS -->
+  <view class="card">
+    <view class="card-head" data-section="aprs" bindtap="toggleSection">
+      <text class="card-title">APRS</text>
+      <text class="collapse-arrow">{{section === 'aprs' ? '▾' : '▸'}}</text>
+    </view>
+    <block wx:if="{{section === 'aprs'}}">
+      <view class="field switch-field">
+        <text class="label">启用 APRS</text>
+        <switch checked="{{aprs.aprs_enabled}}" data-section="aprs" data-field="aprs_enabled" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">APRS-IS 网络收发</text>
+        <switch checked="{{aprs.aprs_net}}" data-section="aprs" data-field="aprs_net" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">射频发射（AFSK）</text>
+        <switch checked="{{aprs.aprs_tx}}" data-section="aprs" data-field="aprs_tx" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">射频接收（AFSK）</text>
+        <switch checked="{{aprs.aprs_rx}}" data-section="aprs" data-field="aprs_rx" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">智能信标间隔（随速度调整）</text>
+        <switch checked="{{aprs.aprs_auto}}" data-section="aprs" data-field="aprs_auto" bindchange="onSwitch" />
+      </view>
+      <view class="field">
+        <text class="label">APRS-IS 服务器</text>
+        <input class="input" placeholder="asia.aprs2.net" value="{{aprs.aprs_server}}"
+               data-section="aprs" data-field="aprs_server" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">端口</text>
+        <input class="input" type="number" value="{{aprs.aprs_port}}"
+               data-section="aprs" data-field="aprs_port" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">SSID（0-15）</text>
+        <input class="input" type="number" value="{{aprs.aprs_ssid}}"
+               data-section="aprs" data-field="aprs_ssid" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">符号（表+代码，如 /I）</text>
+        <input class="input" maxlength="2" value="{{aprs.aprs_symbol}}"
+               data-section="aprs" data-field="aprs_symbol" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">信标间隔（秒，10-3600）</text>
+        <input class="input" type="number" value="{{aprs.aprs_interval}}"
+               data-section="aprs" data-field="aprs_interval" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">射频路径</text>
+        <input class="input" placeholder="WIDE1-1" value="{{aprs.aprs_path}}"
+               data-section="aprs" data-field="aprs_path" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">默认纬度（ddmm.mmmm，自动补 N）</text>
+        <input class="input" placeholder="3153.3100" value="{{aprs.aprs_lat}}"
+               data-section="aprs" data-field="aprs_lat" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">默认经度（dddmm.mmmm，自动补 E）</text>
+        <input class="input" placeholder="11848.8460" value="{{aprs.aprs_lon}}"
+               data-section="aprs" data-field="aprs_lon" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">信标注释</text>
+        <input class="input" maxlength="40" value="{{aprs.aprs_comment}}"
+               data-section="aprs" data-field="aprs_comment" bindinput="onInput" />
+      </view>
+      <button class="primary-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="saveAprs">保存</button>
+    </block>
+  </view>
+
+  <!-- 信令 -->
+  <view class="card">
+    <view class="card-head" data-section="signaling" bindtap="toggleSection">
+      <text class="card-title">信令</text>
+      <text class="collapse-arrow">{{section === 'signaling' ? '▾' : '▸'}}</text>
+    </view>
+    <block wx:if="{{section === 'signaling'}}">
+      <view class="group-label">CTCSS 亚音解码</view>
+      <view class="field switch-field">
+        <text class="label">从麦克风/电台解码</text>
+        <switch checked="{{signaling.ctcss_rx_mic}}" data-section="signaling" data-field="ctcss_rx_mic" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">从 NRL 下行解码</text>
+        <switch checked="{{signaling.ctcss_rx_nrl}}" data-section="signaling" data-field="ctcss_rx_nrl" bindchange="onSwitch" />
+      </view>
+
+      <view class="group-label">MDC1200</view>
+      <view class="field switch-field">
+        <text class="label">从麦克风/电台解码</text>
+        <switch checked="{{signaling.mdc_rx_mic}}" data-section="signaling" data-field="mdc_rx_mic" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">从 NRL 下行解码</text>
+        <switch checked="{{signaling.mdc_rx_nrl}}" data-section="signaling" data-field="mdc_rx_nrl" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">本地 PTT 结束后发送</text>
+        <switch checked="{{signaling.mdc_tx_nrl}}" data-section="signaling" data-field="mdc_tx_nrl" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">NRL 语音结束后发到喇叭</text>
+        <switch checked="{{signaling.mdc_tx_speaker}}" data-section="signaling" data-field="mdc_tx_speaker" bindchange="onSwitch" />
+      </view>
+      <view class="field">
+        <text class="label">Opcode（十六进制）</text>
+        <input class="input" maxlength="4" value="{{signaling.mdc_opcode}}"
+               data-section="signaling" data-field="mdc_opcode" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">参数（十六进制）</text>
+        <input class="input" maxlength="4" value="{{signaling.mdc_argument}}"
+               data-section="signaling" data-field="mdc_argument" bindinput="onInput" />
+      </view>
+      <view class="field">
+        <text class="label">MDC ID（4 位十六进制）</text>
+        <input class="input" maxlength="6" value="{{signaling.mdc_unit_id}}"
+               data-section="signaling" data-field="mdc_unit_id" bindinput="onInput" />
+      </view>
+
+      <view class="group-label">DTMF</view>
+      <view class="field switch-field">
+        <text class="label">从麦克风/电台解码</text>
+        <switch checked="{{signaling.dtmf_rx_mic}}" data-section="signaling" data-field="dtmf_rx_mic" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">从 NRL 下行解码</text>
+        <switch checked="{{signaling.dtmf_rx_nrl}}" data-section="signaling" data-field="dtmf_rx_nrl" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">本地 PTT 结束后发送</text>
+        <switch checked="{{signaling.dtmf_tx_nrl}}" data-section="signaling" data-field="dtmf_tx_nrl" bindchange="onSwitch" />
+      </view>
+      <view class="field switch-field">
+        <text class="label">NRL 语音结束后发到喇叭</text>
+        <switch checked="{{signaling.dtmf_tx_speaker}}" data-section="signaling" data-field="dtmf_tx_speaker" bindchange="onSwitch" />
+      </view>
+      <view class="field">
+        <text class="label">DTMF ID</text>
+        <input class="input" maxlength="16" placeholder="123#" value="{{signaling.dtmf_digits}}"
+               data-section="signaling" data-field="dtmf_digits" bindinput="onInput" />
+      </view>
+      <button class="primary-btn" loading="{{saving}}" disabled="{{saving}}" bindtap="saveSignaling">保存</button>
+    </block>
+  </view>
+
+  <!-- OTA 升级 -->
+  <view class="card">
+    <view class="card-head" data-section="ota" bindtap="toggleSection">
+      <text class="card-title">固件升级（OTA）</text>
+      <text class="collapse-arrow">{{section === 'ota' ? '▾' : '▸'}}</text>
+    </view>
+    <block wx:if="{{section === 'ota'}}">
+      <block wx:if="{{ota}}">
+        <view class="info-row"><text class="info-label">升级服务器</text><text class="info-value">{{ota.configured ? ota.server_url : '未配置'}}</text></view>
+        <view class="info-row" wx:if="{{ota.latest_version}}"><text class="info-label">最新版本</text><text class="info-value">{{ota.latest_version}}</text></view>
+        <view class="info-row" wx:if="{{ota.last_error}}"><text class="info-label">最近错误</text><text class="info-value error-text">{{ota.last_error}}</text></view>
+
+        <view class="ota-progress" wx:if="{{ota.updating}}">
+          <progress percent="{{ota.update_percent}}" stroke-width="6" activeColor="#ff9900" />
+          <text class="progress-text">正在升级 {{ota.update_percent}}%，请勿断电…</text>
+        </view>
+
+        <view class="release-list" wx:if="{{ota.releases.length && !ota.updating}}">
+          <view class="release-item" wx:for="{{ota.releases}}" wx:key="version"
+                data-version="{{item.version}}" bindtap="installVersion">
+            <text class="release-version">{{item.version}}</text>
+            <text class="release-notes" wx:if="{{item.notes}}">{{item.notes}}</text>
+            <text class="install-hint">点击升级</text>
+          </view>
+        </view>
+
+        <view class="btn-row">
+          <button class="ghost-btn" loading="{{otaChecking}}" disabled="{{ota.updating || otaChecking}}" bindtap="checkOta">检查更新</button>
+          <button class="ghost-btn" disabled="{{ota.updating}}" bindtap="loadOta">刷新状态</button>
+        </view>
+      </block>
+      <view class="tip" wx:if="{{!ota}}">加载中…</view>
+    </block>
+  </view>
+
+</view>

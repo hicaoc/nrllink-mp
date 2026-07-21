@@ -5,6 +5,10 @@
     "pages/settings/settings",
     "pages/config/config",
     "pages/ble-config/ble-config",
+    "pages/lan-devices/lan-devices",
+    "pages/lan-device/lan-device",
+    "pages/my-devices/my-devices",
+    "pages/my-device-at/my-device-at",
     "pages/aprs/aprs",
     "pages/voice/voice",
     "pages/group-detail/group-detail",
@@ -14,7 +18,7 @@
     "pages/webview/webview"
   ],
   "window": {
-    "navigationBarTitleText": "NRL互联1.7.23"
+    "navigationBarTitleText": "NRL互联1.8.1"
   },
   "tabBar": {
     "list": [
@@ -35,6 +39,12 @@
         "text": "设置",
         "iconPath": "images/config.png",
         "selectedIconPath": "images/config-active.png"
+      },
+      {
+        "pagePath": "pages/my-devices/my-devices",
+        "text": "我的",
+        "iconPath": "images/my.png",
+        "selectedIconPath": "images/my-active.png"
       }
     ]
   },

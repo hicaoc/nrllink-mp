@@ -1,0 +1,103 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title { font-size: 16px; font-weight: 600; color: #333; }
+.head-right { display: flex; align-items: center; gap: 12px; }
+.collapse-arrow { font-size: 16px; color: #c0c4cc; }
+.refresh-link { font-size: 13px; color: #1989fa; }
+
+/* 状态 */
+.status-card { padding: 14px 16px; }
+.status-row { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot-on { background: #19be6b; }
+.dot-off { background: #bbb; }
+.status-text { font-size: 15px; color: #333; }
+.tip { margin-top: 8px; font-size: 12px; color: #999; line-height: 1.5; }
+.warn-tip { color: #e6a23c; }
+.cat-hint { margin: -4px 0 10px; }
+
+/* 寄存器配置入口 */
+.eeprom-tip { margin: -4px 0 12px; }
+.block-btn {
+  background: #fff; color: #007bff; border: 1px solid #007bff;
+  border-radius: 8px; font-size: 15px; line-height: 42px;
+}
+
+/* 命令行 */
+.cmd-item {
+  padding: 10px 0;
+  border-top: 1px solid #f5f5f5;
+}
+.cmd-item:first-of-type { border-top: none; }
+.cmd-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cmd-label { font-size: 15px; color: #333; font-weight: 500; }
+.cmd-value { font-size: 14px; color: #1989fa; word-break: break-all; text-align: right; }
+.cmd-desc { margin-top: 2px; font-size: 12px; color: #999; line-height: 1.4; }
+.cmd-control {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cmd-control .input {
+  flex: 1;
+  height: 38px; line-height: 38px;
+  padding: 0 12px;
+  background: #f5f6f8; border-radius: 8px;
+  font-size: 14px; color: #333;
+}
+.cmd-current { margin-top: 6px; font-size: 12px; color: #bbb; }
+
+.mini-btn {
+  flex: none; margin: 0; padding: 0 16px;
+  line-height: 32px; height: 32px;
+  font-size: 13px;
+  background: #e8f3ff; color: #1989fa;
+  border-radius: 8px;
+}
+.mini-btn[disabled] { opacity: 0.5; }
+.warn-mini-btn { background: #fdf0e0; color: #e6a23c; }
+
+.cmd-picker { flex: 1; }
+.picker-box {
+  height: 38px; line-height: 38px;
+  padding: 0 12px;
+  background: #f5f6f8; border-radius: 8px;
+  font-size: 14px; color: #333;
+}
+
+/* 日志 */
+.log-box {
+  max-height: 200px;
+  background: #0f1419; border-radius: 8px; padding: 10px;
+}
+.log-line {
+  font-family: monospace; font-size: 12px;
+  line-height: 1.6; word-break: break-all;
+}
+.log-tx { color: #79b8ff; }
+.log-rx { color: #6ee787; }
+.log-err { color: #f97583; }

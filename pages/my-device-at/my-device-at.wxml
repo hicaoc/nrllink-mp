@@ -1,0 +1,115 @@
+<wxs module="fmt">
+function display(v, type) {
+  if (v === undefined || v === null || v === '') return '—';
+  if (type === 'switch') return v ? '开' : '关';
+  return String(v);
+}
+function indexOf(options, v) {
+  var i = options.indexOf(v);
+  return i < 0 ? 0 : i;
+}
+module.exports = { display: display, indexOf: indexOf };
+</wxs>
+
+<view class="page-container">
+
+  <!-- 设备信息 -->
+  <view class="card status-card">
+    <view class="status-row">
+      <view class="dot {{device.is_online ? 'dot-on' : 'dot-off'}}"></view>
+      <text class="status-text">{{device.name}}（{{device.callsign}}-{{device.ssid}}）</text>
+    </view>
+    <view class="tip" wx:if="{{device.version}}">{{device.version}}</view>
+    <view class="tip warn-tip" wx:if="{{!device.is_online}}">设备离线，无法发送指令。显示的是最后一次在线时的信息。</view>
+    <view class="tip warn-tip" wx:if="{{atSupported === false}}">设备固件版本不支持 AT 指令，请升级固件{{showEeprom ? '，或使用下方的寄存器配置' : ''}}。</view>
+  </view>
+
+  <!-- 寄存器（EEPROM）配置入口：老型号设备 -->
+  <view class="card" wx:if="{{showEeprom}}">
+    <view class="card-head">
+      <text class="card-title">寄存器配置</text>
+    </view>
+    <view class="tip eeprom-tip">老硬件的 EEPROM 参数（DCD/PTT/频率/网络等），与 AT 配置互补，可按需使用。</view>
+    <button class="block-btn" bindtap="openEepromSettings">打开寄存器配置</button>
+  </view>
+
+  <!-- 等待设备上报指令列表 -->
+  <view class="card" wx:if="{{!categories.length && device.is_online && atSupported !== false}}">
+    <view class="tip">正在读取设备支持的指令列表…</view>
+  </view>
+
+  <!-- 指令分类 -->
+  <view class="card" wx:for="{{categories}}" wx:key="id" wx:for-item="cat">
+    <view class="card-head" data-id="{{cat.id}}" bindtap="toggleCategory">
+      <text class="card-title">{{cat.name}}</text>
+      <view class="head-right">
+        <text class="refresh-link" wx:if="{{expanded === cat.id && device.is_online}}"
+              data-id="{{cat.id}}" catchtap="refreshCategory">刷新</text>
+        <text class="collapse-arrow">{{expanded === cat.id ? '▾' : '▸'}}</text>
+      </view>
+    </view>
+    <block wx:if="{{expanded === cat.id}}">
+      <view class="tip cat-hint" wx:if="{{cat.hint}}">{{cat.hint}}</view>
+
+      <view class="cmd-item" wx:for="{{cat.commands}}" wx:key="key" wx:for-item="cmd">
+        <view class="cmd-head">
+          <text class="cmd-label">{{cmd.label}}</text>
+          <text class="cmd-value" wx:if="{{cmd.type === 'readonly'}}">{{fmt.display(values[cmd.key], cmd.type)}}</text>
+        </view>
+        <view class="cmd-desc" wx:if="{{cmd.desc}}">{{cmd.desc}}</view>
+
+        <!-- switch -->
+        <view class="cmd-control" wx:if="{{cmd.type === 'switch'}}">
+          <text class="cmd-value">{{values[cmd.key] ? '开' : '关'}}</text>
+          <switch checked="{{values[cmd.key]}}" disabled="{{!device.is_online || pending[cmd.key]}}"
+                  data-key="{{cmd.key}}" bindchange="onSwitch" />
+        </view>
+
+        <!-- text / number -->
+        <view class="cmd-control" wx:if="{{cmd.type === 'text' || cmd.type === 'number'}}">
+          <input class="input" type="{{cmd.type === 'number' ? 'number' : 'text'}}"
+                 value="{{inputs[cmd.key] !== undefined && inputs[cmd.key] !== '' ? inputs[cmd.key] : values[cmd.key]}}"
+                 disabled="{{!device.is_online || pending[cmd.key]}}"
+                 data-key="{{cmd.key}}" bindinput="onInput" />
+          <button class="mini-btn" size="mini" disabled="{{!device.is_online || pending[cmd.key]}}"
+                  data-key="{{cmd.key}}" data-cat="{{cat.id}}" bindtap="onSave">保存</button>
+        </view>
+
+        <!-- select -->
+        <view class="cmd-control" wx:if="{{cmd.type === 'select'}}">
+          <picker class="cmd-picker" mode="selector" range="{{cmd.options}}"
+                  value="{{fmt.indexOf(cmd.options, values[cmd.key])}}"
+                  disabled="{{!device.is_online || pending[cmd.key]}}"
+                  data-key="{{cmd.key}}" bindchange="onSelect">
+            <view class="picker-box">{{values[cmd.key] || '请选择'}} ▾</view>
+          </picker>
+        </view>
+
+        <!-- action -->
+        <view class="cmd-control" wx:if="{{cmd.type === 'action'}}">
+          <button class="mini-btn {{cmd.confirm ? 'warn-mini-btn' : ''}}" size="mini"
+                  loading="{{pending[cmd.key]}}"
+                  disabled="{{!device.is_online || pending[cmd.key]}}"
+                  data-key="{{cmd.key}}" bindtap="onAction">{{cmd.label}}</button>
+        </view>
+
+        <view class="cmd-current" wx:if="{{cmd.type !== 'readonly' && cmd.type !== 'action' && values[cmd.key] !== undefined && values[cmd.key] !== ''}}">
+          当前：{{fmt.display(values[cmd.key], cmd.type)}}
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 会话日志 -->
+  <view class="card" wx:if="{{log.length}}">
+    <view class="card-head">
+      <text class="card-title">指令记录</text>
+      <text class="refresh-link" bindtap="clearLog">清空</text>
+    </view>
+    <scroll-view class="log-box" scroll-y scroll-into-view="log-end">
+      <view class="log-line log-{{item.kind}}" wx:for="{{log}}" wx:key="index">{{item.text}}</view>
+      <view id="log-end"></view>
+    </scroll-view>
+  </view>
+
+</view>

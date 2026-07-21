@@ -1,0 +1,64 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* 状态 */
+.status-card { padding: 14px 16px; }
+.status-row { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot-on { background: #19be6b; }
+.dot-off { background: #bbb; }
+.dot-wait { background: #ff9900; }
+.status-text { font-size: 15px; color: #333; }
+.tip { margin-top: 8px; font-size: 12px; color: #999; line-height: 1.5; }
+
+/* 扫描进度 */
+.progress-wrap { margin-top: 12px; }
+.progress-text { display: block; margin-top: 6px; font-size: 12px; color: #999; }
+
+.add-btn { margin-top: 12px; }
+
+/* 设备列表 */
+.device-list { display: flex; flex-direction: column; gap: 10px; }
+.device-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px; background: #f8f9fa; border-radius: 8px;
+}
+.device-item:active { background: #eef1f4; }
+.device-info { display: flex; flex-direction: column; gap: 2px; }
+.device-name { font-size: 15px; color: #333; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.dot-inline { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.device-id { font-size: 11px; color: #999; }
+.nav-arrow { font-size: 20px; color: #c0c4cc; flex: none; margin-left: 8px; }
+
+.empty-card { align-items: center; }
+.empty-text { display: block; text-align: center; font-size: 14px; color: #999; padding: 12px 0; }
+
+/* 按钮 */
+.primary-btn {
+  background: #007bff; color: #fff; border-radius: 8px;
+  font-size: 15px; border: none; line-height: 44px;
+}
+.primary-btn[disabled] { background: #9cc6f5; color: #fff; }
+.ghost-btn {
+  background: #fff; color: #007bff; border: 1px solid #007bff;
+  border-radius: 8px; font-size: 15px; line-height: 42px;
+}
+.ghost-btn[disabled] { opacity: 0.5; }

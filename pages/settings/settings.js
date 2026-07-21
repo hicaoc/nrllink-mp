@@ -14,6 +14,11 @@ Page({
     wx.navigateTo({ url: '/pages/ble-config/ble-config' });
   },
 
+  // 局域网设备管理（子网扫描发现 + 设备 web API 管理）
+  navigateToLanDevices() {
+    wx.navigateTo({ url: '/pages/lan-devices/lan-devices' });
+  },
+
   // 群组设备管理（原配置页）
   navigateToGroupManage() {
     wx.navigateTo({ url: '/pages/config/config' });

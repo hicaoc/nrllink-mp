@@ -1,0 +1,134 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.card-head .card-title { margin-bottom: 0; }
+.card-head { margin-bottom: 12px; }
+
+.collapse-arrow {
+  font-size: 16px;
+  color: #c0c4cc;
+  flex: none;
+}
+
+/* 状态 */
+.status-card { padding: 14px 16px; }
+.status-row { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot-on { background: #19be6b; }
+.dot-wait { background: #ff9900; }
+.status-text { font-size: 15px; color: #333; }
+.tip { margin-top: 8px; font-size: 12px; color: #999; line-height: 1.5; }
+.warn-tip { color: #e6a23c; }
+
+/* 表单 */
+.field { margin-bottom: 14px; }
+.label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+.switch-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.switch-field .label { margin-bottom: 0; flex: 1; margin-right: 12px; }
+.input {
+  width: 100%; box-sizing: border-box;
+  height: 42px; line-height: 42px;
+  padding: 0 12px;
+  background: #f5f6f8; border-radius: 8px;
+  font-size: 15px; color: #333;
+}
+.group-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+  margin: 4px 0 10px;
+}
+
+/* picker（语音编码） */
+.picker {
+  height: 42px; line-height: 42px;
+  padding: 0 12px;
+  background: #f5f6f8; border-radius: 8px;
+}
+.picker-value { font-size: 15px; color: #333; }
+
+/* WiFi 扫描 */
+.ssid-row { display: flex; align-items: center; gap: 8px; }
+.ssid-input { flex: 1; }
+.scan-btn {
+  flex: none; margin: 0; padding: 0 12px; line-height: 32px; height: 32px;
+  font-size: 13px; background: #e8f3ff; color: #1989fa; border-radius: 8px;
+  white-space: nowrap;
+}
+.scan-btn[disabled] { opacity: 0.6; }
+.wifi-list {
+  margin: 4px 0 8px; border: 1px solid #eee; border-radius: 8px; overflow: hidden;
+}
+.wifi-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid #f2f2f2;
+}
+.wifi-item:last-child { border-bottom: none; }
+.wifi-item:active { background: #f2f4f7; }
+.wifi-ssid { font-size: 14px; color: #333; word-break: break-all; }
+.wifi-ssid-sel { color: #1989fa; font-weight: 600; }
+
+/* OTA */
+.info-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 6px 0; gap: 12px;
+}
+.info-label { font-size: 13px; color: #999; flex: none; }
+.info-value { font-size: 13px; color: #333; text-align: right; word-break: break-all; }
+.error-text { color: #e54d42; }
+.ota-progress { margin: 10px 0; }
+.progress-text { display: block; margin-top: 6px; font-size: 12px; color: #999; }
+.release-list { margin: 8px 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.release-item {
+  padding: 10px 12px; background: #f8f9fa; border-radius: 8px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.release-item:active { background: #eef1f4; }
+.release-version { font-size: 15px; font-weight: 600; color: #333; }
+.release-notes { font-size: 12px; color: #666; line-height: 1.5; }
+.install-hint { font-size: 12px; color: #1989fa; }
+
+/* 按钮 */
+.btn-row { display: flex; gap: 12px; margin-top: 6px; }
+.btn-row .ghost-btn { flex: 1; }
+.primary-btn {
+  background: #007bff; color: #fff; border-radius: 8px;
+  font-size: 15px; border: none; line-height: 44px;
+}
+.primary-btn[disabled] { background: #9cc6f5; color: #fff; }
+.ghost-btn {
+  background: #fff; color: #007bff; border: 1px solid #007bff;
+  border-radius: 8px; font-size: 15px; line-height: 42px;
+}
+.warn-btn {
+  background: #ff9900; color: #fff; border-radius: 8px;
+  font-size: 15px; border: none; line-height: 44px;
+}
+.warn-btn[disabled] { background: #ffcc80; }

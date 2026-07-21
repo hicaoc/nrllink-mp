@@ -1,0 +1,59 @@
+<view class="page-container">
+
+  <!-- 状态 -->
+  <view class="card status-card">
+    <view class="status-row">
+      <view class="dot {{scanning ? 'dot-wait' : 'dot-on'}}"></view>
+      <text class="status-text">{{statusText}}</text>
+    </view>
+    <view class="tip" wx:if="{{!scanning}}">
+      手机需与 NRL 设备连接同一 WiFi。找不到设备时可手动添加 IP。
+    </view>
+  </view>
+
+  <!-- 扫描 -->
+  <view class="card">
+    <button class="primary-btn" loading="{{scanning}}" bindtap="toggleScan">
+      {{scanning ? '停止扫描' : '扫描局域网设备'}}
+    </button>
+    <view class="progress-wrap" wx:if="{{scanning}}">
+      <progress percent="{{progressPercent}}" stroke-width="4" activeColor="#007bff" />
+      <text class="progress-text">正在扫描 {{subnet}}.x（{{progressDone}}/{{progressTotal}}）</text>
+    </view>
+    <button class="ghost-btn add-btn" disabled="{{scanning}}" bindtap="addManually">手动添加设备 IP</button>
+  </view>
+
+  <!-- 设备列表 -->
+  <view class="card" wx:if="{{devices.length}}">
+    <view class="card-title">已发现的设备</view>
+    <view class="device-list">
+      <view class="device-item"
+            wx:for="{{devices}}" wx:key="ip"
+            data-ip="{{item.ip}}"
+            bindtap="openDevice"
+            bindlongpress="removeDevice">
+        <view class="device-info">
+          <text class="device-name">
+            <text class="dot-inline {{item.online ? 'dot-on' : 'dot-off'}}"></text>
+            {{item.name || 'NRL 设备'}}
+          </text>
+          <text class="device-id">{{item.ip}}</text>
+        </view>
+        <view class="nav-arrow">›</view>
+      </view>
+    </view>
+    <view class="tip">长按可从列表移除设备</view>
+  </view>
+
+  <view class="card empty-card" wx:if="{{!devices.length && !scanning}}">
+    <text class="empty-text">暂未发现设备</text>
+  </view>
+
+  <!-- 配网入口 -->
+  <view class="card">
+    <view class="card-title">新设备？</view>
+    <view class="tip">设备未连上 WiFi 时，请先用蓝牙配网把它接入当前网络。</view>
+    <button class="ghost-btn add-btn" bindtap="goBleConfig">去蓝牙配网</button>
+  </view>
+
+</view>

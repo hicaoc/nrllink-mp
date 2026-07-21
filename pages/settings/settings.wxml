@@ -10,6 +10,15 @@
       <view class="nav-arrow">›</view>
     </view>
 
+    <view class="nav-item" bindtap="navigateToLanDevices">
+      <view class="nav-icon icon-lan">📡</view>
+      <view class="nav-text">
+        <text class="nav-title">局域网设备管理</text>
+        <text class="nav-desc">发现并管理同一网络内的 NRL 设备</text>
+      </view>
+      <view class="nav-arrow">›</view>
+    </view>
+
     <view class="nav-item" bindtap="navigateToGroupManage">
       <view class="nav-icon icon-group">👥</view>
       <view class="nav-text">

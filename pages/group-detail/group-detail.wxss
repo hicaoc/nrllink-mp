@@ -167,33 +167,8 @@
   text-align: right;
 }
 
-.join-container {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 32rpx;
-  margin-bottom: 32rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.join-btn {
-  margin: 32rpx 0;
+.at-button {
   background: linear-gradient(135deg, #409EFF 0%, #64b5f6 100%);
-  color: #fff;
-  border-radius: 12rpx;
-  text-align: center;
-  padding: 14rpx;
-  font-size: 34rpx;
-  box-shadow: 0 4rpx 12rpx rgba(64, 158, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.join-btn:active {
-  box-shadow: 0 2rpx 6rpx rgba(64, 158, 255, 0.3);
-}
-
-.join-btn.disabled {
-  background: #c0c4cc;
-  color: #fff;
 }
 
 .online {

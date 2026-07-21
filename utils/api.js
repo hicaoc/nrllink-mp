@@ -26,8 +26,9 @@ const responseInterceptor = (response) => {
   if (response.data.code === 20000 || response.data.code === 60204) {
     return response.data.data;
   } else if (response.data.code === 20001) {
+    // 服务器的错误消息在 data.message 里（顶层 message 可能为空）
     wx.showToast({
-      title: response.data.message,
+      title: response.data.message || (response.data.data && response.data.data.message) || '操作失败',
       icon: 'error',
       duration: 5000 // Further increase the duration for the success message
     });
@@ -270,6 +271,19 @@ export const api = {
     })
   },
 
+  // 通过服务器向设备发送 AT 指令（服务器经 UDP type-11 中继给设备）。
+  // data: { callsign, ssid, type, atcommand, data }，type 1=查询 2=写入。
+  // 注意：AT 回复是异步的，返回的 last_atcommand 可能是上一次的，
+  // 调用方需要用 getDevice 轮询等待刷新。
+  deviceAT(data, silent = false) {
+    return request({
+      url: '/device/at',
+      method: 'POST',
+      data,
+      silent
+    })
+  },
+
   bingDevice(data) {
     return request({
       url: '/device/binddevice',
@@ -410,6 +424,7 @@ export const {
   logout,
   getUserInfo,
   queryDevice,
+  deviceAT,
   bingDevice,
   changeDeviceParm,
   changeDevice1w,

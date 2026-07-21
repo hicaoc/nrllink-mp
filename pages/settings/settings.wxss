@@ -34,6 +34,7 @@
 }
 
 .icon-ble { background: #e8f3ff; }
+.icon-lan { background: #f0e8ff; }
 .icon-group { background: #e9f9ef; }
 .icon-exit { background: #fdeaea; }
 

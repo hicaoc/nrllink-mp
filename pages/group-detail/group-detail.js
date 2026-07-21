@@ -5,6 +5,7 @@ import {
   DevTypeOptions,
   DevModelOptions
 } from '../../utils/constants.js';
+import { manageKind } from '../../utils/atCatalog.js';
 
 const api = require('../../utils/api');
 const app = getApp()
@@ -21,9 +22,8 @@ Page({
       devmap: []
     },
 
-    devices: [], // 所有设备列表
-    selectedDevice: null, // 当前选择的设备
     expandedDetails: {}, // 用于存储每个设备的展开状态
+    isAdmin: false, // 当前用户是否管理员（控制远程 AT 入口）
     showDetails: false, // 控制详细信息显示
     DevStatusOptions: DevStatusOptions, // 添加状态选项
     relayOptions: [],
@@ -48,7 +48,9 @@ Page({
 
     let currentDevice = app.globalData.currentDevice
     currentDevice.displayName = currentDevice.callsign + '-' + currentDevice.ssid + '-' + currentDevice.dmrid + '-' + currentDevice.id
-    this.setData({ selectedDevice: currentDevice })
+
+    const userInfo = app.globalData.userInfo
+    this.setData({ isAdmin: !!(userInfo && userInfo.roles && userInfo.roles.includes('admin')) })
 
     try {
       if (options && options.group) {
@@ -72,7 +74,6 @@ Page({
   async refreshData() {
     let currentGroup = await app.globalData.getGroup(groupData.id)
     this.loadGroupDetail(currentGroup)
-    this.loadDeviceList()
    },
  
   loadReayList() {
@@ -81,92 +82,17 @@ Page({
     })
   },
 
-  // 加载设备列表
-  async loadDeviceList() {
-    try {
-      let devlist = await app.globalData.getMyDevices() || []
-      const devices = Object.values(devlist.items).map(device => ({
-        ...device,
-        displayName: `${device.callsign}-${device.ssid}(${device.dmrid}-${device.id})`
-      }));
-      this.setData({ devices })
-    } catch (error) {
-      console.error('Error loading device list:', error)
-      wx.showToast({
-        title: '获取设备列表失败',
-        icon: 'none'
-      })
-    }
-  },
-
-  // 选择设备
-  selectDevice(e) {
-    const index = e.detail.value
-    const device = this.data.devices[index]
-    if (device) {
-      this.setData({ selectedDevice: device })
-    }
-  },
-
-  // 加入当前群组
-  async joinGroup() {
-    const { selectedDevice } = this.data
-    if (!selectedDevice) {
-      wx.showToast({
-        title: '请先选择设备',
-        icon: 'none'
-      })
-      return
-    }
-
-    wx.showLoading({
-      title: '正在处理中...',
-      mask: true
-    })
-
-    try {
-      // Capture the response from the API call
-      const response = await api.updateDevice({
-        ...selectedDevice,
-        group_id: groupData.id,
-        last_voice_begin_time: "0001-01-01T00:00:00Z",
-        last_voice_end_time: "0001-01-01T00:00:00Z",
-      });
-
-      console.log('updateDevice response:', response);
-      // Check the response code
-// Success case
-      wx.showToast({
-        title: '加入成功，正在刷新数据...',
-        icon: 'success',
-        duration: 3000 // Further increase the duration for the success message
-      });
-
-        groupData = await app.globalData.getGroup(groupData.id);
-        this.loadGroupDetail(groupData);
-        this.loadDeviceList();
-
-        if (selectedDevice.callsign === app.globalData.userInfo.callsign && selectedDevice.ssid === 100) {
-          app.globalData.currentGroup = groupData;
-          app.globalData.currentDevice = selectedDevice;
-        }
-
-        // Consider removing the second success toast or making it more specific
-        // wx.showToast({
-        //   title: '数据刷新完成',
-        //   icon: 'success'
-        // });
-      
-    } catch (error) {
-      // Handle network errors or exceptions during the API call
-      wx.showToast({
-        title: error.message || '操作失败',
-        icon: 'none'
-      });
-      console.error('Error joining group:', error);
-    } finally {
-      wx.hideLoading();
-    }
+  // 管理员对在线 ESP32 设备的远程 AT 管理（经服务器中继）
+  openAT(e) {
+    const device = e.currentTarget.dataset.device
+    const param = encodeURIComponent(JSON.stringify({
+      callsign: device.callsign,
+      ssid: Number(device.ssid),
+      name: `${device.callsign}-${device.ssid}`,
+      dev_model: Number(device.dev_model),
+      is_online: !!device.is_online,
+    }))
+    wx.navigateTo({ url: `/pages/my-device-at/my-device-at?device=${param}` })
   },
 
   formatGoTime(goTime) {
@@ -459,6 +385,7 @@ Page({
           statusReceive: ((device.status & 1) === 1) ? true : false,
           statusSend: ((device.status & 2) === 2) ? true : false,
           rfTypeClass: this.getRFtypeClass(rfTypeId),
+          canAT: manageKind(modelId) !== 'none', // 硬件型号才支持远程 AT
           groupTypeClass: this.getGroupTypeClass(groupTypeId),
           last_packet_time: device.last_packet_time,
           last_voice_begin_time: device.last_voice_begin_time,
@@ -509,7 +436,6 @@ Page({
        console.warn("Missing groupData in onShow, cannot refresh group details.");
        // 可能需要处理 groupData 无效的情况，例如返回上一页或提示错误
     }
-    this.loadDeviceList(); // 加载用户自己的设备列表（用于加入群组）
     this.loadAvailableGroups(); // 加载所有可用群组列表（用于 Picker）
   },
 
@@ -517,7 +443,6 @@ Page({
     if (groupData) {
       this.loadGroupDetail(groupData)
     }
-    this.loadDeviceList()
     wx.stopPullDownRefresh()
   },
 
