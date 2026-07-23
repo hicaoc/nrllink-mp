@@ -1,13 +1,21 @@
-// NRL 设备局域网发现：子网扫描。
-// 设备固件没有 mDNS 广播、也没有 UDP 发现应答，只能扫子网：
-// 对每个候选 IP 发 GET /ping（返回 "ok"），命中后再 GET / 确认页面含
-// NRL 标识并解析设备名（呼号）。
+// NRL 设备局域网发现。新固件使用一个 UDP 广播即可发现整个 LAN；
+// 旧固件保留 /24 HTTP 扫描和手动 IP 作为兼容回退。
 
 const { ping, get } = require('./nrlLan');
 const { parseDeviceName } = require('./nrlPortalParser');
 
 const DEVICES_KEY = 'lanDevices';
 const SUBNET_KEY = 'lanSubnet';
+const DISCOVERY_PORT = 60051;
+const DISCOVERY_REQUEST = 'NRL_DISCOVER/1';
+
+function arrayBufferText(value) {
+  if (typeof value === 'string') return value;
+  const bytes = new Uint8Array(value || new ArrayBuffer(0));
+  let text = '';
+  for (let i = 0; i < bytes.length; i++) text += String.fromCharCode(bytes[i]);
+  try { return decodeURIComponent(escape(text)); } catch (e) { return text; }
+}
 
 // "192.168.1.6" -> "192.168.1"；非法输入返回 null
 function subnetOf(ip) {
@@ -55,6 +63,92 @@ function identifyDevice(ip) {
       online: true,
     };
   }).catch(() => null);
+}
+
+/**
+ * Low-cost discovery: broadcast NRL_DISCOVER/1 and collect unicast JSON
+ * replies for `timeout` milliseconds. Returns { promise, cancel }.
+ */
+function scanBroadcast(subnet, callbacks = {}, timeout = 2600) {
+  const { onFound } = callbacks;
+  let socket = null;
+  let timer = null;
+  let cancelled = false;
+  let finishScan = null;
+  const byId = {};
+
+  const promise = new Promise((resolve) => {
+    const finish = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (socket) {
+        try { socket.close(); } catch (e) {}
+        socket = null;
+      }
+      resolve(Object.keys(byId).map((key) => byId[key]));
+    };
+    finishScan = finish;
+
+    try {
+      socket = wx.createUDPSocket();
+      socket.onMessage((res) => {
+        if (cancelled) return;
+        try {
+          const info = JSON.parse(arrayBufferText(res.message));
+          if (!info || info.protocol !== 'nrl-discovery/1') return;
+          const ip = res.remoteInfo && res.remoteInfo.address;
+          if (!subnetOf(ip)) return;
+          const device = {
+            ip,
+            port: Number(info.http_port) || 80,
+            atPath: info.at_path || '/api/at',
+            deviceId: info.device_id || ip,
+            name: info.name || 'NRL 设备',
+            callsign: info.callsign || '',
+            ssid: Number(info.ssid) || 0,
+            model: info.model || '',
+            dev_model: info.model || '',
+            version: info.version || '',
+            lastSeen: Date.now(),
+            online: true,
+            is_online: true,
+            transport: 'lan',
+          };
+          const key = device.deviceId || ip;
+          if (byId[key]) return;
+          byId[key] = device;
+          if (onFound) onFound(device);
+        } catch (e) {
+          // Ignore unrelated UDP broadcasts on the discovery port.
+        }
+      });
+      socket.onError(() => finish());
+      socket.bind();
+
+      const addresses = ['255.255.255.255'];
+      if (subnet) addresses.push(`${subnet}.255`);
+      const send = () => {
+        if (!socket || cancelled) return;
+        addresses.forEach((address) => {
+          try { socket.send({ address, port: DISCOVERY_PORT, message: DISCOVERY_REQUEST }); } catch (e) {}
+        });
+      };
+      // A few tiny broadcasts tolerate WiFi power-save and AP packet loss.
+      setTimeout(send, 60);
+      setTimeout(send, 450);
+      setTimeout(send, 1000);
+      timer = setTimeout(finish, timeout);
+    } catch (e) {
+      finish();
+    }
+  });
+
+  return {
+    promise,
+    cancel: () => {
+      cancelled = true;
+      if (finishScan) finishScan();
+    },
+  };
 }
 
 /**
@@ -134,6 +228,7 @@ module.exports = {
   subnetOf,
   getLocalSubnet,
   identifyDevice,
+  scanBroadcast,
   scanSubnet,
   loadDevices,
   mergeDevices,

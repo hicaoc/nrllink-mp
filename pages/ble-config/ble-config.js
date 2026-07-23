@@ -95,6 +95,8 @@ Page({
   _rxBuffer: '',            // notify 行缓冲
   _waiters: [],             // 等待 OK/ERR 的回调队列
   _scanResults: null,       // WiFi 扫描累积（非 null 时表示扫描进行中）
+  _wifiStateWaiter: null,   // APPLY 后等待 GOT_IP / FAILED
+  _provisionSucceeded: false,
 
   onLoad() {
     this._onCharChange = this._onCharChange.bind(this);
@@ -218,7 +220,11 @@ Page({
 
   _onConnState(res) {
     if (res.deviceId === this._deviceId && !res.connected) {
-      this.setData({ phase: 'idle', connectedName: '', statusText: '连接已断开' });
+      this.setData({
+        phase: 'idle',
+        connectedName: '',
+        statusText: this._provisionSucceeded ? '配网成功，设备已切换到 WiFi' : '连接已断开',
+      });
       this._rejectAllWaiters('连接断开');
     }
   },
@@ -251,6 +257,10 @@ Page({
     if (eq > 0 && !/^(OK|ERR)/.test(line)) {
       const key = line.slice(0, eq).trim().toUpperCase();
       const val = line.slice(eq + 1);
+      if (key === 'WIFI_STATE') {
+        this._handleWifiState(val);
+        return;
+      }
       // WiFi 扫描结果：WIFI=<ssid>,<rssi>（SSID 可能含逗号，rssi 取最后一个逗号之后）
       if (key === 'WIFI' && this._scanResults) {
         const c = val.lastIndexOf(',');
@@ -330,6 +340,44 @@ Page({
       clearTimeout(w.timer);
       w.reject(new Error(reason));
     }
+    if (this._wifiStateWaiter) {
+      clearTimeout(this._wifiStateWaiter.timer);
+      this._wifiStateWaiter.reject(new Error(reason));
+      this._wifiStateWaiter = null;
+    }
+  },
+
+  _handleWifiState(value) {
+    const state = String(value || '');
+    if (state.indexOf('CONNECTING') === 0) {
+      this.setData({ statusText: '配置已保存，正在连接 WiFi…' });
+      return;
+    }
+    const waiter = this._wifiStateWaiter;
+    if (!waiter) return;
+    clearTimeout(waiter.timer);
+    this._wifiStateWaiter = null;
+    if (state.indexOf('GOT_IP') === 0) {
+      this._provisionSucceeded = true;
+      waiter.resolve(state);
+    }
+    else waiter.reject(new Error(state.indexOf('FAILED') === 0 ? 'WiFi 连接失败，请检查密码和信号' : state));
+  },
+
+  _waitForWifiResult(timeout = 65000) {
+    if (this._wifiStateWaiter) {
+      clearTimeout(this._wifiStateWaiter.timer);
+      this._wifiStateWaiter.reject(new Error('新的配网操作已开始'));
+    }
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (this._wifiStateWaiter && this._wifiStateWaiter.timer === timer) {
+          this._wifiStateWaiter = null;
+        }
+        reject(new Error('等待设备连接 WiFi 超时'));
+      }, timeout);
+      this._wifiStateWaiter = { resolve, reject, timer };
+    });
   },
 
   // ---- 业务动作 ----------------------------------------------------------
@@ -409,35 +457,65 @@ Page({
     return '';
   },
 
-  // 逐项下发 SET（固件每条 SET 都会保存并按需重连），可选重启。
+  // 新固件用 BEGIN/APPLY 原子提交 WiFi；BEGIN 不支持时回退旧协议。
   async _saveConfig(reboot) {
     const err = this._validate();
     if (err) { wx.showToast({ title: err, icon: 'none' }); return; }
     if (this.data.busy) return;
     this.setData({ busy: true, statusText: '保存中…' });
+    this._provisionSucceeded = false;
 
     const f = this.data.form;
-    const cmds = [
-      ['WIFI_SSID', f.wifi_ssid],
+    const otherCmds = [
       ['SERVER_HOST', f.server_host],
       ['SERVER_PORT', f.server_port],
       ['CHANNEL', f.channel],
       ['CALLSIGN', f.callsign],
       ['CALL_SSID', f.call_ssid],
     ];
-    // 密码仅在用户填写时下发（留空表示不修改）。
-    if (f.wifi_pass) cmds.unshift(['WIFI_PASS', f.wifi_pass]);
-
     try {
+      let transactional = true;
+      try {
+        await this._sendCommand('BEGIN', { timeout: 4000 });
+      } catch (e) {
+        transactional = false;
+      }
+
+      const wifiCmds = [['WIFI_SSID', f.wifi_ssid]];
+      // 必须先发 SSID 再发密码。相同 SSID 留空表示保留密码；新 SSID
+      // 留空则按开放网络处理。
+      if (f.wifi_pass) wifiCmds.push(['WIFI_PASS', f.wifi_pass]);
+      const cmds = wifiCmds.concat(otherCmds);
       for (const [k, v] of cmds) {
         if (v === '' || v === undefined || v === null) continue;
         await this._sendCommand('SET ' + k + '=' + v, { timeout: 6000 });
       }
-      if (reboot) {
+
+      if (transactional) {
+        const wifiResult = this._waitForWifiResult();
+        try {
+          await this._sendCommand('APPLY', { timeout: 6000 });
+        } catch (applyError) {
+          if (this._wifiStateWaiter) {
+            clearTimeout(this._wifiStateWaiter.timer);
+            this._wifiStateWaiter.reject(applyError);
+            this._wifiStateWaiter = null;
+          }
+          await wifiResult.catch(() => {});
+          throw applyError;
+        }
+        this.setData({ statusText: '配置已保存，正在连接 WiFi…' });
+        const state = await wifiResult;
+        const comma = state.indexOf(',');
+        const ip = comma >= 0 ? state.slice(comma + 1) : '';
+        this.setData({ statusText: ip ? `配网成功，设备 IP：${ip}` : '配网成功' });
+        wx.showToast({ title: 'WiFi 连接成功', icon: 'success' });
+      }
+      if (reboot && !transactional) {
         await this._sendCommand('REBOOT', { expectReply: true, timeout: 3000 }).catch(() => {});
         this.setData({ statusText: '已保存，设备正在重启' });
         wx.showToast({ title: '已保存并重启', icon: 'success' });
-      } else {
+      } else if (!transactional) {
         this.setData({ statusText: '配置已保存' });
         wx.showToast({ title: '保存成功', icon: 'success' });
       }

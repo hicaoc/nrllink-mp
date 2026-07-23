@@ -84,10 +84,22 @@ function checkSaveResponse(res) {
   return { ok: false, error: (body && body.error) || '设备拒绝保存' };
 }
 
+// Execute an AT command directly on a device in the same LAN. The firmware
+// returns the exact CRLF-delimited AT reply used by serial/NRL transports.
+function localAT(ip, command, timeout = 5000) {
+  return postForm(ip, '/api/at', { command }, timeout).then((res) => {
+    if (res.statusCode !== 200 || !res.data || res.data.ok !== true) {
+      throw new Error((res.data && res.data.error) || `HTTP ${res.statusCode}`);
+    }
+    return String(res.data.reply || '');
+  });
+}
+
 module.exports = {
   request,
   get,
   postForm,
   ping,
   checkSaveResponse,
+  localAT,
 };

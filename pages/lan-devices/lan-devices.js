@@ -1,4 +1,4 @@
-// 局域网 NRL 设备发现列表页：子网扫描 + 缓存设备管理 + 手动添加。
+// 局域网 NRL 设备发现列表页：优先 UDP 广播，旧固件可回退 /24 HTTP 扫描。
 const discovery = require('../../utils/nrlDiscovery');
 const { ping } = require('../../utils/nrlLan');
 
@@ -47,31 +47,17 @@ Page({
 
   async startScan() {
     const subnet = await discovery.getLocalSubnet();
-    if (!subnet) {
-      wx.showModal({
-        title: '无法确定网段',
-        content: '请确认手机已连接 WiFi，或使用手动添加设备 IP。',
-        showCancel: false,
-      });
-      return;
-    }
     this.setData({
       scanning: true,
-      subnet,
+      subnet: subnet || '',
       progressDone: 0,
+      progressTotal: 1,
       progressPercent: 0,
-      statusText: '扫描中…',
+      statusText: '正在广播发现设备…',
     });
 
     const found = [];
-    this._scan = discovery.scanSubnet(subnet, {
-      onProgress: (done, total) => {
-        this.setData({
-          progressDone: done,
-          progressTotal: total,
-          progressPercent: Math.round((done * 100) / total),
-        });
-      },
+    this._scan = discovery.scanBroadcast(subnet, {
       onFound: (device) => {
         found.push(device);
         this.setData({ devices: discovery.mergeDevices([device]) });
@@ -83,7 +69,44 @@ Page({
       this._scan = null;
       this.setData({
         scanning: false,
+        progressDone: 1,
+        progressPercent: 100,
         statusText: wasCancelled ? '已停止' : `扫描完成，发现 ${found.length} 台设备`,
+      });
+      if (!wasCancelled && found.length === 0 && subnet) {
+        wx.showModal({
+          title: '未收到发现响应',
+          content: '可能是旧版固件。是否执行兼容扫描？兼容扫描会依次探测当前网段的 254 个地址。',
+          confirmText: '兼容扫描',
+          success: (res) => { if (res.confirm) this.startLegacyScan(subnet); },
+        });
+      }
+    });
+  },
+
+  startLegacyScan(subnet) {
+    const found = [];
+    this.setData({
+      scanning: true, subnet, progressDone: 0, progressTotal: 254,
+      progressPercent: 0, statusText: '正在兼容扫描旧固件…',
+    });
+    this._scan = discovery.scanSubnet(subnet, {
+      onProgress: (done, total) => this.setData({
+        progressDone: done,
+        progressTotal: total,
+        progressPercent: Math.round((done * 100) / total),
+      }),
+      onFound: (device) => {
+        found.push(device);
+        this.setData({ devices: discovery.mergeDevices([device]) });
+      },
+    });
+    this._scan.promise.then(() => {
+      const wasCancelled = this.data.scanning === false;
+      this._scan = null;
+      this.setData({
+        scanning: false,
+        statusText: wasCancelled ? '已停止' : `兼容扫描完成，发现 ${found.length} 台设备`,
       });
     });
   },
@@ -128,7 +151,7 @@ Page({
   openDeviceByIp(ip) {
     const device = this.data.devices.find((d) => d.ip === ip) || { ip };
     const param = encodeURIComponent(JSON.stringify(device));
-    wx.navigateTo({ url: `/pages/lan-device/lan-device?device=${param}` });
+    wx.navigateTo({ url: `/pages/my-device-at/my-device-at?device=${param}` });
   },
 
   removeDevice(e) {

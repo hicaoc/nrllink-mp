@@ -20,6 +20,7 @@ module.exports = { display: display, indexOf: indexOf };
       <text class="status-text">{{device.name}}（{{device.callsign}}-{{device.ssid}}）</text>
     </view>
     <view class="tip" wx:if="{{device.version}}">{{device.version}}</view>
+    <view class="tip transport-tip">{{transportLabel}}</view>
     <view class="tip warn-tip" wx:if="{{!device.is_online}}">设备离线，无法发送指令。显示的是最后一次在线时的信息。</view>
     <view class="tip warn-tip" wx:if="{{atSupported === false}}">设备固件版本不支持 AT 指令，请升级固件{{showEeprom ? '，或使用下方的寄存器配置' : ''}}。</view>
   </view>

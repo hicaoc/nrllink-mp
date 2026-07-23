@@ -32,6 +32,7 @@
 .status-text { font-size: 15px; color: #333; }
 .tip { margin-top: 8px; font-size: 12px; color: #999; line-height: 1.5; }
 .warn-tip { color: #e6a23c; }
+.transport-tip { color: #1989fa; }
 .cat-hint { margin: -4px 0 10px; }
 
 /* 寄存器配置入口 */

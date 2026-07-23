@@ -4,6 +4,7 @@
 import { getCatalog, getCatalogForDevice, manageKind } from '../../utils/atCatalog.js';
 
 const api = require('../../utils/api');
+const lan = require('../../utils/nrlLan');
 
 const POLL_TIMES = 4;
 const POLL_INTERVAL = 600;
@@ -40,6 +41,7 @@ Page({
     log: [],      // { kind: 'tx'|'rx'|'err', text }
     atSupported: null,
     showEeprom: false, // 老型号设备显示寄存器配置入口
+    transportLabel: '服务器远程',
   },
 
   onLoad(options) {
@@ -49,18 +51,24 @@ Page({
     } catch (e) {
       device = {};
     }
-    if (!device.callsign) {
+    if (!device.callsign && !device.ip) {
       wx.showToast({ title: '缺少设备信息', icon: 'none' });
       setTimeout(() => wx.navigateBack(), 800);
       return;
     }
     this._catalog = getCatalog(device.dev_model) || [];
     this._atmap = {}; // 设备上报的指令全集（决定显示哪些命令）
+    this._isLan = !!device.ip;
+    if (this._isLan) {
+      device.is_online = true;
+      device.transport = 'lan';
+    }
     this.setData({
       device,
       categories: [], // 按设备上报的指令列表动态构建，见 rebuildCategories
       // 老型号（dev_model < 100）：同时提供寄存器（EEPROM）配置入口
       showEeprom: manageKind(device.dev_model) === 'at-legacy',
+      transportLabel: this._isLan ? `局域网直连 · ${device.ip}` : '服务器远程',
     });
     wx.setNavigationBarTitle({ title: device.name || '远程管理' });
     this.initDevice();
@@ -68,6 +76,11 @@ Page({
 
   // 进页：取设备最新状态（顺便拿上次 AT 回复回填），在线则发 AT+READ 全量查询
   async initDevice() {
+    if (this._isLan) {
+      const ok = await this.exec('READ', '123', { silentLog: true, suppressUnknownErr: true });
+      if (!ok) this.setData({ atSupported: false });
+      return;
+    }
     let dev = null;
     try {
       const res = await api.getDevice({ callsign: this.data.device.callsign, ssid: this.data.device.ssid }, true);
@@ -87,8 +100,7 @@ Page({
       }
     }
     if (this.data.device.is_online) {
-      // AT+READ：固件对未知指令返回全量配置 dump（服务器首次上线也这么干）
-      this.exec('READ', '1', { silentLog: true, suppressUnknownErr: true });
+      this.exec('READ', '123', { silentLog: true, suppressUnknownErr: true });
     } else if (!this._lastAt) {
       this.setData({ atSupported: false });
     }
@@ -104,6 +116,10 @@ Page({
     }
     this.setData({ [`pending.${key}`]: true });
     if (!opts.silentLog) this.appendLog('tx', `AT+${key}=${data}`);
+
+    if (this._isLan) {
+      return this.execLan(key, data, opts);
+    }
 
     const prevAt = this._lastAt ? JSON.stringify(this._lastAt) : '';
     let fresh = null;
@@ -157,6 +173,44 @@ Page({
     if (fresh.version) this.setData({ 'device.version': fresh.version });
     this.applyAtmap(fresh.atmap || {}, opts);
     return true;
+  },
+
+  // LAN 模式直接调用设备 /api/at，回复与串口 AT 完全相同，不经过平台服务器。
+  async execLan(key, data, opts = {}) {
+    try {
+      const reply = await lan.localAT(this.data.device.ip, `AT+${key}=${data}`, 7000);
+      const parsed = this.parseLocalReply(reply);
+      this.setData({
+        [`pending.${key}`]: false,
+        'device.is_online': true,
+        atSupported: true,
+      });
+      if (parsed.version) this.setData({ 'device.version': parsed.version });
+      this.applyAtmap(parsed.atmap, opts);
+      return true;
+    } catch (e) {
+      this.setData({ [`pending.${key}`]: false, 'device.is_online': false });
+      if (!opts.silentLog) this.appendLog('err', `局域网请求失败：${e.message || e}`);
+      wx.showToast({ title: '设备连接失败', icon: 'none' });
+      return false;
+    }
+  },
+
+  parseLocalReply(reply) {
+    const atmap = {};
+    let version = '';
+    String(reply || '').split(/\r?\n/).forEach((raw) => {
+      const line = raw.trim();
+      if (!line) return;
+      if (/^NRL-ESP32\s+v/i.test(line)) {
+        version = line;
+        return;
+      }
+      const eq = line.indexOf('=');
+      if (eq <= 0) return;
+      atmap[line.slice(0, eq)] = line.slice(eq + 1);
+    });
+    return { version, atmap };
   },
 
   // atmap 里是否有某个命令（固件回复行带 AT+ 前缀，两种键都查）

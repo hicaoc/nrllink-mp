@@ -7,7 +7,7 @@
       <text class="status-text">{{statusText}}</text>
     </view>
     <view class="tip" wx:if="{{!scanning}}">
-      手机需与 NRL 设备连接同一 WiFi。找不到设备时可手动添加 IP。
+      手机需与 NRL 设备连接同一 WiFi。扫描只发送少量 UDP 广播；旧固件可选择兼容扫描。
     </view>
   </view>
 
@@ -18,7 +18,7 @@
     </button>
     <view class="progress-wrap" wx:if="{{scanning}}">
       <progress percent="{{progressPercent}}" stroke-width="4" activeColor="#007bff" />
-      <text class="progress-text">正在扫描 {{subnet}}.x（{{progressDone}}/{{progressTotal}}）</text>
+      <text class="progress-text">{{statusText}}（{{progressDone}}/{{progressTotal}}）</text>
     </view>
     <button class="ghost-btn add-btn" disabled="{{scanning}}" bindtap="addManually">手动添加设备 IP</button>
   </view>
@@ -37,7 +37,7 @@
             <text class="dot-inline {{item.online ? 'dot-on' : 'dot-off'}}"></text>
             {{item.name || 'NRL 设备'}}
           </text>
-          <text class="device-id">{{item.ip}}</text>
+          <text class="device-id">{{item.ip}} {{item.callsign ? '· ' + item.callsign + '-' + item.ssid : ''}}</text>
         </view>
         <view class="nav-arrow">›</view>
       </view>
