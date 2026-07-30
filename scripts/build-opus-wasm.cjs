@@ -28,6 +28,21 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 function extractEmbeddedWasm() {
     const source = fs.readFileSync(generatedModulePath, 'utf8');
+    const { literalStart, literalEnd } = findEmbeddedWasmLiteral(source);
+    const literal = source.slice(literalStart, literalEnd + 1);
+    const encoded = Function(`"use strict"; return (${literal});`)();
+    const wasm = Buffer.allocUnsafe(encoded.length);
+    for (let i = 0; i < encoded.length; i++) {
+        const charCode = encoded.charCodeAt(i);
+        wasm[i] = (~charCode >> 8) & charCode;
+    }
+    if (wasm.subarray(0, 4).toString('hex') !== '0061736d') {
+        throw new Error('Extracted libopus data is not a WASM module');
+    }
+    return wasm;
+}
+
+function findEmbeddedWasmLiteral(source) {
     const marker = 'function findWasmBinary(){return binaryDecode(';
     const markerIndex = source.indexOf(marker);
     if (markerIndex < 0) throw new Error('Unable to locate embedded libopus WASM');
@@ -47,18 +62,7 @@ function extractEmbeddedWasm() {
         }
     }
     if (literalEnd < 0) throw new Error('Unterminated embedded WASM string');
-
-    const literal = source.slice(literalStart, literalEnd + 1);
-    const encoded = Function(`"use strict"; return (${literal});`)();
-    const wasm = Buffer.allocUnsafe(encoded.length);
-    for (let i = 0; i < encoded.length; i++) {
-        const charCode = encoded.charCodeAt(i);
-        wasm[i] = (~charCode >> 8) & charCode;
-    }
-    if (wasm.subarray(0, 4).toString('hex') !== '0061736d') {
-        throw new Error('Extracted libopus data is not a WASM module');
-    }
-    return wasm;
+    return { literalStart, literalEnd };
 }
 
 async function main() {
@@ -80,10 +84,24 @@ async function main() {
         format: 'cjs',
         platform: 'browser',
         target: 'es2017',
+        minify: true,
+        legalComments: 'none',
         define: {
             'globalThis.process': 'undefined'
         },
         plugins: [{
+            name: 'remove-embedded-wasm',
+            setup(build) {
+                build.onLoad({ filter: /libopus\.generated\.mjs$/ }, args => {
+                    const source = fs.readFileSync(args.path, 'utf8');
+                    const { literalStart, literalEnd } = findEmbeddedWasmLiteral(source);
+                    return {
+                        contents: `${source.slice(0, literalStart)}''${source.slice(literalEnd + 1)}`,
+                        loader: 'js'
+                    };
+                });
+            }
+        }, {
             name: 'ignore-node-builtins',
             setup(build) {
                 build.onResolve({ filter: /^node:/ }, args => ({
