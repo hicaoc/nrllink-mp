@@ -43,7 +43,9 @@ export class VoiceService {
                 for (let i = 0; i < packet.data.length; i++) {
                     linearData[i] = this.g711Codec.alaw2linear(packet.data[i]);
                 }
-                audio.playPCM(linearData);
+                audio.playPCM(linearData, {
+                    streamId: `${packet.callSign || ''}-${packet.ssid == null ? '' : packet.ssid}`
+                });
                 this.processIncomingVoice(packet, linearData);
                 break;
 
