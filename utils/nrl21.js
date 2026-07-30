@@ -74,13 +74,22 @@ export class NRL21Packet {
 }
 
 
-export function createPacket({ callSign, type }) {
+export function createPacket({ callSign, type, count = 0 }) {
 
   return new NRL21Packet({
     type,
     callSign,
+    count,
 
   });
+}
+
+export function setPacketCount(data, count) {
+  const byteArray = data instanceof Uint8Array ? data : new Uint8Array(data);
+  const normalizedCount = Number(count) & 0xffff;
+  byteArray[22] = (normalizedCount >> 8) & 0xff;
+  byteArray[23] = normalizedCount & 0xff;
+  return byteArray;
 }
 
 export function decodePacket(data) {
@@ -92,6 +101,7 @@ export function decodePacket(data) {
 
   return {
     type: byteArray[20],
+    count: view.getUint16(22, false),
     callSign: callSignStr,
     ssid: byteArray[30],
     devModel: byteArray[31],
@@ -140,6 +150,7 @@ export function readUint24(view, offset) {
 
 export default {
   createPacket,
+  setPacketCount,
   decodePacket,
 
 };

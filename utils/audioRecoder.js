@@ -22,6 +22,12 @@ class AudioRecorder {
   }
 
   initRecorder() {
+    // RecorderManager is a singleton. Remove handlers from the previous PTT
+    // session so codec switches do not leave old frame queues alive.
+    if (recorderManager.offStart) recorderManager.offStart();
+    if (recorderManager.offStop) recorderManager.offStop();
+    if (recorderManager.offFrameRecorded) recorderManager.offFrameRecorded();
+
     recorderManager.onStart(() => {
       console.log('recorder start');
     });
@@ -58,6 +64,8 @@ class AudioRecorder {
       });
     }
 
+    if (!frame) return null;
+
     const raw = new Int16Array(frame);
     if (this.codec === 'g711') {
       const encoded = this.g711Codec.encode(raw);
@@ -67,10 +75,13 @@ class AudioRecorder {
   }
 
   start() {
+    const sampleRate = this.codec === 'opus' ? 16000 : 8000;
     recorderManager.start({
       format: 'PCM',
-      sampleRate: 8000,
-      encodeBitRate: 16000,
+      sampleRate,
+      // RecorderManager validates this independently from the raw PCM rate.
+      // Actual Opus bitrate is configured in audioOpus.js after PCM capture.
+      encodeBitRate: 48000,
       numberOfChannels: 1,
       frameSize: 1,
       duration: 600000, // 最大10分钟，默认60秒

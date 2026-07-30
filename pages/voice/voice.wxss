@@ -373,7 +373,7 @@
 .voice-bubble {
   display: flex;
   align-items: center;
-  min-width: 140rpx;
+  min-width: 220rpx;
   height: 80rpx;
   box-sizing: border-box;
   transition: all 0.3s;
@@ -475,6 +475,45 @@
   opacity: 0.9;
 }
 
+.voice-codec-badge {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 12rpx;
+  padding: 3rpx 10rpx;
+  border-radius: 12rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  line-height: 1.3;
+  background: rgba(6, 169, 77, 0.12);
+  color: #058c40;
+}
+
+.self .voice-codec-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.other .voice-bubble.codec-opus {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  color: #3730a3;
+  border: 2rpx solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4rpx 15rpx rgba(99, 102, 241, 0.12);
+}
+
+.self .voice-bubble.codec-opus {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 4rpx 15rpx rgba(79, 70, 229, 0.28);
+}
+
+.other .voice-bubble.codec-opus .wave-bar {
+  background: #6366f1;
+}
+
+.other .voice-bubble.codec-opus .voice-codec-badge {
+  background: rgba(99, 102, 241, 0.14);
+  color: #4f46e5;
+}
+
 /* Receiving Animation */
 .active-receiving .voice-bubble {
   background: #ffffff;
@@ -554,6 +593,36 @@
   color: #06a94d;
   font-weight: 700;
   transform: scale(1.05);
+}
+
+.codec-control {
+  display: flex;
+  align-items: center;
+  min-height: 58rpx;
+  margin-bottom: 14rpx;
+  padding: 0 8rpx;
+  color: #52606d;
+}
+
+.codec-control-title {
+  font-size: 24rpx;
+}
+
+.codec-control-value {
+  flex: 1;
+  margin-left: 14rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #058c40;
+}
+
+.codec-control.codec-opus .codec-control-value {
+  color: #4f46e5;
+}
+
+.codec-control switch {
+  transform: scale(0.78);
+  transform-origin: right center;
 }
 
 .ptt-bar {
@@ -891,6 +960,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 16rpx;
+}
+
+.active-receiving .voice-bubble.codec-opus {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border-color: #6366f1;
+  box-shadow: 0 0 20rpx rgba(99, 102, 241, 0.18);
 }
 
 .server-card-stats {

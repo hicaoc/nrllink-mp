@@ -3,31 +3,90 @@ console.log('audioPlayer.js loaded');
 
 import * as g711 from './audioG711';
 
-const SAMPLE_RATE = 8000;
-
-// Keep the WebAudio scheduling quantum near 10.7ms at 48kHz. A larger
-// quantum would add tens of milliseconds after the packet target is reached.
+const DEFAULT_SAMPLE_RATE = 8000;
+const MAX_INPUT_SAMPLE_RATE = 16000;
 const BUFFER_SIZE = 512;
-
-const SMALL_PACKET_SIZE = 160;
-const LARGE_PACKET_SIZE = 500;
 const SMALL_PACKET_MIN_TARGET = 1;
 const SMALL_PACKET_MAX_TARGET = 5;
-const MAX_BUFFER_MS = 400;
+const MAX_BUFFER_MS = 1000;
 const STREAM_GAP_RESET_MS = 500;
-const STABLE_PACKETS_TO_REDUCE_TARGET = 50;
+const STABLE_PACKETS_TO_REDUCE_TARGET = 250; // About 5s for 20ms packets.
+const SMALL_PACKET_START_HOLD_MS = 20;
+const MAX_SPEED_ADJUSTMENT = 0.015;
 
-let pcmBuffer = new Float32Array(0);
+class PcmRingBuffer {
+    constructor(capacity) {
+        this.capacity = capacity;
+        this.data = new Float32Array(capacity);
+        this.readIndex = 0;
+        this.writeIndex = 0;
+        this.size = 0;
+    }
+
+    get length() {
+        return this.size;
+    }
+
+    clear() {
+        this.readIndex = 0;
+        this.writeIndex = 0;
+        this.size = 0;
+    }
+
+    write(input) {
+        let droppedSamples = 0;
+        let start = 0;
+
+        if (input.length >= this.capacity) {
+            start = input.length - this.capacity;
+            droppedSamples = this.size + start;
+            this.clear();
+        }
+
+        for (let i = start; i < input.length; i++) {
+            if (this.size === this.capacity) {
+                this.readIndex = (this.readIndex + 1) % this.capacity;
+                this.size--;
+                droppedSamples++;
+            }
+
+            this.data[this.writeIndex] = input[i];
+            this.writeIndex = (this.writeIndex + 1) % this.capacity;
+            this.size++;
+        }
+
+        return droppedSamples;
+    }
+
+    get(offset) {
+        if (offset < 0 || offset >= this.size) return 0;
+        return this.data[(this.readIndex + offset) % this.capacity];
+    }
+
+    discard(count) {
+        const discarded = Math.min(Math.max(0, count), this.size);
+        this.readIndex = (this.readIndex + discarded) % this.capacity;
+        this.size -= discarded;
+        return discarded;
+    }
+}
+
+const pcmRingBuffer = new PcmRingBuffer(Math.ceil(MAX_INPUT_SAMPLE_RATE * MAX_BUFFER_MS / 1000));
+
 let isWebAudioInitialized = false;
 let isPlaybackPrimed = false;
-let prebufferPacketCount = 0;
-let prebufferPacketSize = 0;
+let prebufferStartedAt = 0;
+let streamPacketSize = 0;
+let streamPacketDurationMs = 0;
+let activeInputSampleRate = DEFAULT_SAMPLE_RATE;
 let lastPacketArrivalAt = 0;
 let lastPacketDurationMs = 0;
 let jitterEstimateMs = 0;
 let adaptiveSmallPacketFloor = SMALL_PACKET_MIN_TARGET;
 let stablePacketCount = 0;
 let activeStreamId = null;
+let sourceReadPosition = 0;
+let lastSpeedAdjustment = 0;
 
 const webAudioContext = wx.createWebAudioContext();
 const gainNode = webAudioContext.createGain();
@@ -50,20 +109,13 @@ function initWebAudio() {
 
             if (!isPlaybackPrimed && canStartPlayback()) {
                 isPlaybackPrimed = true;
-                prebufferPacketCount = 0;
             }
 
             if (!isPlaybackPrimed) return;
 
-            if (pcmBuffer.length < BUFFER_SIZE) {
-                // Keep the short tail intact. No zero samples are appended to the PCM
-                // queue; playback resumes only after enough real samples arrive.
-                handleUnderflow({ preserveBuffer: true });
-                return;
+            if (!renderFromRingBuffer(outputData)) {
+                handleUnderflow();
             }
-
-            outputData.set(pcmBuffer.subarray(0, BUFFER_SIZE));
-            pcmBuffer = pcmBuffer.slice(BUFFER_SIZE);
         };
 
         wx.onAudioInterruptionEnd(() => {
@@ -78,7 +130,7 @@ function initWebAudio() {
             console.log('AudioContext state changed to:', webAudioContext.state);
             if (webAudioContext.state === 'suspended' || webAudioContext.state === 'running') {
                 resetJitterBuffer();
-                console.log('pcmBuffer cleared.');
+                console.log('PCM ring buffer cleared.');
             }
         };
 
@@ -137,19 +189,28 @@ function playPCM(pcmData, options = {}) {
 
     const now = Date.now();
     const packetSize = pcmData.length;
-    const packetDurationMs = packetSize * 1000 / SAMPLE_RATE;
+    const inputSampleRate = Number(options.sampleRate) || DEFAULT_SAMPLE_RATE;
+    if (inputSampleRate <= 0 || inputSampleRate > MAX_INPUT_SAMPLE_RATE) {
+        console.warn(`Unsupported PCM sample rate: ${inputSampleRate}`);
+        return;
+    }
+    const packetDurationMs = packetSize * 1000 / inputSampleRate;
     const streamId = options.streamId == null ? null : String(options.streamId);
 
-    if (streamId !== null && activeStreamId !== null && streamId !== activeStreamId) {
+    if (
+        (streamId !== null && activeStreamId !== null && streamId !== activeStreamId) ||
+        (streamPacketSize > 0 && activeInputSampleRate !== inputSampleRate)
+    ) {
         resetJitterBuffer();
     }
     if (streamId !== null) activeStreamId = streamId;
+    activeInputSampleRate = inputSampleRate;
 
     if (lastPacketArrivalAt > 0) {
         const arrivalIntervalMs = now - lastPacketArrivalAt;
         if (arrivalIntervalMs > STREAM_GAP_RESET_MS) {
-            // Treat a long receive gap as a new talk burst and discard stale tail audio.
             resetJitterBuffer({ keepStreamId: true });
+            activeInputSampleRate = inputSampleRate;
         } else {
             updateJitterEstimate(arrivalIntervalMs, lastPacketDurationMs);
         }
@@ -158,14 +219,17 @@ function playPCM(pcmData, options = {}) {
     lastPacketArrivalAt = now;
     lastPacketDurationMs = packetDurationMs;
 
-    if (!isPlaybackPrimed) {
-        if (prebufferPacketCount > 0 && prebufferPacketSize !== packetSize) {
-            // Packet size normally stays constant in one talk burst. Restart cleanly if it changes.
-            pcmBuffer = new Float32Array(0);
-            prebufferPacketCount = 0;
-        }
-        prebufferPacketSize = packetSize;
-        prebufferPacketCount++;
+    if (streamPacketSize === 0) {
+        streamPacketSize = packetSize;
+        streamPacketDurationMs = packetDurationMs;
+    } else if (!isPlaybackPrimed && streamPacketSize !== packetSize) {
+        // Packet size normally stays fixed in a talk burst. A change while waiting
+        // starts a new clean prebuffer calculation without mixing policies.
+        pcmRingBuffer.clear();
+        sourceReadPosition = 0;
+        streamPacketSize = packetSize;
+        streamPacketDurationMs = packetDurationMs;
+        prebufferStartedAt = 0;
     }
 
     const float32Data = new Float32Array(packetSize);
@@ -173,14 +237,19 @@ function playPCM(pcmData, options = {}) {
         float32Data[i] = Math.max(-1, Math.min(1, pcmData[i] / 32768.0));
     }
 
-    appendToPlaybackBuffer(resamplePCM(float32Data, SAMPLE_RATE, webAudioContext.sampleRate));
+    let droppedSamples = pcmRingBuffer.write(float32Data);
+    const maxBufferedSamples = Math.ceil(activeInputSampleRate * MAX_BUFFER_MS / 1000);
+    if (pcmRingBuffer.length > maxBufferedSamples) {
+        droppedSamples += pcmRingBuffer.discard(pcmRingBuffer.length - maxBufferedSamples);
+    }
+    if (droppedSamples > 0) sourceReadPosition = 0;
+    if (prebufferStartedAt === 0) prebufferStartedAt = now;
 }
 
 function updateJitterEstimate(arrivalIntervalMs, expectedIntervalMs) {
     if (expectedIntervalMs <= 0) return;
 
     const deviationMs = Math.abs(arrivalIntervalMs - expectedIntervalMs);
-    // RFC3550-style EWMA smooths scheduling noise while still following network jitter.
     jitterEstimateMs += (deviationMs - jitterEstimateMs) / 16;
 
     if (deviationMs < 3) {
@@ -197,10 +266,12 @@ function updateJitterEstimate(arrivalIntervalMs, expectedIntervalMs) {
     }
 }
 
-function getTargetPacketCount(packetSize) {
-    if (packetSize === LARGE_PACKET_SIZE) return 1;
+function isAdaptiveSmallFrame(packetDurationMs) {
+    return packetDurationMs >= 15 && packetDurationMs <= 25;
+}
 
-    if (packetSize === SMALL_PACKET_SIZE) {
+function getTargetPacketCount(packetDurationMs) {
+    if (isAdaptiveSmallFrame(packetDurationMs)) {
         let jitterTarget = SMALL_PACKET_MIN_TARGET;
         if (jitterEstimateMs >= 15) jitterTarget = 5;
         else if (jitterEstimateMs >= 10) jitterTarget = 4;
@@ -210,95 +281,119 @@ function getTargetPacketCount(packetSize) {
         return Math.max(adaptiveSmallPacketFloor, jitterTarget);
     }
 
-    // Unknown packet sizes target about 60ms, bounded to the same 1..5 packet range.
-    const packetDurationMs = packetSize * 1000 / SAMPLE_RATE;
     return Math.max(1, Math.min(5, Math.ceil(60 / packetDurationMs)));
 }
 
+function getTargetSourceSamples() {
+    const packetSize = streamPacketSize || 160;
+    const packetDurationMs = streamPacketDurationMs || 20;
+    return packetSize * getTargetPacketCount(packetDurationMs);
+}
+
 function canStartPlayback() {
-    if (prebufferPacketSize === 0 || pcmBuffer.length < BUFFER_SIZE) return false;
+    if (streamPacketSize === 0 || pcmRingBuffer.length < getTargetSourceSamples()) return false;
 
-    const samplesPerPacket = Math.round(
-        prebufferPacketSize * webAudioContext.sampleRate / SAMPLE_RATE
-    );
-    const targetSamples = samplesPerPacket * getTargetPacketCount(prebufferPacketSize);
-    return pcmBuffer.length >= targetSamples;
+    const targetPacketCount = getTargetPacketCount(streamPacketDurationMs);
+    let startupHoldMs = 0;
+    if (targetPacketCount === 1) {
+        startupHoldMs = isAdaptiveSmallFrame(streamPacketDurationMs)
+            ? SMALL_PACKET_START_HOLD_MS
+            : BUFFER_SIZE * 1000 / webAudioContext.sampleRate;
+    }
+    if (Date.now() - prebufferStartedAt < startupHoldMs) return false;
+
+    return hasEnoughSourceSamples(getNominalSourceStep());
 }
 
-function handleUnderflow({ preserveBuffer = false } = {}) {
-    if (!preserveBuffer) pcmBuffer = new Float32Array(0);
-    isPlaybackPrimed = false;
-    prebufferPacketCount = 0;
-    stablePacketCount = 0;
-    adaptiveSmallPacketFloor = Math.min(
-        SMALL_PACKET_MAX_TARGET,
-        adaptiveSmallPacketFloor + 1
-    );
+function getNominalSourceStep() {
+    return activeInputSampleRate / webAudioContext.sampleRate;
 }
 
-function appendToPlaybackBuffer(data) {
-    const maxSamples = Math.ceil(MAX_BUFFER_MS * webAudioContext.sampleRate / 1000);
-    const combinedLength = pcmBuffer.length + data.length;
-    const keptLength = Math.min(combinedLength, maxSamples);
-    const newPcmBuffer = new Float32Array(keptLength);
+function getPlaybackSourceStep() {
+    const targetSamples = getTargetSourceSamples();
+    const occupancyError = pcmRingBuffer.length - targetSamples;
+    const normalizedError = occupancyError / Math.max(targetSamples, streamPacketSize || 1);
+    lastSpeedAdjustment = Math.max(
+        -MAX_SPEED_ADJUSTMENT,
+        Math.min(MAX_SPEED_ADJUSTMENT, normalizedError * 0.01)
+    );
+    return getNominalSourceStep() * (1 + lastSpeedAdjustment);
+}
 
-    if (combinedLength <= maxSamples) {
-        newPcmBuffer.set(pcmBuffer, 0);
-        newPcmBuffer.set(data, pcmBuffer.length);
-    } else {
-        // Drop the oldest samples so a stalled consumer cannot accumulate latency forever.
-        const oldSamplesToKeep = Math.max(0, keptLength - data.length);
-        if (oldSamplesToKeep > 0) {
-            newPcmBuffer.set(pcmBuffer.subarray(pcmBuffer.length - oldSamplesToKeep), 0);
-        }
-        const dataSamplesToKeep = Math.min(data.length, keptLength);
-        newPcmBuffer.set(
-            data.subarray(data.length - dataSamplesToKeep),
-            keptLength - dataSamplesToKeep
-        );
+function getRequiredSourceSamples(sourceStep) {
+    return Math.floor(sourceReadPosition + sourceStep * (BUFFER_SIZE - 1)) + 2;
+}
+
+function hasEnoughSourceSamples(sourceStep) {
+    return pcmRingBuffer.length >= getRequiredSourceSamples(sourceStep);
+}
+
+function renderFromRingBuffer(outputData) {
+    const sourceStep = getPlaybackSourceStep();
+    if (!hasEnoughSourceSamples(sourceStep)) return false;
+
+    let position = sourceReadPosition;
+    for (let i = 0; i < BUFFER_SIZE; i++) {
+        const lowerIndex = Math.floor(position);
+        const weight = position - lowerIndex;
+        const lowerSample = pcmRingBuffer.get(lowerIndex);
+        const upperSample = pcmRingBuffer.get(lowerIndex + 1);
+        outputData[i] = lowerSample * (1 - weight) + upperSample * weight;
+        position += sourceStep;
     }
 
-    pcmBuffer = newPcmBuffer;
+    const consumedSamples = Math.floor(position);
+    pcmRingBuffer.discard(consumedSamples);
+    sourceReadPosition = position - consumedSamples;
+    return true;
+}
+
+function handleUnderflow() {
+    isPlaybackPrimed = false;
+    prebufferStartedAt = Date.now();
+    stablePacketCount = 0;
+    lastSpeedAdjustment = 0;
+
+    if (isAdaptiveSmallFrame(streamPacketDurationMs)) {
+        adaptiveSmallPacketFloor = Math.min(
+            SMALL_PACKET_MAX_TARGET,
+            adaptiveSmallPacketFloor + 1
+        );
+    }
 }
 
 function resetJitterBuffer({ keepStreamId = false } = {}) {
-    pcmBuffer = new Float32Array(0);
+    pcmRingBuffer.clear();
     isPlaybackPrimed = false;
-    prebufferPacketCount = 0;
-    prebufferPacketSize = 0;
+    prebufferStartedAt = 0;
+    streamPacketSize = 0;
+    streamPacketDurationMs = 0;
+    activeInputSampleRate = DEFAULT_SAMPLE_RATE;
     lastPacketArrivalAt = 0;
     lastPacketDurationMs = 0;
     jitterEstimateMs = 0;
     adaptiveSmallPacketFloor = SMALL_PACKET_MIN_TARGET;
     stablePacketCount = 0;
+    sourceReadPosition = 0;
+    lastSpeedAdjustment = 0;
     if (!keepStreamId) activeStreamId = null;
 }
 
 function getBufferStats() {
+    const packetDurationMs = streamPacketDurationMs || 20;
     return {
-        bufferedMs: pcmBuffer.length * 1000 / webAudioContext.sampleRate,
+        bufferedSamples: pcmRingBuffer.length,
+        bufferedMs: pcmRingBuffer.length * 1000 / activeInputSampleRate,
+        targetSourceSamples: getTargetSourceSamples(),
+        targetPrebufferMs: getTargetSourceSamples() * 1000 / activeInputSampleRate,
+        targetPacketCount: getTargetPacketCount(packetDurationMs),
+        packetSize: streamPacketSize,
+        packetDurationMs: streamPacketDurationMs,
+        sampleRate: activeInputSampleRate,
         jitterEstimateMs,
-        targetPacketCount: getTargetPacketCount(prebufferPacketSize || SMALL_PACKET_SIZE),
-        prebufferPacketCount,
-        prebufferPacketSize,
+        speedAdjustment: lastSpeedAdjustment,
         isPlaybackPrimed,
     };
-}
-
-function resamplePCM(input, inputSampleRate, outputSampleRate) {
-    const ratio = outputSampleRate / inputSampleRate;
-    const outputLength = Math.round(input.length * ratio);
-    const output = new Float32Array(outputLength);
-
-    for (let i = 0; i < outputLength; i++) {
-        const originalIndex = i / ratio;
-        const lowerIndex = Math.floor(originalIndex);
-        const upperIndex = Math.min(Math.ceil(originalIndex), input.length - 1);
-        const weight = originalIndex - lowerIndex;
-        output[i] = input[lowerIndex] * (1 - weight) + input[upperIndex] * weight;
-    }
-
-    return output;
 }
 
 module.exports = {

@@ -17,6 +17,8 @@ Page({
     userInfo: {},
     isTalking: false,
     codec: 'g711',
+    ReceivingCodec: 'g711',
+    ReceivingCodecLabel: 'G.711',
     serverConnected: false,
     showList: false,
     currentGroup: null,
@@ -57,11 +59,13 @@ Page({
     this.voiceService = new VoiceService(this);
     this.recorderService = new RecorderService(this);
 
+    const savedCodec = wx.getStorageSync('voiceSendCodec');
     this.setData({
       userInfo: app.globalData.userInfo,
       chatLogs: app.globalData.chatLogs,
       serverConfig: app.globalData.serverConfig,
-      startTime: Date.now()
+      startTime: Date.now(),
+      codec: savedCodec === 'opus' ? 'opus' : 'g711'
     });
 
     app.registerPage(this);
@@ -94,8 +98,13 @@ Page({
       type: 1,
       callSign: app.globalData.userInfo.callsign,
     });
-    this.audioPacket = new Uint8Array(208);
-    this.audioPacket.set(new Uint8Array(audioPacket.getBuffer()), 0);
+    this.g711AudioPacketHeader = new Uint8Array(audioPacket.getBuffer());
+
+    const opusAudioPacket = nrl21.createPacket({
+      type: 8,
+      callSign: app.globalData.userInfo.callsign,
+    });
+    this.opusAudioPacketHeader = new Uint8Array(opusAudioPacket.getBuffer());
 
     const heartbeatPacket = nrl21.createPacket({
       type: 2,
@@ -121,7 +130,12 @@ Page({
         this.closeUdpClient();
       }
 
-      if (!app.globalData.udpClient || !this.heartbeatBuffer || !this.audioPacket) {
+      if (
+        !app.globalData.udpClient ||
+        !this.heartbeatBuffer ||
+        !this.g711AudioPacketHeader ||
+        !this.opusAudioPacketHeader
+      ) {
         await this.initMdcAndUdp();
       }
 
@@ -310,6 +324,14 @@ Page({
   },
 
   // Event Handlers
+  onCodecSwitch(e) {
+    if (this.data.isTalking) return;
+
+    const codec = e.detail.value ? 'opus' : 'g711';
+    this.setData({ codec });
+    wx.setStorageSync('voiceSendCodec', codec);
+  },
+
   onInput(e) {
     this.setData({ inputText: e.detail.value });
   },

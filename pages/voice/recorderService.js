@@ -1,25 +1,46 @@
 import * as recoder from '../../utils/audioRecoder';
 import * as audioUtils from '../../utils/audioUtils';
 import * as nrlHelpers from '../../utils/nrlHelpers';
+import * as nrl21 from '../../utils/nrl21';
+import * as opus from '../../utils/audioOpus';
 
 const app = getApp();
+const G711_SAMPLE_RATE = 8000;
+const G711_PACKET_SIZE = 160;
+
+function appendUint8(left, right) {
+    const result = new Uint8Array(left.length + right.length);
+    result.set(left, 0);
+    result.set(right, left.length);
+    return result;
+}
+
+function appendInt16(left, right) {
+    const result = new Int16Array(left.length + right.length);
+    result.set(left, 0);
+    result.set(right, left.length);
+    return result;
+}
 
 export class RecorderService {
     constructor(page) {
         this.page = page;
         this.recorder = null;
         this.audioProcessor = null;
+        this.sendTimer = null;
+        this.sendQueue = [];
         this.outgoingVoiceBuffer = [];
+        this.voicePacketCount = 0;
+        this.activeCodec = 'g711';
+        this.activeSampleRate = G711_SAMPLE_RATE;
     }
 
-    /**
-     * Check for microphone permission.
-     */
     async checkAudioPermission() {
         try {
             const authSetting = await wx.getAppAuthorizeSetting();
-            if (authSetting['microphoneAuthorized'] === true) return true;
-            if (authSetting['microphoneAuthorized'] !== "authorized") {
+            const microphoneAuthorized = authSetting.microphoneAuthorized;
+            if (microphoneAuthorized === true || microphoneAuthorized === 'authorized') return true;
+            if (microphoneAuthorized === false || microphoneAuthorized === 'denied') {
                 wx.showToast({ title: '录音权限被拒绝，请手动开启', icon: 'none' });
                 throw new Error('Mic denied');
             }
@@ -31,46 +52,78 @@ export class RecorderService {
         }
     }
 
-    /**
-     * Start audio recording and packet transmission.
-     */
+    async ensureSelectedCodec(codec) {
+        if (codec !== 'opus') return true;
+
+        wx.showLoading({ title: '初始化 Opus...' });
+        try {
+            await opus.checkOpusSupport();
+            return true;
+        } catch (err) {
+            console.error('Opus initialization failed:', err);
+            this.page.setData({ codec: 'g711' });
+            wx.setStorageSync('voiceSendCodec', 'g711');
+            wx.showToast({ title: '当前环境不支持 Opus，已切回 G.711', icon: 'none' });
+            return false;
+        } finally {
+            wx.hideLoading();
+        }
+    }
+
+    sendVoicePayload(type, payload) {
+        const header = type === 8
+            ? this.page.opusAudioPacketHeader
+            : this.page.g711AudioPacketHeader;
+        if (!header || !payload || !app.globalData.udpClient) return false;
+
+        const packet = new Uint8Array(header.length + payload.length);
+        packet.set(header, 0);
+        packet.set(payload, header.length);
+        nrl21.setPacketCount(packet, this.voicePacketCount);
+        this.voicePacketCount = (this.voicePacketCount + 1) & 0xffff;
+        return app.globalData.udpClient.send(packet);
+    }
+
     async startRecording() {
         if (this.page.data.isTalking) return;
+
+        const codec = this.page.data.codec === 'opus' ? 'opus' : 'g711';
         this.outgoingVoiceBuffer = [];
+        this.sendQueue = [];
+        this.voicePacketCount = 0;
 
         try {
             await this.checkAudioPermission();
         } catch (err) {
             return;
         }
+        if (!await this.ensureSelectedCodec(codec)) return;
 
+        this.activeCodec = codec;
+        this.activeSampleRate = codec === 'opus' ? opus.OPUS_SAMPLE_RATE : G711_SAMPLE_RATE;
         this.page.setData({ isTalking: true });
+
         try {
-            this.recorder = await recoder.startRecording(this.page.data.codec, () => {
-                // 录音被系统自动停止（如达到时长上限），同步 PTT 状态
-                if (this.page.data.isTalking) {
-                    this.stopRecording();
-                }
+            this.recorder = await recoder.startRecording(codec, () => {
+                if (this.page.data.isTalking) this.stopRecording();
             });
         } catch (err) {
+            console.error('Recorder start failed:', err);
             wx.showToast({ title: '录音启动失败', icon: 'none' });
             this.page.setData({ isTalking: false });
             return;
         }
 
-        let sendBuffer = new Uint8Array(0);
+        let g711Buffer = new Uint8Array(0);
+        let opusPcmBuffer = new Int16Array(0);
 
-        // 独立发包定时器，固定 20ms 节律，与录音帧边界解耦
+        // Both codecs send one 20 ms audio frame per tick. Opus payload length is
+        // variable, so encoded frames are queued instead of concatenated by byte.
         this.sendTimer = setInterval(() => {
-            if (sendBuffer.length >= 160 && app.globalData.udpClient) {
-                const packetData = sendBuffer.slice(0, 160);
-                sendBuffer = sendBuffer.slice(160);
-                this.page.audioPacket.set(packetData, 48);
-                app.globalData.udpClient.send(this.page.audioPacket);
-            }
+            const payload = this.sendQueue.shift();
+            if (payload) this.sendVoicePayload(codec === 'opus' ? 8 : 1, payload);
         }, 20);
 
-        // 只负责把录音帧追加到 sendBuffer，不控制发包时序
         const processAudio = async () => {
             while (this.page.data.isTalking) {
                 try {
@@ -78,14 +131,26 @@ export class RecorderService {
                     if (!frame) break;
 
                     const { encoded, raw } = frame;
-                    this.outgoingVoiceBuffer.push(raw); // store raw PCM16 for WAV saving
+                    this.outgoingVoiceBuffer.push(raw.slice());
 
-                    const newBuffer = new Uint8Array(sendBuffer.length + encoded.length);
-                    newBuffer.set(sendBuffer);
-                    newBuffer.set(encoded, sendBuffer.length);
-                    sendBuffer = newBuffer;
+                    if (codec === 'g711') {
+                        g711Buffer = appendUint8(g711Buffer, encoded);
+                        while (g711Buffer.length >= G711_PACKET_SIZE) {
+                            this.sendQueue.push(g711Buffer.slice(0, G711_PACKET_SIZE));
+                            g711Buffer = g711Buffer.slice(G711_PACKET_SIZE);
+                        }
+                        continue;
+                    }
+
+                    opusPcmBuffer = appendInt16(opusPcmBuffer, raw);
+                    while (opusPcmBuffer.length >= opus.OPUS_FRAME_SIZE) {
+                        const pcmFrame = opusPcmBuffer.slice(0, opus.OPUS_FRAME_SIZE);
+                        opusPcmBuffer = opusPcmBuffer.slice(opus.OPUS_FRAME_SIZE);
+                        this.sendQueue.push(await opus.encodeFrame(pcmFrame));
+                    }
                 } catch (err) {
                     console.error('Recording process error:', err);
+                    this.page.setData({ isTalking: false });
                     break;
                 }
             }
@@ -93,22 +158,42 @@ export class RecorderService {
         this.audioProcessor = processAudio();
     }
 
-    /**
-     * Stop audio recording and save the file.
-     */
-    async stopRecording() {
-        this.page.setData({ isTalking: false });
-        if (this.sendTimer) {
-            clearInterval(this.sendTimer);
-            this.sendTimer = null;
+    async flushQueuedFrames(codec) {
+        while (this.sendQueue.length > 0) {
+            const payload = this.sendQueue.shift();
+            this.sendVoicePayload(codec === 'opus' ? 8 : 1, payload);
+            await new Promise(resolve => setTimeout(resolve, 20));
         }
+    }
+
+    async stopRecording() {
+        if (this.stopPromise) return this.stopPromise;
+
+        this.stopPromise = this.finishRecording();
+        try {
+            await this.stopPromise;
+        } finally {
+            this.stopPromise = null;
+        }
+    }
+
+    async finishRecording() {
+        const codec = this.activeCodec;
+        const sampleRate = this.activeSampleRate;
+        this.page.setData({ isTalking: false });
+
         try {
             if (this.recorder) recoder.stopRecording(this.recorder);
             if (this.audioProcessor) await this.audioProcessor;
+            if (this.sendTimer) {
+                clearInterval(this.sendTimer);
+                this.sendTimer = null;
+            }
+            await this.flushQueuedFrames(codec);
 
-            if (!this.outgoingVoiceBuffer || this.outgoingVoiceBuffer.length === 0) return;
+            if (!this.outgoingVoiceBuffer.length) return;
 
-            const bufferLength = this.outgoingVoiceBuffer.reduce((acc, curr) => acc + curr.length, 0);
+            const bufferLength = this.outgoingVoiceBuffer.reduce((sum, chunk) => sum + chunk.length, 0);
             const fullBuffer = new Int16Array(bufferLength);
             let offset = 0;
             for (const chunk of this.outgoingVoiceBuffer) {
@@ -116,42 +201,43 @@ export class RecorderService {
                 offset += chunk.length;
             }
 
-            const wavData = audioUtils.addWavHeader(new Uint8Array(fullBuffer.buffer), 8000);
+            const wavData = audioUtils.addWavHeader(new Uint8Array(fullBuffer.buffer), sampleRate);
             const filePath = await audioUtils.saveToFile(wavData, 'wav');
-            const duration = Math.ceil((Date.now() - app.globalData.recoderStartTime) / 1000);
+            const duration = Math.max(1, Math.ceil(fullBuffer.length / sampleRate));
+            const codecLabel = codec === 'opus' ? 'Opus' : 'G.711';
 
-            const newLog = {
+            this.page.voiceService.addChatLog({
                 id: Date.now(),
                 type: 'voice',
                 isSelf: true,
                 sender: '我',
-                duration: duration,
-                filePath: filePath,
+                codec,
+                codecLabel,
+                duration,
+                filePath,
                 timestamp: nrlHelpers.formatLastVoiceTime(Date.now())
-            };
+            });
 
-            this.page.voiceService.addChatLog(newLog);
-
-            // Send MDC
+            // MDC remains Type 1/G.711 for compatibility with existing devices.
             const mdcPacket = app.globalData.mdcPacket;
             if (mdcPacket) {
-                const packetSize = 160;
-                const totalPackets = Math.ceil(mdcPacket.length / packetSize);
+                const totalPackets = Math.ceil(mdcPacket.length / G711_PACKET_SIZE);
                 for (let i = 0; i < totalPackets; i++) {
-                    const start = i * packetSize;
-                    const end = Math.min(start + packetSize, mdcPacket.length);
-                    this.page.audioPacket.set(mdcPacket.slice(start, end), 48);
-                    if (app.globalData.udpClient) {
-                        await new Promise(resolve => {
-                            app.globalData.udpClient.send(this.page.audioPacket);
-                            setTimeout(resolve, 20);
-                        });
-                    }
+                    const payload = new Uint8Array(G711_PACKET_SIZE);
+                    payload.set(mdcPacket.slice(
+                        i * G711_PACKET_SIZE,
+                        Math.min((i + 1) * G711_PACKET_SIZE, mdcPacket.length)
+                    ));
+                    this.sendVoicePayload(1, payload);
+                    await new Promise(resolve => setTimeout(resolve, 20));
                 }
             }
         } catch (err) {
             console.error('Stop recording failed:', err);
         } finally {
+            if (this.sendTimer) clearInterval(this.sendTimer);
+            this.sendTimer = null;
+            this.sendQueue = [];
             this.recorder = null;
             this.audioProcessor = null;
         }

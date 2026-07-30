@@ -59,7 +59,7 @@
               <text class="sender-qth" wx:if="{{item.qth}}">{{item.qth}}</text>
             </view>
             <!-- Voice Bubble -->
-            <view wx:if="{{item.type === 'voice'}}" class="bubble voice-bubble {{currentPlayingId === item.id && isVoicePlaying ? 'playing' : ''}}" bindtap="playVoice" data-filepath="{{item.filePath}}" data-id="{{item.id}}" style="width: {{20 + item.duration * 5}}%; max-width: 66%;">
+            <view wx:if="{{item.type === 'voice'}}" class="bubble voice-bubble codec-{{item.codec || 'g711'}} {{currentPlayingId === item.id && isVoicePlaying ? 'playing' : ''}}" bindtap="playVoice" data-filepath="{{item.filePath}}" data-id="{{item.id}}" style="width: {{20 + item.duration * 5}}%; max-width: 66%;">
               <view class="voice-waveform {{currentPlayingId === item.id && isVoicePlaying ? 'playing' : ''}}">
                 <view class="wave-bar bar-1"></view>
                 <view class="wave-bar bar-2"></view>
@@ -67,6 +67,7 @@
                 <view class="wave-bar bar-4"></view>
                 <view class="wave-bar bar-5"></view>
               </view>
+              <text class="voice-codec-badge">{{item.codecLabel || 'G.711'}}</text>
               <text class="duration">{{item.duration}}s</text>
             </view>
             <!-- Text Bubble -->
@@ -112,7 +113,7 @@
             </view>
             <text class="status-receiving">正在接收...</text>
           </view>
-          <view class="bubble voice-bubble receiving" style="width: {{receivingBubbleWidth}}%;">
+          <view class="bubble voice-bubble receiving codec-{{ReceivingCodec}}" style="width: {{receivingBubbleWidth}}%;">
             <view class="voice-waveform playing">
               <view class="wave-bar bar-1"></view>
               <view class="wave-bar bar-2"></view>
@@ -120,6 +121,7 @@
               <view class="wave-bar bar-4"></view>
               <view class="wave-bar bar-5"></view>
             </view>
+            <text class="voice-codec-badge">{{ReceivingCodecLabel}}</text>
             <text class="duration">{{duration}}s</text>
           </view>
         </view>
@@ -233,6 +235,11 @@
       <view class="send-btn {{inputText.length > 0 ? 'active' : ''}}" bindtap="sendMessage">
         <text class="iconfont icon-send">发送</text>
       </view>
+    </view>
+    <view class="codec-control codec-{{codec}}">
+      <text class="codec-control-title">发送编码</text>
+      <text class="codec-control-value">{{codec === 'opus' ? 'Opus 16 kHz' : 'G.711 8 kHz'}}</text>
+      <switch checked="{{codec === 'opus'}}" disabled="{{isTalking}}" bindchange="onCodecSwitch" color="#6366f1" />
     </view>
     <view class="ptt-bar">
       <view class="status-indicator {{serverConnected ? 'connected' : 'disconnected'}}"></view>

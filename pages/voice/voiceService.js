@@ -2,11 +2,17 @@ import * as audio from '../../utils/audioPlayer';
 import * as nrl21 from '../../utils/nrl21';
 import * as audioUtils from '../../utils/audioUtils';
 import * as g711 from '../../utils/audioG711';
+import * as opus from '../../utils/audioOpus';
 import * as nrlHelpers from '../../utils/nrlHelpers';
 const devModels = require('./devmodels');
 
 const app = getApp();
 const devModelMap = new Map(devModels.map(model => [Number(model.id), model.name]));
+// Count is already parsed, but legacy devices may keep sending zero. Keep packet
+// reordering disabled until sequence support can be negotiated or auto-detected.
+const ENABLE_VOICE_PACKET_REORDER = false;
+const VOICE_REORDER_WINDOW = 3;
+const VOICE_REORDER_RESET_MS = 500;
 
 export class VoiceService {
     constructor(page) {
@@ -16,6 +22,15 @@ export class VoiceService {
         this.g711Codec = new g711.G711Codec();
         this.accumulatedDuration = 0; // Accurate duration in milliseconds
         this.durationUpdateTimer = null; // Timer for throttled duration updates
+        this.voiceReorderBuffer = new Map();
+        this.expectedVoiceCount = null;
+        this.reorderStreamId = null;
+        this.lastReorderPacketAt = 0;
+        this.opusDecodeChain = Promise.resolve();
+        this.opusDecoderSender = null;
+        this.opusDecoderSession = 0;
+        this.lastOpusPacketAt = 0;
+        this.opusDecodeErrorShown = false;
 
         // Track current receiving state to avoid relying on async page.data
         this.currentReceiving = {
@@ -25,6 +40,9 @@ export class VoiceService {
             dmrid: null,
             devModel: null,
             devModelName: '',
+            codec: 'g711',
+            codecLabel: 'G.711',
+            sampleRate: 8000,
             startTime: null,
             lastReceiveTime: null
         };
@@ -37,16 +55,13 @@ export class VoiceService {
         const packet = nrl21.decodePacket(data);
 
         switch (packet.type) {
-            case 1: // Voice
-                // Decode once and reuse for both playback and recording
-                const linearData = new Int16Array(packet.data.length);
-                for (let i = 0; i < packet.data.length; i++) {
-                    linearData[i] = this.g711Codec.alaw2linear(packet.data[i]);
+            case 1: // G.711 voice
+            case 8: // Opus voice, 16 kHz mono
+                if (ENABLE_VOICE_PACKET_REORDER) {
+                    this.enqueueOrderedVoicePacket(packet);
+                } else {
+                    this.dispatchVoicePacket(packet);
                 }
-                audio.playPCM(linearData, {
-                    streamId: `${packet.callSign || ''}-${packet.ssid == null ? '' : packet.ssid}`
-                });
-                this.processIncomingVoice(packet, linearData);
                 break;
 
             case 2: // Heartbeat
@@ -62,13 +77,120 @@ export class VoiceService {
         }
     }
 
+    dispatchVoicePacket(packet) {
+        if (packet.type === 8) {
+            this.opusDecodeChain = this.opusDecodeChain
+                .then(() => this.playOpusVoicePacket(packet))
+                .catch((err) => {
+                    console.error('Opus packet decode failed:', err);
+                    if (!this.opusDecodeErrorShown) {
+                        this.opusDecodeErrorShown = true;
+                        wx.showToast({ title: '收到 Opus 音频，但当前环境无法解码', icon: 'none' });
+                    }
+                });
+            return;
+        }
+        this.playVoicePacket(packet);
+    }
+
+    playVoicePacket(packet) {
+        // Decode once and reuse for both playback and recording.
+        const linearData = new Int16Array(packet.data.length);
+        for (let i = 0; i < packet.data.length; i++) {
+            linearData[i] = this.g711Codec.alaw2linear(packet.data[i]);
+        }
+        audio.playPCM(linearData, {
+            streamId: `${packet.callSign || ''}-${packet.ssid == null ? '' : packet.ssid}-g711`,
+            sampleRate: 8000
+        });
+        this.processIncomingVoice(packet, linearData, {
+            codec: 'g711',
+            codecLabel: 'G.711',
+            sampleRate: 8000
+        });
+    }
+
+    async playOpusVoicePacket(packet) {
+        const now = Date.now();
+        const sender = `${packet.callSign || ''}-${packet.ssid == null ? '' : packet.ssid}`;
+        if (sender !== this.opusDecoderSender || now - this.lastOpusPacketAt > 1000) {
+            this.opusDecoderSender = sender;
+            this.opusDecoderSession++;
+        }
+        this.lastOpusPacketAt = now;
+
+        const decoderStreamId = `${sender}-${this.opusDecoderSession}`;
+        const linearData = await opus.decodeFrame(packet.data, decoderStreamId);
+        audio.playPCM(linearData, {
+            streamId: `${sender}-opus`,
+            sampleRate: opus.OPUS_SAMPLE_RATE
+        });
+        this.processIncomingVoice(packet, linearData, {
+            codec: 'opus',
+            codecLabel: 'Opus',
+            sampleRate: opus.OPUS_SAMPLE_RATE
+        });
+    }
+
+    enqueueOrderedVoicePacket(packet) {
+        const now = Date.now();
+        const streamId = `${packet.callSign || ''}-${packet.ssid == null ? '' : packet.ssid}-${packet.type}`;
+        const count = Number(packet.count) & 0xffff;
+
+        if (
+            this.reorderStreamId !== streamId ||
+            (this.lastReorderPacketAt > 0 && now - this.lastReorderPacketAt > VOICE_REORDER_RESET_MS)
+        ) {
+            this.voiceReorderBuffer.clear();
+            this.expectedVoiceCount = count;
+            this.reorderStreamId = streamId;
+        }
+        this.lastReorderPacketAt = now;
+
+        if (!this.voiceReorderBuffer.has(count)) {
+            this.voiceReorderBuffer.set(count, packet);
+        }
+        this.flushOrderedVoicePackets();
+
+        if (this.voiceReorderBuffer.size >= VOICE_REORDER_WINDOW) {
+            let nearestCount = null;
+            let nearestDistance = 0x10000;
+            for (const queuedCount of this.voiceReorderBuffer.keys()) {
+                const distance = (queuedCount - this.expectedVoiceCount + 0x10000) & 0xffff;
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestCount = queuedCount;
+                }
+            }
+            if (nearestCount !== null) {
+                this.expectedVoiceCount = nearestCount;
+                this.flushOrderedVoicePackets();
+            }
+        }
+    }
+
+    flushOrderedVoicePackets() {
+        while (
+            this.expectedVoiceCount !== null &&
+            this.voiceReorderBuffer.has(this.expectedVoiceCount)
+        ) {
+            const packet = this.voiceReorderBuffer.get(this.expectedVoiceCount);
+            this.voiceReorderBuffer.delete(this.expectedVoiceCount);
+            this.dispatchVoicePacket(packet);
+            this.expectedVoiceCount = (this.expectedVoiceCount + 1) & 0xffff;
+        }
+    }
+
     /**
      * Process chunks of incoming voice data.
      * @param {Object} packet - The decoded packet
      * @param {Int16Array} linearData - Pre-decoded PCM data to avoid duplicate decoding
      */
-    processIncomingVoice(packet, linearData) {
+    processIncomingVoice(packet, linearData, audioFormat = {}) {
         const now = Date.now();
+        const codec = audioFormat.codec === 'opus' ? 'opus' : 'g711';
+        const codecLabel = codec === 'opus' ? 'Opus' : 'G.711';
+        const sampleRate = Number(audioFormat.sampleRate) || 8000;
 
         // Normalize packet values with same defaults used when storing
         const packetCallSign = packet.callSign || '未知';
@@ -81,7 +203,8 @@ export class VoiceService {
             // Check if this is a different sender or too long interval
             const isDifferentSender =
                 this.currentReceiving.callSign !== packetCallSign ||
-                this.currentReceiving.ssid !== packetSSID;
+                this.currentReceiving.ssid !== packetSSID ||
+                this.currentReceiving.codec !== codec;
 
             const timeSinceLastPacket = now - this.currentReceiving.lastReceiveTime;
             const isTooLongInterval = timeSinceLastPacket > 1000; // 1 second gap = new transmission (normal interval is 20-62.5ms)
@@ -105,6 +228,9 @@ export class VoiceService {
                 dmrid: packet.dmrid || '',
                 devModel: packetDevModel,
                 devModelName: packetDevModelName,
+                codec,
+                codecLabel,
+                sampleRate,
                 startTime: now,
                 lastReceiveTime: now
             };
@@ -117,6 +243,8 @@ export class VoiceService {
                 SSID: this.currentReceiving.ssid,
                 DMRID: this.currentReceiving.dmrid,
                 DevModelName: this.currentReceiving.devModelName,
+                ReceivingCodec: this.currentReceiving.codec,
+                ReceivingCodecLabel: this.currentReceiving.codecLabel,
                 ReceivingTime: nrlHelpers.formatLastVoiceTime(now),
                 lastVoiceTime: now,
                 duration: 0
@@ -133,19 +261,9 @@ export class VoiceService {
         // Use pre-decoded linearData (already decoded in handleMessage to avoid duplication)
         this.incomingVoiceBuffer.push(linearData);
 
-        // Calculate accurate duration based on packet size
-        // 160 bytes = 20ms, 500 bytes = 62.5ms
-        const packetSize = packet.data.length;
-        let packetDurationMs = 0;
-        if (packetSize === 160) {
-            packetDurationMs = 20;
-        } else if (packetSize === 500) {
-            packetDurationMs = 62.5;
-        } else {
-            // Fallback: estimate based on 8kHz sample rate (1 byte = 0.125ms)
-            packetDurationMs = packetSize * 0.125;
-        }
-        this.accumulatedDuration += packetDurationMs;
+        // Duration must use decoded PCM samples. Opus payload bytes are VBR and
+        // therefore cannot be used to infer frame duration.
+        this.accumulatedDuration += linearData.length * 1000 / sampleRate;
 
         // Only update lastVoiceTime, duration is updated by timer
         this.page.setData({ lastVoiceTime: now });
@@ -217,6 +335,9 @@ export class VoiceService {
         const DMRID = this.currentReceiving.dmrid;
         const DevModel = this.currentReceiving.devModel;
         const DevModelName = this.currentReceiving.devModelName;
+        const codec = this.currentReceiving.codec;
+        const codecLabel = this.currentReceiving.codecLabel;
+        const sampleRate = this.currentReceiving.sampleRate;
 
         // Reset receiving state
         this.currentReceiving = {
@@ -226,6 +347,9 @@ export class VoiceService {
             dmrid: null,
             devModel: null,
             devModelName: '',
+            codec: 'g711',
+            codecLabel: 'G.711',
+            sampleRate: 8000,
             startTime: null,
             lastReceiveTime: null
         };
@@ -243,7 +367,7 @@ export class VoiceService {
             offset += chunk.length;
         }
 
-        const wavData = audioUtils.addWavHeader(new Uint8Array(fullBuffer.buffer), 8000);
+        const wavData = audioUtils.addWavHeader(new Uint8Array(fullBuffer.buffer), sampleRate);
         try {
             const filePath = await audioUtils.saveToFile(wavData, 'wav');
             const qthmap = await app.globalData.getQTH(true);
@@ -259,6 +383,8 @@ export class VoiceService {
                 dmrid: DMRID,
                 devModel: DevModel,
                 devModelName: DevModelName,
+                codec,
+                codecLabel,
                 qth: qth ? qth.qth + " " + qth.name : '无位置数据',
                 duration: finalDuration,
                 filePath: filePath,
