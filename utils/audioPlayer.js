@@ -111,9 +111,17 @@ function initWebAudio() {
                 isPlaybackPrimed = true;
             }
 
-            if (!isPlaybackPrimed) return;
+            // The ScriptProcessor output buffer is NOT zeroed between callbacks
+            // on WeChat. Leaving it untouched replays the last rendered block
+            // forever (e.g. a loud MDC tail), so always write silence when
+            // there is no real audio to render.
+            if (!isPlaybackPrimed) {
+                outputData.fill(0);
+                return;
+            }
 
             if (!renderFromRingBuffer(outputData)) {
+                outputData.fill(0);
                 handleUnderflow();
             }
         };

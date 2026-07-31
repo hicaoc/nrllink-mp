@@ -388,6 +388,341 @@ export class MDC1200Encoder {
 
 } // End of class MDC1200Encoder
 
+// ---------------------------------------------------------------------------
+// MDC1200 Decoder
+// Ported from Matthew Kaufman's mdc_decode.c (FOURPOINT strategy, MDC_ND=5).
+// Expects S16 PCM samples; supported sample rates follow the incru table of
+// the original library (8000/16000/22050/32000/44100/48000 Hz).
+// ---------------------------------------------------------------------------
+
+const MDC_ND = 5;
+const MDC_GDTHRESH = 5; // "good bits" threshold for sync detection
+
+function _decoderIncru(sampleRate) {
+    switch (Number(sampleRate)) {
+        case 8000: return 644245094;
+        case 16000: return 322122547;
+        case 22050: return 233739716;
+        case 32000: return 161061274;
+        case 44100: return 116869858;
+        case 48000: return 107374182;
+        default: return Math.floor(1200 * 2 * (0x80000000 / sampleRate));
+    }
+}
+
+function _decFlip(val, bits) {
+    let res = 0;
+    for (let i = 0; i < bits; i++) {
+        if ((val >> i) & 1) {
+            res |= 1 << (bits - 1 - i);
+        }
+    }
+    return res;
+}
+
+function _decDocrc(dataSlice, len) {
+    let crc = 0x0000;
+    for (let i = 0; i < len; i++) {
+        const c = _decFlip(dataSlice[i], 8); // Reflect data byte
+        for (let j = 0x80; j; j >>= 1) { // Process MSB first
+            let bit = crc & 0x8000;
+            crc <<= 1;
+            if (c & j) bit ^= 0x8000; // XOR data bit if 1
+            if (bit) crc ^= 0x1021; // XOR with poly if necessary
+        }
+    }
+    crc = _decFlip(crc, 16); // Reflect result
+    crc ^= 0xffff; // Final XOR
+    return crc & 0xFFFF;
+}
+
+function _popcount32(n) {
+    let count = 0;
+    let v = n | 0;
+    while (v) {
+        ++count;
+        v &= (v - 1);
+    }
+    return count;
+}
+
+export class MDC1200Decoder {
+    constructor(sampleRate = 8000) {
+        this.incru = _decoderIncru(sampleRate);
+        this.incr5 = 5 * this.incru;
+        this.sampleRate = Number(sampleRate) || 8000;
+
+        this.good = 0;
+        this.indouble = 0;
+        this.op = 0;
+        this.arg = 0;
+        this.unitID = 0;
+        this.extra0 = 0;
+        this.extra1 = 0;
+        this.extra2 = 0;
+        this.extra3 = 0;
+
+        this.du = [];
+        for (let i = 0; i < MDC_ND; i++) {
+            this.du.push({
+                thu: Math.floor(i * 2 * (0x80000000 / MDC_ND)) >>> 0,
+                xorb: 0,
+                invert: 0,
+                nlstep: i,
+                nlevel: new Float64Array(10),
+                synclow: 0,
+                synchigh: 0,
+                shstate: -1,
+                shcount: 0,
+                bits: new Uint8Array(112),
+            });
+        }
+    }
+
+    _clearbits(x) {
+        this.du[x].bits.fill(0);
+    }
+
+    // Convolutional ECC single-error correction (mdc_decode.c _gofix)
+    _gofix(data) {
+        const csr = [0, 0, 0, 0, 0, 0, 0];
+        let syn = 0;
+
+        for (let i = 0; i < 7; i++) {
+            for (let j = 0; j <= 7; j++) {
+                for (let k = 6; k > 0; k--) csr[k] = csr[k - 1];
+
+                csr[0] = (data[i] >> j) & 0x01;
+                const b = csr[0] + csr[2] + csr[5] + csr[6];
+                syn <<= 1;
+                if ((b & 0x01) ^ ((data[i + 7] >> j) & 0x01)) {
+                    syn |= 1;
+                }
+                let ec = 0;
+                if (syn & 0x80) ++ec;
+                if (syn & 0x20) ++ec;
+                if (syn & 0x04) ++ec;
+                if (syn & 0x02) ++ec;
+                if (ec >= 3) {
+                    syn ^= 0xa6;
+                    let fixi = i;
+                    let fixj = j - 7;
+                    if (fixj < 0) {
+                        --fixi;
+                        fixj += 8;
+                    }
+                    if (fixi >= 0) {
+                        data[fixi] ^= 1 << fixj; // flip
+                    }
+                }
+            }
+        }
+    }
+
+    _procbits(x, out) {
+        const du = this.du[x];
+        const lbits = new Uint8Array(112);
+        let lbc = 0;
+
+        // Deinterleave 112 bits
+        for (let i = 0; i < 16; i++) {
+            for (let j = 0; j < 7; j++) {
+                lbits[lbc++] = du.bits[(j * 16) + i];
+            }
+        }
+
+        const data = new Uint8Array(14);
+        for (let i = 0; i < 14; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (lbits[(i * 8) + j]) {
+                    data[i] |= 1 << j;
+                }
+            }
+        }
+
+        this._gofix(data);
+
+        const ccrc = _decDocrc(data, 4);
+        const rcrc = (data[5] << 8) | data[4];
+
+        if (ccrc === rcrc) {
+            if (du.shstate === 2) {
+                // Second half of a double packet
+                this.extra0 = data[0];
+                this.extra1 = data[1];
+                this.extra2 = data[2];
+                this.extra3 = data[3];
+
+                for (let k = 0; k < MDC_ND; k++) this.du[k].shstate = -1;
+
+                this.good = 2;
+                this.indouble = 0;
+            } else if (!this.indouble) {
+                this.good = 1;
+                this.op = data[0];
+                this.arg = data[1];
+                this.unitID = (data[2] << 8) | data[3];
+
+                if (data[0] === 0x35 || data[0] === 0x55) {
+                    // Opcodes that mean a double packet follows
+                    this.good = 0;
+                    this.indouble = 1;
+                    du.shstate = 2;
+                    du.shcount = 0;
+                    this._clearbits(x);
+                } else {
+                    for (let k = 0; k < MDC_ND; k++) this.du[k].shstate = -1;
+                }
+            } else {
+                // Any subsequent good decoder allowed to attempt second half
+                du.shstate = 2;
+                du.shcount = 0;
+                this._clearbits(x);
+            }
+        } else {
+            du.shstate = -1;
+        }
+
+        if (this.good) {
+            out.push({
+                frames: this.good,
+                op: this.op,
+                arg: this.arg,
+                unitID: this.unitID,
+                extra: [this.extra0, this.extra1, this.extra2, this.extra3],
+            });
+            this.good = 0;
+        }
+    }
+
+    _shiftin(x, out) {
+        const du = this.du[x];
+        const bit = du.xorb;
+
+        if (du.shstate === -1) {
+            du.synchigh = 0;
+            du.synclow = 0;
+            du.shstate = 0;
+        }
+
+        if (du.shstate === 0) {
+            du.synchigh = du.synchigh << 1;
+            if (du.synclow & 0x80000000) du.synchigh |= 1;
+            du.synclow = du.synclow << 1;
+            if (bit) du.synclow |= 1;
+
+            let gcount = _popcount32(0x000000ff & (0x00000007 ^ du.synchigh));
+            gcount += _popcount32(0x092a446f ^ du.synclow);
+
+            if (gcount <= MDC_GDTHRESH) {
+                du.shstate = 1;
+                du.shcount = 0;
+                this._clearbits(x);
+            } else if (gcount >= 40 - MDC_GDTHRESH) {
+                // Inverted sync: flip polarity and continue
+                du.shstate = 1;
+                du.shcount = 0;
+                du.xorb = du.xorb ? 0 : 1;
+                du.invert = du.invert ? 0 : 1;
+                this._clearbits(x);
+            }
+            return;
+        }
+
+        if (du.shstate === 1 || du.shstate === 2) {
+            du.bits[du.shcount] = bit;
+            du.shcount++;
+            if (du.shcount > 111) {
+                this._procbits(x, out);
+            }
+        }
+    }
+
+    _nlproc(x, out) {
+        const du = this.du[x];
+        let vnow;
+        let vpast;
+
+        switch (du.nlstep) {
+            case 3:
+                vnow = (-0.60 * du.nlevel[3]) + (0.97 * du.nlevel[1]);
+                vpast = (-0.60 * du.nlevel[7]) + (0.97 * du.nlevel[9]);
+                break;
+            case 8:
+                vnow = (-0.60 * du.nlevel[8]) + (0.97 * du.nlevel[6]);
+                vpast = (-0.60 * du.nlevel[2]) + (0.97 * du.nlevel[4]);
+                break;
+            default:
+                return;
+        }
+
+        du.xorb = vnow > vpast ? 1 : 0;
+        if (du.invert) du.xorb = du.xorb ? 0 : 1;
+        this._shiftin(x, out);
+    }
+
+    /**
+     * Feed S16 PCM samples. Returns an array of decoded packets (usually
+     * empty): { frames: 1|2, op, arg, unitID, extra: [e0, e1, e2, e3] }
+     */
+    processSamples(samples) {
+        const out = [];
+        if (!samples || !samples.length) return out;
+
+        for (let i = 0; i < samples.length; i++) {
+            const value = samples[i] / 65536.0;
+
+            for (let j = 0; j < MDC_ND; j++) {
+                const du = this.du[j];
+                const lthu = du.thu;
+                du.thu = (du.thu + this.incr5) >>> 0;
+                if (du.thu < lthu) { // wrapped
+                    du.nlstep++;
+                    if (du.nlstep > 9) du.nlstep = 0;
+                    du.nlevel[du.nlstep] = value;
+                    this._nlproc(j, out);
+                }
+            }
+        }
+
+        return out;
+    }
+} // End of class MDC1200Decoder
+
+// --- Display helpers ---
+
+const MDC_OP_LABELS = {
+    0x00: 'PTT ID',
+    0x01: 'PTT ID',
+    0x40: '紧急报警',
+    0x11: '远程监听',
+    0x63: '呼叫提醒',
+};
+
+export function formatMdcId(unitID) {
+    return (Number(unitID) & 0xffff).toString(16).toUpperCase().padStart(4, '0');
+}
+
+export function describeMdcPacket(packet) {
+    if (!packet) return '';
+
+    let label = MDC_OP_LABELS[packet.op];
+    if (!label) {
+        if (packet.op === 0x35) {
+            label = packet.frames === 2 ? '选呼' : '请求通话';
+        } else if (packet.op === 0x55) {
+            label = '状态消息';
+        } else {
+            label = `OP:0x${(packet.op & 0xff).toString(16).toUpperCase().padStart(2, '0')}`;
+        }
+    }
+
+    return `MDC:${formatMdcId(packet.unitID)} ${label}`;
+}
+
 export default {
     MDC1200Encoder,
+    MDC1200Decoder,
+    formatMdcId,
+    describeMdcPacket,
 };

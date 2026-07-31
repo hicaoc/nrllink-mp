@@ -3,6 +3,7 @@ import * as nrl21 from '../../utils/nrl21';
 import * as audioUtils from '../../utils/audioUtils';
 import * as g711 from '../../utils/audioG711';
 import * as opus from '../../utils/audioOpus';
+import * as mdc1200 from '../../utils/mdc1200';
 import * as nrlHelpers from '../../utils/nrlHelpers';
 const devModels = require('./devmodels');
 
@@ -31,6 +32,8 @@ export class VoiceService {
         this.opusDecoderSession = 0;
         this.lastOpusPacketAt = 0;
         this.opusDecodeErrorShown = false;
+        this.mdcDecoder = null;
+        this.mdcDecoderSampleRate = 0;
 
         // Track current receiving state to avoid relying on async page.data
         this.currentReceiving = {
@@ -43,6 +46,7 @@ export class VoiceService {
             codec: 'g711',
             codecLabel: 'G.711',
             sampleRate: 8000,
+            mdcLabel: '',
             startTime: null,
             lastReceiveTime: null
         };
@@ -231,6 +235,7 @@ export class VoiceService {
                 codec,
                 codecLabel,
                 sampleRate,
+                mdcLabel: '',
                 startTime: now,
                 lastReceiveTime: now
             };
@@ -245,6 +250,7 @@ export class VoiceService {
                 DevModelName: this.currentReceiving.devModelName,
                 ReceivingCodec: this.currentReceiving.codec,
                 ReceivingCodecLabel: this.currentReceiving.codecLabel,
+                ReceivingMdcLabel: '',
                 ReceivingTime: nrlHelpers.formatLastVoiceTime(now),
                 lastVoiceTime: now,
                 duration: 0
@@ -261,6 +267,10 @@ export class VoiceService {
         // Use pre-decoded linearData (already decoded in handleMessage to avoid duplication)
         this.incomingVoiceBuffer.push(linearData);
 
+        // Feed the MDC1200 signaling decoder (ID bursts usually sit at the
+        // head or tail of a transmission).
+        this.decodeIncomingMdc(linearData, sampleRate);
+
         // Duration must use decoded PCM samples. Opus payload bytes are VBR and
         // therefore cannot be used to infer frame duration.
         this.accumulatedDuration += linearData.length * 1000 / sampleRate;
@@ -273,6 +283,31 @@ export class VoiceService {
         this.voiceEndTimer = setTimeout(() => {
             this.finishIncomingVoice();
         }, 2500);
+    }
+
+    /**
+     * Run the MDC1200 decoder over incoming PCM and surface the decoded
+     * unit ID / opcode next to the sender's callsign.
+     */
+    decodeIncomingMdc(linearData, sampleRate) {
+        try {
+            if (!this.mdcDecoder || this.mdcDecoderSampleRate !== sampleRate) {
+                this.mdcDecoder = new mdc1200.MDC1200Decoder(sampleRate);
+                this.mdcDecoderSampleRate = sampleRate;
+            }
+
+            const packets = this.mdcDecoder.processSamples(linearData);
+            for (const mdcPacket of packets) {
+                const label = mdc1200.describeMdcPacket(mdcPacket);
+                console.log(`[Voice] 📟 MDC decoded: ${label} (op=0x${mdcPacket.op.toString(16)}, arg=0x${mdcPacket.arg.toString(16)}, frames=${mdcPacket.frames})`);
+                if (this.currentReceiving.isReceiving) {
+                    this.currentReceiving.mdcLabel = label;
+                    this.page.setData({ ReceivingMdcLabel: label });
+                }
+            }
+        } catch (err) {
+            console.warn('MDC decode failed:', err);
+        }
     }
 
     /**
@@ -338,6 +373,7 @@ export class VoiceService {
         const codec = this.currentReceiving.codec;
         const codecLabel = this.currentReceiving.codecLabel;
         const sampleRate = this.currentReceiving.sampleRate;
+        const mdcLabel = this.currentReceiving.mdcLabel;
 
         // Reset receiving state
         this.currentReceiving = {
@@ -350,6 +386,7 @@ export class VoiceService {
             codec: 'g711',
             codecLabel: 'G.711',
             sampleRate: 8000,
+            mdcLabel: '',
             startTime: null,
             lastReceiveTime: null
         };
@@ -385,6 +422,7 @@ export class VoiceService {
                 devModelName: DevModelName,
                 codec,
                 codecLabel,
+                mdcLabel,
                 qth: qth ? qth.qth + " " + qth.name : '无位置数据',
                 duration: finalDuration,
                 filePath: filePath,

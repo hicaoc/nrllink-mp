@@ -330,6 +330,17 @@
   flex-shrink: 0;
 }
 
+.sender-mdc {
+  font-size: 18rpx;
+  color: #8e44ad;
+  background: rgba(142, 68, 173, 0.12);
+  padding: 2rpx 8rpx;
+  border-radius: 10rpx;
+  margin-right: 10rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .sender-qth {
   display: block;
   font-size: 20rpx;

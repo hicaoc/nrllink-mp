@@ -72,7 +72,8 @@ Page({
   },
 
   async refreshData() {
-    let currentGroup = await app.globalData.getGroup(groupData.id)
+    // 管理操作（踢人、改参数等）后调用，绕过缓存强制取最新群组数据
+    let currentGroup = await app.globalData.getGroup(groupData.id, false, true)
     this.loadGroupDetail(currentGroup)
    },
  

@@ -1,6 +1,9 @@
 //import { getQTH, getQTHmap,logout } from './utils/api';
 import * as audio from './utils/audioPlayer';
 
+// /group/get 结果缓存时长，避免多个页面/定时器高频重复请求同一群组
+const GROUP_GET_CACHE_MS = 15000;
+
 import {
   getGroupList as _getGroupList,
   getGroup as _getGroup,
@@ -62,21 +65,44 @@ App({
       }
     },
 
-    getGroup: async function (group_id, silent = false) {
+    getGroup: async function (group_id, silent = false, forceRefresh = false) {
 
-      try {
-        const data = await _getGroup({ group_id: group_id }, silent);
-        // console.log('getGroup', data)
-        return data
-      } catch (error) {
-        if (!silent) {
-          wx.showToast({
-            title: error.message || '获取群组失败',
-            icon: 'none'
-          });
-        }
+      if (group_id === undefined || group_id === null) return;
+
+      if (!this.groupCache) this.groupCache = {};
+      const cached = this.groupCache[group_id];
+
+      if (!forceRefresh && cached) {
+        // 合并进行中的相同请求，避免并发重复调用
+        if (cached.promise) return cached.promise;
+        if (Date.now() - cached.fetchedAt < GROUP_GET_CACHE_MS) return cached.data;
       }
 
+      const promise = _getGroup({ group_id: group_id }, silent)
+        .then((data) => {
+          this.groupCache[group_id] = { fetchedAt: Date.now(), data, promise: null };
+          return data;
+        })
+        .catch((error) => {
+          if (this.groupCache[group_id] && this.groupCache[group_id].promise === promise) {
+            delete this.groupCache[group_id];
+          }
+          if (!silent) {
+            wx.showToast({
+              title: error.message || '获取群组失败',
+              icon: 'none'
+            });
+          }
+          return undefined;
+        });
+
+      this.groupCache[group_id] = {
+        fetchedAt: cached ? cached.fetchedAt : 0,
+        data: cached ? cached.data : undefined,
+        promise
+      };
+
+      return promise;
     },
 
     getDevice: async function (callsign, ssid, silent = false) {

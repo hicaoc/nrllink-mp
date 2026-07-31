@@ -19,6 +19,7 @@ Page({
     codec: 'g711',
     ReceivingCodec: 'g711',
     ReceivingCodecLabel: 'G.711',
+    ReceivingMdcLabel: '',
     serverConnected: false,
     showList: false,
     currentGroup: null,
@@ -226,7 +227,7 @@ Page({
     this.stopGroupRefreshTimer();
     this.groupRefreshTimer = setInterval(() => {
       this.refreshData(true);
-    }, 5000);
+    }, 15000);
   },
 
   stopGroupRefreshTimer() {
@@ -244,12 +245,23 @@ Page({
     if (group) {
       const devlist = Object.values(group.devmap || {});
       const onlineCount = devlist.filter(d => d.is_online).length;
-      this.setData({
-        currentGroup: group.name,
-        onlineCount: onlineCount,
-        deviceCount: devlist.length
-      });
-    } else {
+      // 数据没有变化时不触发 setData，避免列表无意义地反复刷新
+      if (
+        group.name !== this.data.currentGroup ||
+        onlineCount !== this.data.onlineCount ||
+        devlist.length !== this.data.deviceCount
+      ) {
+        this.setData({
+          currentGroup: group.name,
+          onlineCount: onlineCount,
+          deviceCount: devlist.length
+        });
+      }
+    } else if (
+      this.data.currentGroup !== '未加入群组' ||
+      this.data.onlineCount !== 0 ||
+      this.data.deviceCount !== 0
+    ) {
       this.setData({
         currentGroup: '未加入群组',
         onlineCount: 0,
