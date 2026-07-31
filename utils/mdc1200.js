@@ -338,7 +338,7 @@ export class MDC1200Encoder {
             this.tthu = 0;
             this.thu = 0;
             this.bpos = 0;
-            this.ipos = -1; // Will become 0 on first bit clock tick in _enc_get_samp
+            this.ipos = 0; // Will become 0 on first bit clock tick in _enc_get_samp
             this.state = 1;
             this.xorb = 1; // Initial XOR state matches C code
             this.lb = 0;   // Initial last bit matches C code
