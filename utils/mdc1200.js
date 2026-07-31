@@ -1,9 +1,10 @@
 export class MDC1200Encoder {
-    constructor() {
-        this.sampleRate = 8000;
-        // --- Phase increments for 8000 Hz ---
-        this.incru = 644245094;    // 1200 Hz @ 8000 Hz
-        this.incru18 = 966367642;   // 1800 Hz @ 8000 Hz
+    constructor(sampleRate = 8000) {
+        this.sampleRate = sampleRate;
+        // Phase increments computed for the given sample rate
+        // Formula: Math.round(freq / sampleRate * 2^32)
+        this.incru = Math.round(1200 / sampleRate * 0x100000000);    // 1200 Hz
+        this.incru18 = Math.round(1800 / sampleRate * 0x100000000);  // 1800 Hz
         // Use the S16 full amplitude sintable matching mdc_encode.c
         this.sintable = this._generateS16FullAmplitudeSintable();
         this.loaded = 0;
@@ -358,7 +359,7 @@ export class MDC1200Encoder {
 
         while (this.state === 1 && safetyCounter < maxSamples) {
             const sample = this._enc_get_samp();
-            samples.push(sample * 0.2); //音量小一半
+            samples.push(sample); // 满幅输出，与 C 参考实现一致
             count++;
             safetyCounter++;
             // If a specific bufferSize was requested, stop when reached

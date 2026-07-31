@@ -218,18 +218,26 @@ export class RecorderService {
                 timestamp: nrlHelpers.formatLastVoiceTime(Date.now())
             });
 
-            // MDC remains Type 1/G.711 for compatibility with existing devices.
-            const mdcPacket = app.globalData.mdcPacket;
-            if (mdcPacket) {
-                const totalPackets = Math.ceil(mdcPacket.length / G711_PACKET_SIZE);
-                for (let i = 0; i < totalPackets; i++) {
-                    const payload = new Uint8Array(G711_PACKET_SIZE);
-                    payload.set(mdcPacket.slice(
-                        i * G711_PACKET_SIZE,
-                        Math.min((i + 1) * G711_PACKET_SIZE, mdcPacket.length)
-                    ));
-                    this.sendVoicePayload(1, payload);
+            // Send MDC tail tone using the same codec as the voice transmission.
+            // Opus MDC frames are pre-encoded in initMdcAndUdp, mirroring the G711 approach.
+            if (codec === 'opus' && app.globalData.mdcOpusFrames && app.globalData.mdcOpusFrames.length > 0) {
+                for (const frame of app.globalData.mdcOpusFrames) {
+                    this.sendVoicePayload(8, frame);
                     await new Promise(resolve => setTimeout(resolve, 20));
+                }
+            } else {
+                const mdcPacket = app.globalData.mdcPacket;
+                if (mdcPacket) {
+                    const totalPackets = Math.ceil(mdcPacket.length / G711_PACKET_SIZE);
+                    for (let i = 0; i < totalPackets; i++) {
+                        const payload = new Uint8Array(G711_PACKET_SIZE);
+                        payload.set(mdcPacket.slice(
+                            i * G711_PACKET_SIZE,
+                            Math.min((i + 1) * G711_PACKET_SIZE, mdcPacket.length)
+                        ));
+                        this.sendVoicePayload(1, payload);
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
                 }
             }
         } catch (err) {

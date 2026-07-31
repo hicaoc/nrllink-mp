@@ -118,3 +118,64 @@ export async function checkOpusSupport() {
     await getEncoder();
     return true;
 }
+
+let mdcEncoderPromise = null;
+
+/**
+ * Get a dedicated Opus encoder for MDC signaling.
+ * Uses Application.Audio + Signal.Auto to faithfully preserve FSK tones
+ * (1200/1800 Hz), unlike the voice encoder which suppresses non-speech.
+ */
+function getMdcEncoder() {
+    ensureWebAssemblyRuntime();
+    if (!mdcEncoderPromise) {
+        mdcEncoderPromise = createEncoder({
+            sampleRate: OPUS_SAMPLE_RATE,
+            channels: OPUS_CHANNELS,
+            frameSize: OPUS_FRAME_SIZE,
+            bitrate: 64000,
+            application: Application.Audio,
+            complexity: 10,
+            signal: Signal.Auto,
+            maxBandwidth: Bandwidth.Wideband,
+            vbr: true,
+            dtx: false,
+            fec: false,
+        }).catch((err) => {
+            mdcEncoderPromise = null;
+            throw err;
+        });
+    }
+    return mdcEncoderPromise;
+}
+
+/**
+ * Pre-encode MDC1200 PCM samples (16000 Hz) into Opus frames.
+ * The MDC encoder should be instantiated with sampleRate=16000 so that
+ * samples are natively at Opus rate — no upsampling needed.
+ * Uses a dedicated Audio-mode encoder to preserve FSK tone integrity.
+ * Returns an array of encoded Uint8Array frames, each representing 20 ms.
+ */
+export async function encodeMdcToOpusFrames(mdcSamples) {
+    if (!(mdcSamples instanceof Int16Array) || mdcSamples.length === 0) {
+        return [];
+    }
+
+    // Split into OPUS_FRAME_SIZE frames and encode each
+    const frames = [];
+    const encoder = await getMdcEncoder();
+    for (let offset = 0; offset + OPUS_FRAME_SIZE <= mdcSamples.length; offset += OPUS_FRAME_SIZE) {
+        const pcmFrame = mdcSamples.slice(offset, offset + OPUS_FRAME_SIZE);
+        frames.push(encoder.encode(pcmFrame));
+    }
+
+    // If there are remaining samples that don't fill a full frame, pad with silence
+    const remaining = mdcSamples.length % OPUS_FRAME_SIZE;
+    if (remaining > 0) {
+        const lastFrame = new Int16Array(OPUS_FRAME_SIZE); // zero-padded
+        lastFrame.set(mdcSamples.slice(mdcSamples.length - remaining), 0);
+        frames.push(encoder.encode(lastFrame));
+    }
+
+    return frames;
+}

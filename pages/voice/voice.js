@@ -1,6 +1,7 @@
 import * as udp from '../../utils/udp';
 import * as audio from '../../utils/audioPlayer';
 import * as g711 from '../../utils/audioG711';
+import * as opus from '../../utils/audioOpus';
 import * as nrl21 from '../../utils/nrl21';
 import * as mdc from '../../utils/mdc1200';
 import * as nrlHelpers from '../../utils/nrlHelpers';
@@ -86,11 +87,27 @@ Page({
     app.globalData.currentDevice = currentDevice;
 
     try {
-      this.mdcEncoder = new mdc.MDC1200Encoder();
+      const mdcId = parseInt(app.globalData.userInfo.mdcid, 16);
+
+      // G711 MDC: 8000 Hz samples → A-law encode
+      this.mdcEncoder = new mdc.MDC1200Encoder(8000);
       this.mdcEncoder.setPreamble(10);
-      this.mdcEncoder.setPacket(0x01, 0x00, parseInt(app.globalData.userInfo.mdcid, 16));
-      const samples = this.mdcEncoder.getSamples();
-      app.globalData.mdcPacket = g711.MDC2g711Encode(samples);
+      this.mdcEncoder.setPacket(0x01, 0x00, mdcId);
+      const samples8k = this.mdcEncoder.getSamples();
+      app.globalData.mdcPacket = g711.MDC2g711Encode(samples8k);
+
+      // Opus MDC: native 16000 Hz samples → Opus encode (async, non-blocking)
+      app.globalData.mdcOpusFrames = null;
+      const mdcEncoder16k = new mdc.MDC1200Encoder(16000);
+      mdcEncoder16k.setPreamble(10);
+      mdcEncoder16k.setPacket(0x01, 0x00, mdcId);
+      const samples16k = mdcEncoder16k.getSamples();
+      opus.encodeMdcToOpusFrames(samples16k).then(frames => {
+        app.globalData.mdcOpusFrames = frames;
+        console.log(`MDC Opus pre-encoded: ${frames.length} frames`);
+      }).catch(err => {
+        console.warn('MDC Opus pre-encode failed, will fallback to G711 MDC:', err);
+      });
     } catch (e) {
       console.error('MDC Init Error:', e);
     }
