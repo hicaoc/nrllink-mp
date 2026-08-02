@@ -491,7 +491,7 @@ Page({
     const { currentDevice } = app.globalData;
     this.setData({
       showGroupModal: true,
-      currentGroupId: currentDevice?.group_id || null
+      currentGroupId: currentDevice?.group_id ?? null
     });
   },
 
@@ -527,7 +527,8 @@ Page({
   async showOnlineDevices() {
     try {
       const currentDevice = app.globalData.currentDevice;
-      if (!currentDevice || !currentDevice.group_id) {
+      // 公共大厅 group_id 为 0，不能用 falsy 判断
+      if (!currentDevice || currentDevice.group_id === undefined || currentDevice.group_id === null) {
         wx.showToast({ title: '未加入群组', icon: 'none' });
         return;
       }

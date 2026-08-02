@@ -339,6 +339,18 @@ Page({
         return a.is_online ? -1 : 1;
       });
 
+      // 群组类型需先于设备循环解析，循环内会用到
+      let groupTypeId = 0;
+      try {
+        groupTypeId = Number(group.type);
+        if (isNaN(groupTypeId)) {
+          console.warn('Invalid group type:', group.type);
+          groupTypeId = 0;
+        }
+      } catch (error) {
+        console.warn('Error parsing group type:', error);
+      }
+
       const devmap = new Array(devices.length);
       let onlineCount = 0;
 
@@ -398,17 +410,6 @@ Page({
         };
       }
 
-      let groupTypeId = 0;
-      try {
-        groupTypeId = Number(group.type);
-        if (isNaN(groupTypeId)) {
-          console.warn('Invalid group type:', group.type);
-          groupTypeId = 0;
-        }
-      } catch (error) {
-        console.warn('Error parsing group type:', error);
-      }
-
       const update = {
         'group.deviceCount': devmap.length,
         'group.onlineCount': onlineCount,
@@ -440,11 +441,13 @@ Page({
     this.loadAvailableGroups(); // 加载所有可用群组列表（用于 Picker）
   },
 
-  onPullDownRefresh() {
-    if (groupData) {
-      this.loadGroupDetail(groupData)
+  async onPullDownRefresh() {
+    // 下拉刷新需要重新请求 group/get 拿最新数据，而不是用进入页面时的旧数据
+    try {
+      await this.refreshData();
+    } finally {
+      wx.stopPullDownRefresh();
     }
-    wx.stopPullDownRefresh()
   },
 
   toggleDetails(e) {

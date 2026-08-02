@@ -71,7 +71,8 @@ Page({
   },
 
   groupName(groupId) {
-    if (!groupId) return '未加入';
+    // 公共大厅 group_id 为 0，不能用 falsy 判断
+    if (groupId === undefined || groupId === null) return '未加入';
     const name = this._groupMap && this._groupMap[groupId];
     return name ? `${groupId} - ${name}` : `#${groupId}`;
   },
