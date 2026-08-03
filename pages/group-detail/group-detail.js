@@ -432,7 +432,8 @@ Page({
 
   onShow() {
     // 每次显示页面时都刷新数据和群组列表
-    if (groupData && groupData.id) { // 确保 groupData 有效
+    // 公共大厅 id 为 0，不能用 falsy 判断
+    if (groupData && groupData.id !== undefined && groupData.id !== null) { // 确保 groupData 有效
       this.refreshData();
     } else {
        console.warn("Missing groupData in onShow, cannot refresh group details.");
